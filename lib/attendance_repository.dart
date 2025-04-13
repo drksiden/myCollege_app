@@ -2,7 +2,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 class AttendanceRepository {
-  static final AttendanceRepository _instance = AttendanceRepository._internal();
+  static final AttendanceRepository _instance =
+      AttendanceRepository._internal();
   factory AttendanceRepository() => _instance;
 
   final Map<String, List<Map<String, dynamic>>> monthlyAttendance = {};
@@ -25,7 +26,10 @@ class AttendanceRepository {
       for (int d = 1; d <= daysInMonth; d++) {
         final date = DateTime(2025, i, d);
         final isWeekend = date.weekday == 6 || date.weekday == 7;
-        final isHoliday = holidays.any((h) => h.year == date.year && h.month == date.month && h.day == date.day);
+        final isHoliday = holidays.any(
+          (h) =>
+              h.year == date.year && h.month == date.month && h.day == date.day,
+        );
 
         if (isWeekend || isHoliday) {
           days.add({'date': date, 'status': null});

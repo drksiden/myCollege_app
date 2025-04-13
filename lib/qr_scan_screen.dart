@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/attendance_repository.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class QrScanScreen extends StatefulWidget {
@@ -17,10 +18,15 @@ class _QrScanScreenState extends State<QrScanScreen> {
       if (code != null) {
         setState(() {
           result = "QR-код: $code";
-          // Здесь можешь добавить логику для отметки посещения
+          AttendanceRepository().markAttendance(DateTime.parse(code));
         });
         break;
+      } else {
+        setState(() {
+          result = "Не удалось распознать QR-код";
+        });
       }
+      // Если нужно, можно добавить логику для обработки других типов штрих-кодов
     }
   }
 
@@ -30,17 +36,10 @@ class _QrScanScreenState extends State<QrScanScreen> {
       appBar: AppBar(title: const Text("Сканер QR-кода")),
       body: Column(
         children: [
-          Expanded(
-            flex: 3,
-            child: MobileScanner(
-              onDetect: _onDetect,
-            ),
-          ),
+          Expanded(flex: 3, child: MobileScanner(onDetect: _onDetect)),
           Expanded(
             flex: 1,
-            child: Center(
-              child: Text(result, textAlign: TextAlign.center),
-            ),
+            child: Center(child: Text(result, textAlign: TextAlign.center)),
           ),
         ],
       ),
