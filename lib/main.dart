@@ -1,8 +1,10 @@
 // main.dart
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Для SystemChrome и SystemUiOverlayStyle
+import 'package:flutter_application_1/auth_wrapper.dart';
+import 'package:flutter_application_1/firebase_options.dart';
 import 'package:provider/provider.dart'; // Импорт provider
-import 'home_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/theme_notifier.dart'; // Импорт нашего Notifier'а
@@ -13,6 +15,12 @@ Future<void> main() async {
 
   // 2. Инициализируем локализацию для дат (русский язык)
   await initializeDateFormatting('ru', null);
+
+  await Firebase.initializeApp(
+    options:
+        DefaultFirebaseOptions
+            .currentPlatform, // Используем сгенерированные опции
+  );
 
   // 3. Запускаем приложение с Provider'ом для управления темой
   runApp(
@@ -197,7 +205,7 @@ class MyStudentApp extends StatelessWidget {
       ],
       locale: const Locale('ru'),
 
-      home: const HomeScreen(),
+      home: const AuthWrapper(),
       debugShowCheckedModeBanner: false, // Убираем баннер Debug
     );
   }

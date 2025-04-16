@@ -1,214 +1,364 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../models/user_profile.dart';
-import '../mock_data.dart';
-import '../settings_screen.dart'; // Импорт экрана настроек
+import 'package:firebase_auth/firebase_auth.dart'; // Для получения текущего пользователя и выхода
+import 'package:cloud_firestore/cloud_firestore.dart'; // Для получения данных из Firestore
+import 'package:flutter_application_1/edit_profile_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
-  // Получаем профиль (пока из mock данных)
-  final UserProfile userProfile = mockUserProfile;
+// import '../models/user_profile.dart'; // Модель можно использовать для типизации, но пока обойдемся Map
+import '../settings_screen.dart';
 
-  // Убираем const из конструктора, т.к. userProfile не константа
-  ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  // Меняем на StatefulWidget
+  const ProfileScreen({super.key}); // Делаем конструктор const
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final User? currentUser =
+      FirebaseAuth.instance.currentUser; // Получаем текущего пользователя Auth
+
+  // Функция выхода
+  Future<void> _signOut(BuildContext context) async {
+    bool? confirmed = await showDialog<bool>(
+      // Диалог подтверждения
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Подтверждение'),
+            content: const Text('Вы уверены, что хотите выйти?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed:
+                    () => Navigator.pop(
+                      ctx,
+                      true,
+                    ), // Возвращаем true при подтверждении
+                child: Text(
+                  'Выйти',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseAuth.instance.signOut();
+        // AuthWrapper автоматически перекинет на экран входа
+      } catch (e) {
+        print("Sign out error: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка выхода: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Получаем тему для доступа к стилям и цветам
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final cardTheme =
-        Theme.of(context).cardTheme; // Получаем стиль карт из темы
 
     return Scaffold(
-      // AppBar использует стиль из темы (прозрачный, без тени)
-      appBar: AppBar(
-        title: const Text('Профиль'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Редактировать профиль',
-            onPressed: () {
-              // TODO: Реализовать переход на экран редактирования профиля
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Функция редактирования в разработке'),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      // Используем ListView для прокрутки контента
-      body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16.0,
-          vertical: 16.0,
-        ), // Отступы для всего контента
-        children: [
-          // --- Секция Аватара и Имени ---
-          Column(
-            children: [
-              CircleAvatar(
-                radius: 55, // Немного уменьшим радиус
-                backgroundColor:
-                    colorScheme
-                        .secondaryContainer, // Фон из темы для placeholder'а
-                backgroundImage:
-                    userProfile.profileImageUrl.isNotEmpty
-                        ? NetworkImage(userProfile.profileImageUrl)
-                        : const AssetImage('assets/images/default_avatar.png')
-                            as ImageProvider,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                userProfile.name,
-                style: textTheme.headlineSmall, // Используем стиль темы
-                textAlign: TextAlign.center,
-              ),
-              if (userProfile.email.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    userProfile.email,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ), // Цвет из темы
-                  ),
-                ),
-            ],
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2), // Анимация
+      // AppBar теперь строится внутри StreamBuilder, чтобы иметь доступ к snapshot.data
+      // Убрали AppBar отсюда
+      body:
+          currentUser == null
+              ? const Center(child: Text('Ошибка: Пользователь не найден'))
+              : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream:
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(currentUser!.uid)
+                        .snapshots(),
+                builder: (context, snapshot) {
+                  // Состояния загрузки, ошибки, отсутствия данных
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Ошибка загрузки данных: ${snapshot.error}'),
+                    );
+                  }
+                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return const Center(
+                      child: Text('Данные профиля не найдены.'),
+                    );
+                  }
 
-          const SizedBox(height: 24),
+                  // Данные получены
+                  final userData =
+                      snapshot.data!
+                          .data()!; // Используем ! т.к. проверили exists
 
-          // --- Секция Основной Информации ---
-          // Используем Card со стилем из темы (без тени, с границей)
-          Card(
-                // elevation: cardTheme.elevation, // Берется из темы
-                // shape: cardTheme.shape, // Берется из темы
-                // color: cardTheme.color, // Берется из темы
-                // margin: cardTheme.margin, // Задаем через ListView.padding
-                child: Column(
-                  // Убрали лишний Padding, т.к. ListTile имеет свой
-                  children: [
-                    _buildInfoTile(
-                      context,
-                      icon: Icons.badge_outlined,
-                      title: 'Студент ID',
-                      value: userProfile.studentId,
+                  // Строим Scaffold с AppBar ЗДЕСЬ
+                  return Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Профиль'),
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Редактировать профиль',
+                          onPressed: () {
+                            // Переход на экран редактирования, передавая текущие данные
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => EditProfileScreen(
+                                      initialUserData: userData,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    _buildInfoTile(
-                      context,
-                      icon: Icons.cake_outlined,
-                      title: 'Возраст',
-                      value: '${userProfile.age} лет',
-                    ),
-                    _buildInfoTile(
-                      context,
-                      icon: Icons.school_outlined,
-                      title: 'Курс',
-                      value: '${userProfile.course} курс',
-                    ),
-                    _buildInfoTile(
-                      context,
-                      icon: Icons.group_outlined,
-                      title: 'Группа',
-                      value: userProfile.group,
-                    ),
-                    _buildInfoTile(
-                      context,
-                      icon: Icons.computer_outlined,
-                      title: 'Специальность',
-                      value: userProfile.specialty,
-                    ),
-                    if (userProfile.phone.isNotEmpty)
-                      _buildInfoTile(
-                        context,
-                        icon: Icons.phone_outlined,
-                        title: 'Телефон',
-                        value: userProfile.phone,
-                        isLast: true, // Убираем разделитель
-                      ),
-                  ],
-                ),
-              )
-              .animate(delay: 200.ms)
-              .fadeIn(duration: 400.ms)
-              .slideX(begin: -0.1), // Анимация
+                    body:
+                        currentUser == null
+                            ? const Center(
+                              child: Text('Ошибка: Пользователь не найден'),
+                            ) // Если вдруг пользователь null
+                            : StreamBuilder<
+                              DocumentSnapshot<Map<String, dynamic>>
+                            >(
+                              // Слушаем изменения документа текущего пользователя в коллекции 'users'
+                              stream:
+                                  FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(currentUser!.uid)
+                                      .snapshots(),
+                              builder: (context, snapshot) {
+                                // Состояние загрузки
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                                // Ошибка загрузки данных
+                                if (snapshot.hasError) {
+                                  print("Firestore error: ${snapshot.error}");
+                                  return Center(
+                                    child: Text(
+                                      'Ошибка загрузки данных профиля: ${snapshot.error}',
+                                    ),
+                                  );
+                                }
+                                // Данных нет (документ не найден)
+                                if (!snapshot.hasData ||
+                                    !snapshot.data!.exists) {
+                                  return const Center(
+                                    child: Text('Данные профиля не найдены.'),
+                                  );
+                                }
 
-          const SizedBox(height: 16), // Уменьшим отступ
-          // --- Секция Настроек ---
-          Card(
-            // Отдельная карта для настроек
-            child: _buildInfoTile(
-              context,
-              icon: Icons.settings_outlined, // Иконка настроек
-              title: 'Настройки',
-              value: '', // Нет значения
-              isLast: true, // Последний элемент в этой карте
-              onTap: () {
-                // Переход на экран настроек
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
-              },
-            ),
-          ).animate(delay: 300.ms).fadeIn(duration: 400.ms), // Анимация
+                                // Данные получены!
+                                final userData =
+                                    snapshot.data!
+                                        .data(); // Map<String, dynamic>
+                                final userName =
+                                    userData?['name'] ?? 'Имя не указано';
+                                final userEmail =
+                                    userData?['email'] ??
+                                    currentUser!.email ??
+                                    ''; // Берем из Firestore или из Auth
+                                final userRole =
+                                    userData?['role'] ?? 'неизвестно';
+                                final userGroupName =
+                                    userData?['groupName']; // Будет null, если не студент или нет группы
+                                // ... получите другие поля таким же образом ...
+                                final studentId = userData?['studentId'];
+                                final age = userData?['age'];
+                                final course = userData?['course'];
+                                final specialty = userData?['specialty'];
+                                final phone = userData?['phone'];
 
-          const SizedBox(height: 16),
+                                // Строим интерфейс на основе полученных данных
+                                return ListView(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 16.0,
+                                  ),
+                                  children: [
+                                    // --- Секция Аватара ---
+                                    Column(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 55,
+                                              backgroundColor:
+                                                  colorScheme
+                                                      .secondaryContainer,
+                                              // TODO: Загружать URL из userData['profileImageUrl']
+                                              backgroundImage: const AssetImage(
+                                                'assets/images/default_avatar.png',
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              userName,
+                                              style: textTheme.headlineSmall,
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            if (userEmail.isNotEmpty)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 4.0,
+                                                ),
+                                                child: Text(
+                                                  userEmail,
+                                                  style: textTheme.bodyMedium
+                                                      ?.copyWith(
+                                                        color:
+                                                            colorScheme
+                                                                .onSurfaceVariant,
+                                                      ),
+                                                ),
+                                              ),
+                                            Padding(
+                                              // Показываем роль
+                                              padding: const EdgeInsets.only(
+                                                top: 4.0,
+                                              ),
+                                              child: Text(
+                                                'Роль: $userRole',
+                                                style: textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color:
+                                                          colorScheme.secondary,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                        .animate()
+                                        .fadeIn(duration: 400.ms)
+                                        .slideY(begin: 0.2),
+                                    const SizedBox(height: 24),
 
-          // --- Секция Выхода ---
-          Card(
-            // Отдельная карта для выхода
-            child: _buildInfoTile(
-              context,
-              icon: Icons.logout,
-              title: 'Выйти',
-              value: '',
-              iconColor: colorScheme.error, // Цвет иконки выхода
-              titleColor: colorScheme.error, // Цвет текста выхода
-              isLast: true, // Последний элемент
-              onTap: () {
-                // TODO: Реализовать логику выхода
-                showDialog(
-                  context: context,
-                  builder:
-                      (ctx) => AlertDialog(
-                        title: const Text('Подтверждение'),
-                        content: const Text('Вы уверены, что хотите выйти?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Отмена'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Выход из системы... (демо)'),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Выйти',
-                              style: TextStyle(color: colorScheme.error),
+                                    // --- Секция Информации ---
+                                    Card(
+                                          child: Column(
+                                            children: [
+                                              // Показываем поля в зависимости от роли и наличия данных
+                                              if (studentId != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.badge_outlined,
+                                                  title: 'Студент ID',
+                                                  value: '$studentId',
+                                                ),
+                                              if (age != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.cake_outlined,
+                                                  title: 'Возраст',
+                                                  value: '$age лет',
+                                                ),
+                                              if (course != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.school_outlined,
+                                                  title: 'Курс',
+                                                  value: '$course курс',
+                                                ),
+                                              if (userGroupName != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.group_outlined,
+                                                  title: 'Группа',
+                                                  value: userGroupName,
+                                                ), // Используем groupName
+                                              if (specialty != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.computer_outlined,
+                                                  title: 'Специальность',
+                                                  value: '$specialty',
+                                                ),
+                                              if (phone != null)
+                                                _buildInfoTile(
+                                                  context,
+                                                  icon: Icons.phone_outlined,
+                                                  title: 'Телефон',
+                                                  value: '$phone',
+                                                  isLast: true,
+                                                ),
+                                              // Добавьте поля для учителя, если userRole == 'teacher'
+                                              // if (userRole == 'teacher' && teacherSubject != null) ...
+                                            ],
+                                          ),
+                                        )
+                                        .animate(delay: 200.ms)
+                                        .fadeIn(duration: 400.ms)
+                                        .slideX(begin: -0.1),
+                                    const SizedBox(height: 16),
+
+                                    // --- Настройки ---
+                                    Card(
+                                          child: _buildInfoTile(
+                                            context,
+                                            icon: Icons.settings_outlined,
+                                            title: 'Настройки',
+                                            value: '',
+                                            isLast: true,
+                                            onTap:
+                                                () => Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            const SettingsScreen(),
+                                                  ),
+                                                ),
+                                          ),
+                                        )
+                                        .animate(delay: 300.ms)
+                                        .fadeIn(duration: 400.ms),
+                                    const SizedBox(height: 16),
+
+                                    // --- Выход ---
+                                    Card(
+                                          child: _buildInfoTile(
+                                            context,
+                                            icon: Icons.logout,
+                                            title: 'Выйти',
+                                            value: '',
+                                            iconColor: colorScheme.error,
+                                            titleColor: colorScheme.error,
+                                            isLast: true,
+                                            onTap:
+                                                () => _signOut(
+                                                  context,
+                                                ), // Вызываем функцию выхода
+                                          ),
+                                        )
+                                        .animate(delay: 400.ms)
+                                        .fadeIn(duration: 400.ms),
+                                  ],
+                                );
+                              },
                             ),
-                          ),
-                        ],
-                      ),
-                );
-              },
-            ),
-          ).animate(delay: 400.ms).fadeIn(duration: 400.ms), // Анимация
-        ],
-      ),
+                  );
+                },
+              ),
     );
   }
 
-  // Обновленный хелпер для создания ListTile в стиле темы
+  // _buildInfoTile остается как был в предыдущем ответе
   Widget _buildInfoTile(
     BuildContext context, {
     required IconData icon,
