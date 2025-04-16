@@ -9,38 +9,34 @@ class ActivitiesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Получаем и сортируем активности: сначала будущие (от ближайшей), потом прошедшие (от недавней)
+    // Получаем тему
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Сортируем активности по дате (как в ScheduleScreen: будущие -> прошедшие)
     final List<Map<String, dynamic>> sortedActivities = List.from(
       mockActivities,
     );
-    final now = DateTime.now(); // Текущая дата для сравнения
-
+    final now = DateTime.now();
     sortedActivities.sort((a, b) {
       final dateA = DateTime.parse(a['date']);
       final dateB = DateTime.parse(b['date']);
-
-      // Сравниваем относительно текущей даты
       final aIsFuture = dateA.isAfter(now) || DateUtils.isSameDay(dateA, now);
       final bIsFuture = dateB.isAfter(now) || DateUtils.isSameDay(dateB, now);
-
-      if (aIsFuture && !bIsFuture) return -1; // Будущие идут первыми
-      if (!aIsFuture && bIsFuture) return 1; // Прошедшие идут последними
-
-      if (aIsFuture) {
-        // Обе будущие - сортируем от ближайшей к дальней
-        return dateA.compareTo(dateB);
-      } else {
-        // Обе прошедшие - сортируем от недавней к старой
-        return dateB.compareTo(dateA);
-      }
+      if (aIsFuture && !bIsFuture) return -1;
+      if (!aIsFuture && bIsFuture) return 1;
+      if (aIsFuture) return dateA.compareTo(dateB);
+      return dateB.compareTo(dateA);
     });
 
     final bool hasActivities = sortedActivities.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Активности')),
+      appBar: AppBar(
+        title: const Text('Активности'),
+        // AppBar использует стиль из main.dart (прозрачный, без тени)
+      ),
       body: AnimatedSwitcher(
-        // Анимация для переключения между списком и пустым состоянием
         duration: const Duration(milliseconds: 400),
         transitionBuilder:
             (child, animation) =>
@@ -48,117 +44,98 @@ class ActivitiesScreen extends StatelessWidget {
         child:
             hasActivities
                 ? ListView.builder(
-                  key: const ValueKey(
-                    'activities_list',
-                  ), // Ключ для AnimatedSwitcher
-                  padding: const EdgeInsets.all(16), // Отступы для всего списка
+                  // Можно заменить на ListView.separated, если нужны разделители
+                  key: const ValueKey('activities_list'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 12.0,
+                  ),
                   itemCount: sortedActivities.length,
                   itemBuilder: (context, index) {
                     final activity = sortedActivities[index];
-                    // Форматируем дату, можно добавить день недели
                     final date = DateFormat(
                       'EEEE, d MMMM yyyy г.',
                       'ru',
                     ).format(DateTime.parse(activity['date']));
-                    // Получаем цвет и иконку через утилиты
+                    // Получаем цвет и иконку через утилиты (убедитесь, что getActivityColor использует context)
                     final color = getActivityColor(context, activity['type']);
                     final icon = getActivityIcon(activity['type']);
 
-                    // Карточка активности
-                    return Card(
-                          // Используем общую тему CardTheme, но добавляем нижний отступ
-                          margin: const EdgeInsets.only(bottom: 16),
-                          // Можно убрать shape и elevation, если они такие же как в теме
-                          // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          // elevation: 3,
-                          clipBehavior:
-                              Clip.antiAlias, // Для красивого эффекта InkWell
-                          child: InkWell(
-                            // Добавляем реакцию на нажатие
-                            onTap: () {
-                              // TODO: Добавить действие при нажатии (например, показать детали)
-                              print('Tapped on: ${activity['title']}');
-                            },
-                            child: Padding(
-                              // Отступы внутри карточки
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                // Используем Row для лучшего контроля над расположением
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Иконка слева
-                                  CircleAvatar(
-                                    backgroundColor: color.withOpacity(
-                                      0.15,
-                                    ), // Чуть насыщеннее фон
-                                    foregroundColor: color,
-                                    child: Icon(icon),
-                                  ),
-                                  const SizedBox(
-                                    width: 16,
-                                  ), // Отступ между иконкой и текстом
-                                  // Текстовый контент справа
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                    // Используем Container вместо Card для плоского вида
+                    return Container(
+                          margin: const EdgeInsets.only(
+                            bottom: 12.0,
+                          ), // Отступ между активностями
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            // Цвет фона чуть отличается от основного фона Scaffold
+                            color: colorScheme.surfaceContainer,
+                            borderRadius: BorderRadius.circular(12.0),
+                            // Убрали рамку, можно добавить если нужно:
+                            // border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5))
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Иконка в кружке
+                              CircleAvatar(
+                                radius: 20, // Размер кружка
+                                backgroundColor: color.withAlpha(
+                                  50,
+                                ), // Полупрозрачный фон иконки
+                                foregroundColor: color, // Цвет самой иконки
+                                child: Icon(icon, size: 20), // Размер иконки
+                              ),
+                              const SizedBox(width: 16),
+                              // Текстовый контент
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Заголовок
+                                    Text(
+                                      activity['title'],
+                                      style: textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ), // Стиль темы
+                                    ),
+                                    const SizedBox(height: 6),
+                                    // Описание
+                                    Text(
+                                      activity['description'],
+                                      // ЯВНО задаем цвет текста через тему!
+                                      style: textTheme.bodyMedium?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    // Дата
+                                    Row(
                                       children: [
-                                        // Заголовок
+                                        Icon(
+                                          Icons.calendar_today_outlined,
+                                          size: 14,
+                                          color: colorScheme.outline,
+                                        ), // Цвет иконки даты из темы
+                                        const SizedBox(width: 6),
                                         Text(
-                                          activity['title'],
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleLarge?.copyWith(
-                                            fontSize: 18,
-                                          ), // Используем стиль темы
-                                        ),
-                                        const SizedBox(height: 6),
-                                        // Описание
-                                        Text(
-                                          activity['description'],
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodyMedium
-                                              ?.copyWith(color: Colors.black54),
-                                        ),
-                                        const SizedBox(height: 10),
-                                        // Дата
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.date_range_outlined,
-                                              size: 16,
-                                              color: Colors.grey.shade600,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              date,
-                                              style: TextStyle(
-                                                color: Colors.grey.shade700,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
+                                          date,
+                                          // ЯВНО задаем цвет текста через тему!
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: colorScheme.outline,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         )
-                        // Анимация появления карточки
-                        .animate()
-                        .fadeIn(
-                          duration: 400.ms,
-                          delay: (index * 70).ms,
-                        ) // Немного медленнее
-                        .slideY(
-                          begin: 0.3,
-                          end: 0.0,
-                          curve: Curves.easeOutCirc,
-                        ); // Другая кривая для разнообразия
+                        .animate() // Анимация
+                        .fadeIn(duration: 400.ms, delay: (index * 80).ms)
+                        .moveY(begin: 10, end: 0); // Сдвиг снизу
                   },
                 )
                 : Center(
@@ -183,3 +160,17 @@ class ActivitiesScreen extends StatelessWidget {
     );
   }
 }
+
+// Напоминание: Убедитесь, что функция getActivityColor в mock_data.dart
+// принимает BuildContext и использует colorScheme для цветов, например:
+/*
+Color getActivityColor(BuildContext context, String type) {
+  final colorScheme = Theme.of(context).colorScheme;
+  switch (type) {
+    case 'academic': return colorScheme.primary;
+    case 'event': return Colors.orange.shade700; // Или colorScheme.tertiary
+    case 'social': return Colors.green.shade600; // Или colorScheme.secondary
+    default: return colorScheme.onSurfaceVariant;
+  }
+}
+*/

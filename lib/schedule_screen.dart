@@ -1,5 +1,6 @@
+// lib/schedule_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Для SystemUiOverlayStyle
+// SystemUiOverlayStyle больше не нужен здесь, т.к. управляется из main.dart
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/schedule_day.dart';
@@ -9,9 +10,8 @@ import '../mock_data.dart';
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
 
-  // Хелпер isLessonNow остается без изменений
+  // Хелпер isLessonNow остается
   bool isLessonNow(Lesson lesson, BuildContext context) {
-    // ... (код хелпера как в предыдущем ответе) ...
     final timeRange = lesson.parseTimeRange();
     if (timeRange == null || timeRange.start == null || timeRange.end == null) {
       return false;
@@ -35,252 +35,261 @@ class ScheduleScreen extends StatelessWidget {
     final bool hasSchedule = schedule.isNotEmpty;
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Определяем стиль для системных панелей
-    final systemUiStyle = SystemUiOverlayStyle(
-      // Строка состояния (сверху)
-      statusBarColor: Colors.transparent, // Прозрачный фон
-      statusBarIconBrightness:
-          isDark
-              ? Brightness.light
-              : Brightness.dark, // Иконки темные/светлые в зависимости от темы
-      statusBarBrightness:
-          isDark ? Brightness.dark : Brightness.light, // Для iOS
-      // Панель навигации (снизу)
-      systemNavigationBarColor:
-          colorScheme.surface, // Цвет фона панели как у Scaffold
-      systemNavigationBarDividerColor: Colors.transparent,
-      systemNavigationBarIconBrightness:
-          isDark ? Brightness.light : Brightness.dark, // Иконки на панели
-    );
+    return Scaffold(
+      // Scaffold без AnnotatedRegion
+      appBar: AppBar(
+        title: const Text('Расписание'),
+      ), // AppBar использует стиль из main.dart
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        transitionBuilder:
+            (child, animation) =>
+                FadeTransition(opacity: animation, child: child),
+        child:
+            hasSchedule
+                ? ListView.separated(
+                  // Используем ListView.separated для разделителей между ДНЯМИ
+                  key: const ValueKey('schedule_list'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 16.0,
+                  ), // Отступы для всего списка
+                  itemCount: schedule.length,
+                  // Строитель для дней
+                  itemBuilder: (context, index) {
+                    final daySchedule = schedule[index];
+                    final bool isToday =
+                        daySchedule.dayName.toLowerCase() ==
+                        currentDayName.toLowerCase();
+                    final bool hasLessonsToday = daySchedule.lessons.isNotEmpty;
 
-    // Оборачиваем Scaffold для применения стиля системных панелей
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: systemUiStyle,
-      child: Scaffold(
-        // Можно применить стиль и к AppBar, чтобы он влиял на статус бар над ним
-        appBar: AppBar(
-          title: const Text('Расписание'),
-          backgroundColor: Colors.transparent, // Делаем AppBar прозрачным
-          elevation: 0, // Убираем тень AppBar
-          foregroundColor: colorScheme.onSurface, // Цвет текста и иконок AppBar
-          systemOverlayStyle:
-              systemUiStyle, // Применяем стиль к статус бару над AppBar
-        ),
-        // Используем цвет фона основной темы
-        backgroundColor: colorScheme.surface,
-        body: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
-          transitionBuilder:
-              (child, animation) =>
-                  FadeTransition(opacity: animation, child: child),
-          child:
-              hasSchedule
-                  ? ListView.builder(
-                    key: const ValueKey('schedule_list'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ), // Немного увеличил гор. отступ
-                    itemCount: schedule.length,
-                    itemBuilder: (context, index) {
-                      final daySchedule = schedule[index];
-                      final bool isToday =
-                          daySchedule.dayName.toLowerCase() ==
-                          currentDayName.toLowerCase();
-                      final bool hasLessonsToday =
-                          daySchedule.lessons.isNotEmpty;
-
-                      return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8.0),
-                            elevation:
-                                isToday
-                                    ? 1.5
-                                    : 0.5, // Очень маленькая тень или почти нет
-                            // Убираем фоновый цвет для текущего дня
-                            color:
-                                colorScheme
-                                    .surfaceContainerHighest, // Цвет фона карточки из темы
-                            // Добавляем рамку для текущего дня как акцент
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                12.0,
-                              ), // Стандартное скругление из темы
-                              side:
-                                  isToday
-                                      ? BorderSide(
-                                        color: colorScheme.primary,
-                                        width: 1.5,
-                                      ) // Рамка для текущего дня
-                                      : BorderSide(
-                                        color: colorScheme.outlineVariant
-                                            .withOpacity(0.5),
-                                        width: 0.5,
-                                      ), // Тонкая граница для остальных
+                    // Блок для одного дня
+                    return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Заголовок дня
+                            _buildDayHeader(
+                              context,
+                              daySchedule.dayName,
+                              isToday,
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: ExpansionTile(
-                              key: PageStorageKey(daySchedule.dayName),
-                              initiallyExpanded: isToday && hasLessonsToday,
-                              tilePadding: const EdgeInsets.symmetric(
-                                horizontal: 16.0,
-                                vertical: 10.0,
-                              ), // Немного увеличил верт. отступ
-                              childrenPadding: EdgeInsets.zero,
-                              leading: Icon(
-                                Icons.calendar_today_outlined,
-                                color:
-                                    isToday
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurfaceVariant,
-                                size: 20, // Уменьшим иконку дня
-                              ),
-                              title: Text(
-                                daySchedule.dayName,
-                                style: textTheme.titleMedium?.copyWith(
-                                  // Используем titleMedium
-                                  fontWeight:
-                                      isToday
-                                          ? FontWeight.bold
-                                          : FontWeight.w600,
-                                  color: isToday ? colorScheme.primary : null,
+
+                            const SizedBox(
+                              height: 12,
+                            ), // Отступ после заголовка дня
+                            // Список уроков ИЛИ сообщение "Нет занятий"
+                            if (hasLessonsToday)
+                              // Используем Column для уроков, без обертки Card или ExpansionTile
+                              Column(
+                                // Генерируем виджеты уроков, передавая isToday
+                                children: _buildLessonList(
+                                  context,
+                                  daySchedule.lessons,
+                                  isToday,
+                                ),
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 8.0,
+                                  bottom: 8.0,
+                                ), // Небольшой отступ
+                                child: Text(
+                                  'Нет занятий',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
-                              subtitle: Text(
-                                hasLessonsToday
-                                    ? '${daySchedule.lessons.length} пар(ы)'
-                                    : 'Нет пар',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ), // Цвет из темы
-                              ),
-                              children:
-                                  hasLessonsToday
-                                      ? ListTile.divideTiles(
-                                        context: context,
-                                        // Убираем цвет разделителя, делаем его стандартным
-                                        // color: isToday ? colorScheme.primaryContainer.withAlpha(150) : null,
-                                        tiles: daySchedule.lessons.map((
-                                          lesson,
-                                        ) {
-                                          final bool isCurrentLesson =
-                                              isToday &&
-                                              isLessonNow(lesson, context);
-
-                                          // Используем ListTile напрямую, без Container
-                                          return ListTile(
-                                            // Выделяем текущий урок через selected и selectedTileColor
-                                            selected: isCurrentLesson,
-                                            selectedTileColor: colorScheme
-                                                .primary
-                                                .withAlpha(
-                                                  30,
-                                                ), // Очень легкий акцент
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 16.0,
-                                                  vertical: 6.0,
-                                                ), // Настраиваем отступы ListTile
-                                            leading: Icon(
-                                              lesson.icon ??
-                                                  Icons.book_outlined,
-                                              size: 22,
-                                              color:
-                                                  isCurrentLesson
-                                                      ? colorScheme.primary
-                                                      : colorScheme
-                                                          .secondary, // Другой цвет для иконок уроков
-                                            ),
-                                            title: Text(
-                                              lesson.subject,
-                                              style: textTheme.bodyLarge
-                                                  ?.copyWith(
-                                                    // Используем bodyLarge
-                                                    fontWeight:
-                                                        isCurrentLesson
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
-                                                  ),
-                                            ),
-                                            subtitle: Padding(
-                                              // Добавим отступ сверху для подзаголовка
-                                              padding: const EdgeInsets.only(
-                                                top: 2.0,
-                                              ),
-                                              child: Text(
-                                                '${lesson.teacher}${lesson.room != null ? ' (${lesson.room})' : ''}',
-                                                style: textTheme.bodyMedium
-                                                    ?.copyWith(
-                                                      color:
-                                                          colorScheme
-                                                              .onSurfaceVariant,
-                                                    ),
-                                              ),
-                                            ),
-                                            trailing: Text(
-                                              lesson.timeRange.replaceAll(
-                                                ' - ',
-                                                '\n',
-                                              ),
-                                              textAlign: TextAlign.right,
-                                              style: textTheme.bodySmall
-                                                  ?.copyWith(
-                                                    color:
-                                                        isCurrentLesson
-                                                            ? colorScheme
-                                                                .primary
-                                                            : colorScheme
-                                                                .outline,
-                                                    fontWeight:
-                                                        isCurrentLesson
-                                                            ? FontWeight.bold
-                                                            : FontWeight.normal,
-                                                    height: 1.3,
-                                                  ),
-                                            ),
-                                          );
-                                        }),
-                                      ).toList()
-                                      : [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 20.0,
-                                          ),
-                                          child: Text(
-                                            'В этот день нет занятий',
-                                            textAlign: TextAlign.center,
-                                            style: textTheme.bodyMedium
-                                                ?.copyWith(
-                                                  color:
-                                                      colorScheme
-                                                          .onSurfaceVariant,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                            ),
-                          )
-                          .animate()
-                          .fadeIn(duration: 350.ms, delay: (index * 80).ms)
-                          .slideX(begin: index % 2 == 0 ? -0.1 : 0.1);
-                    },
-                  )
-                  : Center(
-                    key: const ValueKey('no_schedule'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        'Расписание пока недоступно.',
-                        style: textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ).animate().fadeIn(delay: 200.ms),
-                    ),
+                          ],
+                        )
+                        .animate() // Анимация появления блока дня
+                        .fadeIn(
+                          duration: 350.ms,
+                          delay: (index * 100).ms,
+                        ) // Увеличил задержку
+                        .moveY(
+                          begin: 10,
+                          end: 0,
+                          duration: 350.ms,
+                        ); // Небольшой сдвиг снизу
+                  },
+                  // Строитель разделителей между днями
+                  separatorBuilder:
+                      (context, index) => Divider(
+                        height: 32, // Увеличим пространство между днями
+                        thickness: 1,
+                        color:
+                            colorScheme
+                                .surfaceContainerHighest, // Цвет разделителя из темы
+                      ),
+                )
+                : Center(
+                  key: const ValueKey('no_schedule'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      'Расписание пока недоступно.',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ).animate().fadeIn(delay: 200.ms),
                   ),
-        ),
+                ),
       ),
     );
+  }
+
+  // Виджет для заголовка дня
+  Widget _buildDayHeader(BuildContext context, String dayName, bool isToday) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 4.0,
+        top: 4.0,
+      ), // Отступы заголовка
+      child: Row(
+        children: [
+          // Индикатор текущего дня (линия)
+          if (isToday)
+            Container(
+              width: 4,
+              height: 24, // Высота соответствует примерно тексту
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              margin: const EdgeInsets.only(right: 12),
+            ),
+          // Название дня
+          Text(
+            dayName,
+            style: textTheme.titleLarge?.copyWith(
+              // Крупный заголовок дня
+              fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+              color: isToday ? colorScheme.primary : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Функция генерации списка виджетов уроков для одного дня
+  List<Widget> _buildLessonList(
+    BuildContext context,
+    List<Lesson> lessons,
+    bool isToday,
+  ) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    List<Widget> lessonWidgets = [];
+    for (int i = 0; i < lessons.length; i++) {
+      final lesson = lessons[i];
+      final bool isCurrentLesson = isToday && isLessonNow(lesson, context);
+
+      lessonWidgets.add(
+        Container(
+          margin: const EdgeInsets.only(bottom: 10.0), // Отступ между уроками
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+          decoration: BoxDecoration(
+            // Легкий фон для всех уроков для визуального разделения
+            color: colorScheme.surfaceContainer, // Чуть темнее/светлее фона
+            borderRadius: BorderRadius.circular(12.0),
+            // Яркая рамка для текущего урока
+            border:
+                isCurrentLesson
+                    ? Border.all(color: colorScheme.primary, width: 2.0)
+                    : Border.all(
+                      color: Colors.transparent,
+                      width: 0,
+                    ), // Без рамки для остальных
+          ),
+          child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.center, // Выравниваем по центру вертикально
+            children: [
+              // Иконка урока
+              Icon(
+                lesson.icon ?? Icons.book_outlined,
+                size: 24, // Чуть крупнее иконка урока
+                color:
+                    isCurrentLesson
+                        ? colorScheme.primary
+                        : colorScheme.secondary,
+              ),
+              const SizedBox(width: 14),
+              // Текст урока
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lesson.subject,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold, // Всегда жирный предмет
+                        // Цвет для текущего урока можно не менять, т.к. есть рамка
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${lesson.teacher}${lesson.room != null ? ' • ${lesson.room}' : ''}', // Используем точку как разделитель
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Время урока + индикатор "Сейчас"
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    lesson.timeRange, // Без переноса строки
+                    style: textTheme.bodyMedium?.copyWith(
+                      // Крупнее время
+                      color:
+                          isCurrentLesson
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
+                      fontWeight:
+                          isCurrentLesson ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                  // Маленький чип "Сейчас"
+                  if (isCurrentLesson)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Chip(
+                        label: const Text('Сейчас'),
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        labelStyle: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onPrimary,
+                        ),
+                        backgroundColor: colorScheme.primary,
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+      // Разделители между уроками больше не нужны, т.к. есть margin у Container
+    }
+    return lessonWidgets;
   }
 }
