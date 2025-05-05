@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.flutter_application_1" // Рекомендую сменить на уникальное позже
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34
     // ИЗМЕНЕНИЕ 1: Указываем версию NDK явно
     ndkVersion = "27.0.12077973" // Было: flutter.ndkVersion
 
@@ -30,7 +30,7 @@ android {
         // ИЗМЕНЕНИЕ 2: Указываем minSdkVersion явно
         minSdk = 23 // Было: flutter.minSdkVersion
 
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34
         versionCode = flutter.versionCode.toInt() // Добавил .toInt(), т.к. versionCode должен быть Int
         versionName = flutter.versionName
     }

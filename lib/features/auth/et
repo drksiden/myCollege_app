@@ -1,0 +1,352 @@
+// lib/features/student/profile_page.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+// import 'package:go_router/go_router.dart'; // Если используешь AppRouter.push/go
+
+import '../../core/auth_service.dart'; // Для authStateProvider и authServiceProvider
+import '../../models/user.dart'; // Наша freezed модель User
+import '../../routes/app_router.dart'; // Для AppRouter.push/go
+
+// Импорты для экранов, на которые будем переходить (пока могут быть заглушками)
+// import 'edit_profile_page.dart';
+// import '../settings/settings_screen.dart'; // Путь к экрану настроек
+
+// Превращаем в ConsumerWidget для доступа к ref
+class ProfilePage extends ConsumerWidget {
+  const ProfilePage({super.key});
+
+  // --- Функция выхода ---
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Подтверждение'),
+            content: const Text('Вы уверены, что хотите выйти?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Отмена'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(
+                  'Выйти',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true) {
+      try {
+        // Используем ref для доступа к сервису и выхода
+        await ref.read(authServiceProvider).signOut();
+        // Навигация не нужна, GoRouter сделает редирект автоматически
+        // при изменении authStateProvider
+      } catch (e) {
+        debugPrint("Sign out error: $e");
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка выхода: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+  // ---------------------
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Получаем асинхронное состояние пользователя из authStateProvider
+    final authState = ref.watch(authStateProvider);
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Используем .when для обработки состояний AsyncValue
+    return authState.when(
+      // --- Состояние Загрузки ---
+      loading:
+          () => const Scaffold(
+            // Можно оставить AppBar пустым или с заголовком "Загрузка..."
+            appBar: null, // Убираем AppBar пока грузится
+            body: Center(child: CircularProgressIndicator()),
+          ),
+      // --- Состояние Ошибки ---
+      error:
+          (error, stackTrace) => Scaffold(
+            appBar: AppBar(title: const Text('Ошибка')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Ошибка загрузки профиля: $error'),
+              ),
+            ),
+          ),
+      // --- Состояние Данных (успешно загружено) ---
+      data: (user) {
+        // Если данные есть, но user == null (маловероятно из-за редиректа, но проверим)
+        if (user == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Профиль')),
+            body: const Center(child: Text('Пользователь не найден.')),
+          );
+        }
+
+        // --- Строим основной UI ---
+        return Scaffold(
+          // AppBar теперь здесь, когда данные пользователя `user` доступны
+          appBar: AppBar(
+            title: const Text('Профиль'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Редактировать профиль',
+                onPressed: () {
+                  // TODO: Создать EditProfilePage и определить роут '/profile/edit'
+                  // Переход на экран редактирования
+                  // AppRouter.push(context, '/profile/edit', extra: user);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Экран редактирования еще не создан'),
+                    ),
+                  );
+                },
+              ),
+              // Можно добавить иконку настроек прямо в AppBar
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: 'Настройки',
+                onPressed: () {
+                  // TODO: Создать SettingsScreen и определить роут '/settings'
+                  // AppRouter.push(context, '/settings');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Экран настроек еще не создан'),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 16.0,
+            ),
+            children: [
+              // --- Секция Аватара и Имени ---
+              Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundColor: colorScheme.secondaryContainer,
+                        backgroundImage:
+                            (user.profilePictureUrl != null &&
+                                    user.profilePictureUrl!.isNotEmpty)
+                                ? NetworkImage(
+                                  user.profilePictureUrl!,
+                                ) // Загружаем из сети, если есть URL
+                                : const AssetImage(
+                                      'assets/images/default_avatar.png',
+                                    )
+                                    as ImageProvider, // Иначе - заглушка
+                        // Можно добавить обработку ошибок загрузки NetworkImage
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        // Используем getter fullName из модели User
+                        user.fullName,
+                        style: textTheme.headlineSmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          user.email, // Используем поле 'email'
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          'Роль: ${user.role}', // Используем поле 'role'
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms)
+                  .slideY(begin: 0.2), // Анимация как в старом коде
+              const SizedBox(height: 24),
+
+              // --- Секция Информации о Студенте ---
+              // Показываем эту секцию, если роль 'student' (хотя мы и так в StudentHomeScreen)
+              if (user.role == 'student')
+                Card(
+                      child: Column(
+                        children:
+                            [
+                                  // Используем поля из нашей модели User
+                                  if (user.course != null)
+                                    _buildInfoTile(
+                                      context,
+                                      icon: Icons.school_outlined,
+                                      title: 'Курс',
+                                      value: '${user.course} курс',
+                                    ),
+                                  if (user.groupName != null &&
+                                      user.groupName!.isNotEmpty)
+                                    _buildInfoTile(
+                                      context,
+                                      icon: Icons.group_outlined,
+                                      title: 'Группа',
+                                      value: user.groupName!,
+                                    ),
+                                  if (user.specialty != null &&
+                                      user.specialty!.isNotEmpty)
+                                    _buildInfoTile(
+                                      context,
+                                      icon: Icons.computer_outlined,
+                                      title: 'Специальность',
+                                      value: user.specialty!,
+                                    ),
+                                  if (user.phone != null &&
+                                      user.phone!.isNotEmpty)
+                                    _buildInfoTile(
+                                      context,
+                                      icon: Icons.phone_outlined,
+                                      title: 'Телефон',
+                                      value: user.phone!,
+                                      isLast: true,
+                                    ), // Отмечаем последнее поле
+                                  // Добавь другие нужные поля из модели User...
+                                  // Например, если у тебя был studentId в старой модели:
+                                  // _buildInfoTile(context, icon: Icons.badge_outlined, title: 'Студ. ID', value: user.studentSpecificId ?? 'Не указан'), // Пример
+                                ]
+                                .where((tile) => tile != null)
+                                .toList()
+                                .cast<
+                                  Widget
+                                >(), // Убираем null элементы, если поля опциональны
+                      ),
+                    )
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideX(begin: -0.1), // Анимация
+              const SizedBox(height: 16),
+
+              // --- Ссылка на Настройки (можно убрать, если есть иконка в AppBar) ---
+              // Card(
+              //   child: _buildInfoTile(
+              //     context,
+              //     icon: Icons.settings_outlined,
+              //     title: 'Настройки',
+              //     value: '',
+              //     isLast: true,
+              //     onTap: () { /* TODO: Navigate to settings */ },
+              //   ),
+              // ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
+              // const SizedBox(height: 16),
+
+              // --- Кнопка Выхода ---
+              Card(
+                color: colorScheme.errorContainer.withOpacity(
+                  0.3,
+                ), // Слегка красный фон для опасного действия
+                child: _buildInfoTile(
+                  context,
+                  icon: Icons.logout,
+                  title: 'Выйти',
+                  value: '',
+                  iconColor: colorScheme.error,
+                  titleColor: colorScheme.error,
+                  isLast: true,
+                  onTap:
+                      () => _signOut(
+                        context,
+                        ref,
+                      ), // Вызываем нашу функцию выхода
+                ),
+              ).animate(delay: 400.ms).fadeIn(duration: 400.ms), // Анимация
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // --- Вспомогательный виджет для отображения строки информации ---
+  // (Скопирован из твоего старого кода, немного адаптирован под тему)
+  Widget _buildInfoTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
+    Color? iconColor,
+    Color? titleColor,
+    bool isLast = false,
+    VoidCallback? onTap,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    // Убрали dividerTheme, используем стандартный Divider
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          leading: Icon(
+            icon,
+            color: iconColor ?? colorScheme.primary, // Используем цвет из темы
+            size: 24,
+          ),
+          title: Text(
+            title,
+            style: textTheme.titleMedium?.copyWith(
+              color: titleColor,
+            ), // Стиль M3
+          ),
+          trailing:
+              value.isNotEmpty
+                  ? Text(
+                    value,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color:
+                          colorScheme
+                              .onSurfaceVariant, // Цвет для второстепенного текста
+                    ),
+                  )
+                  : (onTap != null
+                      ? const Icon(Icons.chevron_right)
+                      : null), // Иконка ">" если есть onTap и нет value
+          onTap: onTap,
+          dense: false, // Используем стандартные отступы
+          minVerticalPadding: 12, // Немного увеличим вертикальный отступ
+        ),
+        // Добавляем стандартный разделитель
+        if (!isLast)
+          const Divider(
+            height: 1, // Стандартная высота
+            thickness: 1, // Стандартная толщина
+            indent:
+                56, // Отступ слева (примерно ширина иконки + отступ ListTile)
+            endIndent: 16, // Отступ справа
+            // Цвет берется из DividerTheme темы Material 3
+          ),
+      ],
+    );
+  }
+
+  // -------------------------------------------------------------
+}

@@ -1,11 +1,15 @@
-import 'dart:convert'; // Для utf8
+// lib/features/settings/pin/change_pin_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:crypto/crypto.dart'; // Для SHA256
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'pin_setup_screen.dart'; // Экран установки нового ПИН
+import 'package:go_router/go_router.dart'; // Для навигации
+
+// Не импортируем PinSetupScreen напрямую, используем роутинг
 
 class ChangePinScreen extends StatefulWidget {
+  // Убрали const
   const ChangePinScreen({super.key});
 
   @override
@@ -18,7 +22,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   final _storage = const FlutterSecureStorage();
   bool _isLoading = false;
   String? _errorMessage;
-  final int _pinLength = 4; // Должно совпадать с PinSetupScreen
+  final int _pinLength = 4; // Должно совпадать
 
   @override
   void dispose() {
@@ -26,7 +30,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     super.dispose();
   }
 
-  // Функция хеширования ПИН-кода (должна быть идентична той, что в PinSetupScreen)
+  // Функция хеширования (идентична PinSetupScreen)
   String _hashPin(String pin) {
     final bytes = utf8.encode(pin);
     final digest = sha256.convert(bytes);
@@ -59,14 +63,12 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     final storedPinHashKey = 'pin_hash_$userId';
 
     try {
-      // Читаем сохраненный хеш
       final storedPinHash = await _storage.read(key: storedPinHashKey);
 
       if (storedPinHash == null) {
-        // Этого не должно произойти, если мы перешли с экрана настроек, где ПИН был включен
         setState(() {
           _isLoading = false;
-          _errorMessage = "Ошибка: ПИН-код не найден в хранилище.";
+          _errorMessage = "Ошибка: ПИН-код не найден.";
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -79,19 +81,15 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
         return;
       }
 
-      // Хешируем введенный ПИН
-      final enteredPin = _currentPinController.text;
-      final enteredPinHash = _hashPin(enteredPin);
+      final enteredPinHash = _hashPin(_currentPinController.text);
 
-      // Сравниваем хеши
       if (enteredPinHash == storedPinHash) {
-        // Успех! Переходим на экран установки нового ПИН-кода
-        // Используем pushReplacement, чтобы пользователь не мог вернуться на экран проверки старого ПИН
+        // Успех! Переходим на экран установки нового ПИН-кода, ЗАМЕНЯЯ текущий экран
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const PinSetupScreen()),
-          );
+          // Используем pushReplacementNamed из GoRouter для замены
+          context.pushReplacement(
+            '/settings/pin/setup',
+          ); // Заменит /settings/pin/change на /settings/pin/setup
         }
       } else {
         // Неверный ПИН
@@ -107,10 +105,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             ),
           );
         }
-        // Можно добавить счетчик попыток и блокировку
+        // TODO: Добавить счетчик попыток и блокировку?
       }
     } catch (e) {
-      print("Error verifying PIN: $e");
+      debugPrint("Error verifying PIN: $e");
       setState(() {
         _isLoading = false;
         _errorMessage = "Ошибка проверки ПИН-кода.";
@@ -130,6 +128,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI взят из старого файла
     return Scaffold(
       appBar: AppBar(title: const Text("Смена ПИН-кода")),
       body: Center(
@@ -141,7 +140,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(Icons.password_outlined, size: 60), // Иконка
+                const Icon(Icons.password_outlined, size: 60),
                 const SizedBox(height: 20),
                 Text(
                   "Введите текущий ПИН-код",
@@ -151,9 +150,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                 const SizedBox(height: 30),
                 TextFormField(
                   controller: _currentPinController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: "Текущий ПИН-код",
-                    border: OutlineInputBorder(),
                     counterText: "",
                   ),
                   keyboardType: TextInputType.number,
@@ -165,21 +163,32 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                     if (value == null || value.length != _pinLength) {
                       return 'ПИН должен состоять из $_pinLength цифр';
                     }
+                    if (int.tryParse(value) == null) {
+                      return 'Используйте только цифры';
+                    }
                     return null;
                   },
                 ),
+                if (_errorMessage != null) // Отображение ошибки
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 const SizedBox(height: 40),
                 if (_isLoading)
-                  const CircularProgressIndicator()
+                  const Center(child: CircularProgressIndicator())
                 else
                   ElevatedButton(
                     onPressed: _verifyCurrentPin,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
                     child: const Text("ПОДТВЕРДИТЬ"),
                   ),
-                // Можно добавить кнопку "Забыли ПИН?" (потребует доп. логики восстановления)
+                // Можно добавить кнопку "Забыли ПИН?"
               ],
             ),
           ),
