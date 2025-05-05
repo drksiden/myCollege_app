@@ -1,212 +1,254 @@
-// main.dart
-import 'package:firebase_core/firebase_core.dart';
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Для SystemChrome и SystemUiOverlayStyle
-import 'package:flutter_application_1/auth_wrapper.dart';
-import 'package:flutter_application_1/firebase_options.dart';
-import 'package:provider/provider.dart'; // Импорт provider
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/theme_notifier.dart'; // Импорт нашего Notifier'а
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'firebase_options.dart';
+import 'routes/app_router.dart';
+import 'core/providers/theme_provider.dart'; // Наш провайдер темы
 
-Future<void> main() async {
-  // 1. Гарантируем инициализацию биндингов Flutter ДО любых await или плагинов
+// --- Константы для удобства ---
+const _seedColor = Colors.indigo; // Основной цвет для генерации схемы
+const _borderRadiusValue = 12.0; // Общий радиус скругления
+const _buttonBorderRadiusValue = 8.0; // Радиус для кнопок
+const _inputBorderRadiusValue = 8.0; // Радиус для полей ввода
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Инициализируем локализацию для дат (русский язык)
-  await initializeDateFormatting('ru', null);
-
-  await Firebase.initializeApp(
-    options:
-        DefaultFirebaseOptions
-            .currentPlatform, // Используем сгенерированные опции
-  );
-
-  // 3. Запускаем приложение с Provider'ом для управления темой
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(), // Создаем и предоставляем ThemeNotifier
-      child: const MyStudentApp(),
-    ),
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyStudentApp extends StatelessWidget {
-  const MyStudentApp({super.key});
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Следим за изменениями в ThemeNotifier
-    final themeNotifier = Provider.of<ThemeNotifier>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeNotifierProvider);
 
-    // Определяем, активна ли темная тема (учитывая системные настройки)
-    final isCurrentlyDark = themeNotifier.isDarkMode(context);
-
-    // Устанавливаем стиль системных панелей (статус-бар, нав-бар)
-    // Делаем это здесь, чтобы стиль реагировал на смену темы
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        // Статус-бар (сверху)
-        statusBarColor: Colors.transparent, // Прозрачный фон
-        statusBarIconBrightness:
-            isCurrentlyDark ? Brightness.light : Brightness.dark, // Иконки
-        // Навигационная панель (снизу)
-        // Используем цвет фона, подходящий для M3 тем
-        systemNavigationBarColor:
-            isCurrentlyDark
-                ? const Color(0xFF1F1F1F) // Примерный темный фон для панели
-                : const Color(0xFFF8F8F8), // Примерный светлый фон для панели
-        systemNavigationBarDividerColor: Colors.transparent, // Без разделителя
-        systemNavigationBarIconBrightness:
-            isCurrentlyDark ? Brightness.light : Brightness.dark, // Иконки
-      ),
-    );
-
-    // --- Определяем Светлую Тему ---
-    final lightTheme = ThemeData(
-      useMaterial3: true,
+    // --- Генерируем Цветовую Схему ---
+    final lightColorScheme = ColorScheme.fromSeed(
+      seedColor: _seedColor,
       brightness: Brightness.light,
-      // Основная цветовая схема (можно поэкспериментировать с seedColor)
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF4A90E2), // Пример: более спокойный синий
-        brightness: Brightness.light,
-        // Можно переопределить конкретные цвета схемы
-        surface: const Color(0xFFFDFDFD), // Чуть отличный от белого фон
-        surfaceContainerHighest: const Color(
-          0xFFF0F0F0,
-        ), // Цвет фона "карточек"
-      ),
-      fontFamily:
-          'Inter', // Пример современного шрифта (нужно добавить в проект)
-      // Стили компонентов для минимализма
-      scaffoldBackgroundColor: const Color(0xFFFDFDFD), // Фон Scaffold
-      appBarTheme: AppBarTheme(
-        centerTitle: true,
-        elevation: 0, // Без тени
-        backgroundColor: Colors.transparent, // Прозрачный AppBar
-        foregroundColor:
-            Colors.black87, // Цвет иконок и текста на AppBar (для светлой темы)
-        // Стиль системных оверлеев уже задан глобально через SystemChrome
-      ),
-      cardTheme: CardTheme(
-        elevation: 0, // Без тени
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16), // Более скругленные углы
-          side: BorderSide(
-            color: Colors.grey.shade300,
-            width: 0.8,
-          ), // Тонкая граница
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 8.0), // Отступы карт
-        clipBehavior: Clip.antiAlias,
-        color: const Color(
-          0xFFF0F0F0,
-        ), // Явный цвет фона карты (если отличается от surface)
-      ),
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 16.0,
-          vertical: 0,
-        ), // Стандартные отступы ListTile
-        dense: false, // Не слишком компактные
-      ),
-      dividerTheme: DividerThemeData(
-        space: 1, // Минимальное пространство у Divider
-        thickness: 0.5,
-        color: Colors.grey.shade300,
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        elevation: 0, // Без тени
-        backgroundColor: const Color(0xFFF8F8F8), // Фон панели навигации
-        selectedItemColor: const Color(0xFF4A90E2), // Цвет выбранного элемента
-        unselectedItemColor: Colors.grey.shade600, // Цвет невыбранного
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true, // Показать текст выбранного
-        showUnselectedLabels: false, // Скрыть текст невыбранных
-      ),
-      // Доп. стили по необходимости (кнопки, поля ввода и т.д.)
     );
-
-    // --- Определяем Темную Тему ---
-    final darkTheme = ThemeData(
-      useMaterial3: true,
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: _seedColor,
       brightness: Brightness.dark,
-      // Цветовая схема для темной темы
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF4A90E2), // Тот же seed, но с темной яркостью
-        brightness: Brightness.dark,
-        surface: const Color(0xFF1A1A1A), // Очень темный фон
-        surfaceContainerHighest: const Color(
-          0xFF2A2A2A,
-        ), // Фон "карточек" в темной теме
-      ),
-      fontFamily: 'Inter',
-
-      // Стили компонентов для темной темы
-      scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-      appBarTheme: AppBarTheme(
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor:
-            Colors.white, // Цвет иконок и текста на AppBar (для темной темы)
-        // Стиль системных оверлеев уже задан глобально через SystemChrome
-      ),
-      cardTheme: CardTheme(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.grey.shade800,
-            width: 0.8,
-          ), // Граница для темной темы
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        clipBehavior: Clip.antiAlias,
-        color: const Color(0xFF2A2A2A), // Цвет фона карты
-      ),
-      listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-        dense: false,
-      ),
-      dividerTheme: DividerThemeData(
-        space: 1,
-        thickness: 0.5,
-        color: Colors.grey.shade800,
-      ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        elevation: 0,
-        backgroundColor: const Color(0xFF1F1F1F), // Фон панели навигации
-        selectedItemColor: const Color(
-          0xFF6AAAFF,
-        ), // Более светлый синий для акцента в темной теме
-        unselectedItemColor: Colors.grey.shade500,
-        type: BottomNavigationBarType.fixed,
-        showSelectedLabels: true,
-        showUnselectedLabels: false,
-      ),
-      // Доп. стили ...
+      // Можно немного подстроить темную схему, если стандартная не нравится
+      // primary: Colors.indigoAccent[100], // Пример: сделать основной цвет светлее
     );
 
-    return MaterialApp(
-      title: 'MyStudentApp',
-      theme: lightTheme, // Светлая тема
-      darkTheme: darkTheme, // Темная тема
-      themeMode: themeNotifier.themeMode, // Режим темы из Notifier'а
-      // Настройки локализации
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ru'),
-        // Locale('en'),
-      ],
-      locale: const Locale('ru'),
+    // --- Определяем общие настройки BorderRadius ---
+    final commonBorderRadius = BorderRadius.circular(_borderRadiusValue);
+    final buttonBorderRadius = BorderRadius.circular(_buttonBorderRadiusValue);
+    final inputBorderRadius = BorderRadius.circular(_inputBorderRadiusValue);
 
-      home: const AuthWrapper(),
-      debugShowCheckedModeBanner: false, // Убираем баннер Debug
+    // --- Базовая настройка ThemeData (общая для light/dark) ---
+    ThemeData configureBaseTheme(ColorScheme colorScheme) {
+      return ThemeData(
+        colorScheme: colorScheme,
+        useMaterial3: true,
+
+        // Можно подключить кастомный шрифт через google_fonts
+        // fontFamily: GoogleFonts.inter().fontFamily,
+
+        // --- Настройки компонентов ---
+        appBarTheme: AppBarTheme(
+          backgroundColor: colorScheme.surface, // Фон AppBar - цвет поверхности
+          foregroundColor: colorScheme.onSurface, // Цвет текста и иконок
+          elevation: 0, // Без тени для "плоского" дизайна
+          scrolledUnderElevation: 2, // Небольшая тень при скролле под AppBar
+          centerTitle: true,
+          titleTextStyle: TextStyle(
+            // Стиль заголовка
+            fontSize: 18,
+            fontWeight: FontWeight.w600, // Полужирный
+            color: colorScheme.onSurface,
+          ),
+        ),
+
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true, // Добавляем фон полю ввода
+          fillColor: colorScheme.surfaceContainerHighest, // Цвет фона поля
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 14.0,
+            horizontal: 16.0,
+          ), // Паддинги
+          border: OutlineInputBorder(
+            // Стандартная рамка
+            borderRadius: inputBorderRadius,
+            borderSide: BorderSide.none, // Без видимой рамки по умолчанию
+          ),
+          enabledBorder: OutlineInputBorder(
+            // Рамка в неактивном состоянии
+            borderRadius: inputBorderRadius,
+            borderSide: BorderSide(
+              color: colorScheme.outlineVariant.withAlpha(128),
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            // Рамка в фокусе
+            borderRadius: inputBorderRadius,
+            borderSide: BorderSide(color: colorScheme.primary, width: 2.0),
+          ),
+          errorBorder: OutlineInputBorder(
+            // Рамка при ошибке
+            borderRadius: inputBorderRadius,
+            borderSide: BorderSide(color: colorScheme.error, width: 1.5),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            // Рамка при ошибке в фокусе
+            borderRadius: inputBorderRadius,
+            borderSide: BorderSide(color: colorScheme.error, width: 2.0),
+          ),
+          labelStyle: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+          ), // Стиль метки
+          prefixIconColor: colorScheme.onSurfaceVariant, // Цвет иконки слева
+        ),
+
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary, // Основной цвет фона
+            foregroundColor:
+                colorScheme.onPrimary, // Цвет текста/иконок на кнопке
+            elevation: 2, // Небольшая тень
+            padding: const EdgeInsets.symmetric(
+              vertical: 14.0,
+              horizontal: 24.0,
+            ),
+            shape: RoundedRectangleBorder(borderRadius: buttonBorderRadius),
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: colorScheme.primary, // Цвет текста
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: buttonBorderRadius),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+
+        cardTheme: CardTheme(
+          elevation: 0, // Без тени для чистого вида
+          color:
+              colorScheme
+                  .surfaceContainerLow, // Цвет фона карточки (чуть отличается от фона)
+          shape: RoundedRectangleBorder(
+            borderRadius: commonBorderRadius,
+            // Добавляем тонкую обводку в цвет границы
+            side: BorderSide(
+              color: colorScheme.outlineVariant.withAlpha(153),
+              width: 0.8,
+            ),
+          ),
+          margin: const EdgeInsets.symmetric(
+            vertical: 6.0,
+          ), // Отступы по умолчанию для карточек
+        ),
+
+        listTileTheme: ListTileThemeData(
+          iconColor: colorScheme.primary, // Цвет иконок (leading)
+          tileColor: Colors.transparent, // Прозрачный фон по умолчанию
+          shape: RoundedRectangleBorder(
+            borderRadius: commonBorderRadius,
+          ), // Скругление (для InkWell)
+          dense: false, // Не слишком компактно
+          minVerticalPadding: 14, // Увеличим вертикальный отступ
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          // Фон берется из Scaffold, можно задать явно:
+          // backgroundColor: colorScheme.surfaceContainer,
+          selectedItemColor: colorScheme.primary, // Активный элемент
+          unselectedItemColor:
+              colorScheme.onSurfaceVariant, // Неактивный элемент
+          type: BottomNavigationBarType.fixed,
+          showSelectedLabels: true,
+          showUnselectedLabels:
+              false, // Скрываем текст у неактивных для чистоты
+          elevation: 0, // Убираем тень
+          selectedLabelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ), // Стиль активного текста
+        ),
+
+        chipTheme: ChipThemeData(
+          backgroundColor: colorScheme.secondaryContainer.withAlpha(
+            204,
+          ), // Фон чипа
+          labelStyle: TextStyle(
+            color: colorScheme.onSecondaryContainer,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+          iconTheme: IconThemeData(
+            color: colorScheme.onSecondaryContainer,
+            size: 14,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          side: BorderSide.none, // Без рамки
+        ),
+
+        dividerTheme: DividerThemeData(
+          color: colorScheme.outlineVariant.withAlpha(153), // Цвет разделителя
+          thickness: 1,
+          space: 1, // Минимальное пространство (управляется в ListTile)
+        ),
+
+        dialogTheme: DialogTheme(
+          backgroundColor: colorScheme.surfaceContainerHigh, // Фон диалога
+          shape: RoundedRectangleBorder(borderRadius: commonBorderRadius),
+          titleTextStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+          contentTextStyle: TextStyle(
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating, // Всплывающий SnackBar
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          // Можно задать цвета по умолчанию для разных типов SnackBar
+          // backgroundColor: ...,
+          // actionTextColor: ...,
+        ),
+        tooltipTheme: TooltipThemeData(
+          decoration: BoxDecoration(
+            color: colorScheme.inverseSurface.withAlpha(229),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          textStyle: TextStyle(color: colorScheme.inversePrimary),
+        ),
+      );
+    }
+
+    // --- Создаем светлую и темную темы ---
+    final lightTheme = configureBaseTheme(lightColorScheme);
+    final darkTheme = configureBaseTheme(darkColorScheme);
+
+    // --- Собираем MaterialApp ---
+    return MaterialApp.router(
+      routerConfig: router,
+      title: 'myCollege App',
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: themeMode,
+      debugShowCheckedModeBanner: false,
     );
   }
 }
