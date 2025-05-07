@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Для получения пользователя
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Для проверки флагов
-import 'package:flutter/services.dart'; // Для WidgetsBindingObserver и HapticFeedback
+// Для WidgetsBindingObserver и HapticFeedback
 
 // Импорты наших экранов и виджетов
 import '../auth/lock_screen.dart'; // Экран блокировки

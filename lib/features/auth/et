@@ -1,352 +1,243 @@
-// lib/features/student/profile_page.dart
+// lib/features/student/home_screen.dart
+import 'dart:async'; // Для Timer/Duration
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-// import 'package:go_router/go_router.dart'; // Если используешь AppRouter.push/go
+import 'package:firebase_auth/firebase_auth.dart'; // Для получения пользователя
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Для проверки флагов
+// import 'package:go_router/go_router.dart'; // Если будешь использовать навигацию GoRouter напрямую
 
-import '../../core/auth_service.dart'; // Для authStateProvider и authServiceProvider
-import '../../models/user.dart'; // Наша freezed модель User
-import '../../routes/app_router.dart'; // Для AppRouter.push/go
+// --- ДОБАВЬ ЭТИ ИМПОРТЫ ---
+import 'package:flutter/services.dart'; // Для WidgetsBindingObserver
+import '../auth/lock_screen.dart'; // Экран блокировки
+import '../../routes/app_router.dart'; // Для AppRouter.push (если он используется для модального окна)
+// -------------------------
 
-// Импорты для экранов, на которые будем переходить (пока могут быть заглушками)
-// import 'edit_profile_page.dart';
-// import '../settings/settings_screen.dart'; // Путь к экрану настроек
+// Импорты страниц разделов
+import 'profile_page.dart';
+import 'schedule_page.dart';
+import 'grades_page.dart';
+import 'performance_page.dart';
 
-// Превращаем в ConsumerWidget для доступа к ref
-class ProfilePage extends ConsumerWidget {
-  const ProfilePage({super.key});
+// --- KeepAliveWrapper (остается без изменений) ---
+class KeepAliveWrapper extends StatefulWidget { /* ... */ }
+class _KeepAliveWrapperState extends State<KeepAliveWrapper> with AutomaticKeepAliveClientMixin { /* ... */ }
+// ---------------------------------------------
 
-  // --- Функция выхода ---
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Подтверждение'),
-            content: const Text('Вы уверены, что хотите выйти?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Отмена'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: Text(
-                  'Выйти',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ],
-          ),
-    );
+// --- StudentHomeScreen ---
+// Добавляем 'with WidgetsBindingObserver'
+class StudentHomeScreen extends ConsumerStatefulWidget {
+  const StudentHomeScreen({super.key});
+  @override
+  ConsumerState<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
 
-    if (confirmed == true) {
-      try {
-        // Используем ref для доступа к сервису и выхода
-        await ref.read(authServiceProvider).signOut();
-        // Навигация не нужна, GoRouter сделает редирект автоматически
-        // при изменении authStateProvider
-      } catch (e) {
-        debugPrint("Sign out error: $e");
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ошибка выхода: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+// Добавляем 'with WidgetsBindingObserver'
+class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen> with WidgetsBindingObserver {
+  int _selectedIndex = 0;
+  late PageController _pageController;
+  // --- ДОБАВЛЯЕМ ПЕРЕМЕННЫЕ ДЛЯ БЛОКИРОВКИ ---
+  final _storage = const FlutterSecureStorage();
+  bool _isLockScreenVisible = false;
+  DateTime? _pausedTime;
+  final Duration _lockTimeout = const Duration(minutes: 1); // Таймаут блокировки (1 минута)
+  DateTime? _lastUnlockTime;
+  Timer? _lockTimer; // Таймер для блокировки ПОСЛЕ запуска, если не было активности
+  final Duration _inactiveLockTimeout = const Duration(minutes: 5); // Блокировка через 5 минут неактивности
+  // -----------------------------------------
+
+  // Список страниц (остается прежним)
+  final List<Widget> _pages = const [ /* ... */ ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+    // --- ДОБАВЛЯЕМ ЛОГИКУ ИЗ СТАРОГО initState ---
+    WidgetsBinding.instance.addObserver(this); // Регистрируем наблюдатель
+    // Проверяем, нужно ли показать LockScreen сразу при запуске
+    // (если пользователь уже вошел и включен ПИН/Био)
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkLockOnStart();
+        _resetInactiveTimer(); // Запускаем таймер неактивности
+     });
+    // Проверку и предложение настройки ПИН/Био можно оставить здесь или
+    // перенести в ProfilePage/SettingsPage для чистоты HomeScreen
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _checkAndPromptQuickLoginSetup();
+    // });
+     // ------------------------------------------
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    // --- НЕ ЗАБЫВАЕМ УДАЛИТЬ НАБЛЮДАТЕЛЬ И ТАЙМЕР ---
+    WidgetsBinding.instance.removeObserver(this);
+    _lockTimer?.cancel();
+    // --------------------------------------------
+    super.dispose();
+  }
+
+  // --- ДОБАВЛЯЕМ МЕТОДЫ ДЛЯ БЛОКИРОВКИ (адаптированы из старого home_screen.dart) ---
+
+   // Сброс и запуск таймера неактивности
+   void _resetInactiveTimer() {
+      _lockTimer?.cancel(); // Отменяем старый таймер
+      _lockTimer = Timer(_inactiveLockTimeout, () {
+         print("Inactive timeout reached. Showing lock screen.");
+         _showLockScreen(); // Показываем экран блокировки по таймеру неактивности
+      });
+   }
+
+   // Обработчик событий для сброса таймера при взаимодействии пользователя
+   void _handleUserInteraction([_]) {
+      // print("User interaction detected. Resetting inactive timer.");
+      _resetInactiveTimer();
+   }
+
+   // Проверка необходимости блокировки при запуске/возобновлении
+   Future<void> _checkLockOnStart() async {
+     // Показываем LockScreen сразу, если включен PIN/Bio
+     final userId = FirebaseAuth.instance.currentUser?.uid;
+     if (userId == null) return;
+     final pinEnabled = await _storage.read(key: 'pin_enabled_$userId') == 'true';
+     final bioEnabled = await _storage.read(key: 'bio_enabled_$_userId') == 'true';
+
+     if (pinEnabled || bioEnabled) {
+        print("PIN or Biometrics enabled. Showing lock screen on start/resume.");
+        _showLockScreen();
+     }
+   }
+
+  // Отслеживание состояния приложения
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.detached) {
+      // Приложение свернуто или неактивно
+      if (!_isLockScreenVisible) { // Запоминаем время только если не заблокировано
+         _pausedTime = DateTime.now();
+         _lockTimer?.cancel(); // Останавливаем таймер неактивности
+         print("App Paused at: $_pausedTime");
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // Приложение возобновилось
+      final resumeTime = DateTime.now();
+      print("App Resumed at: $resumeTime");
+      _resetInactiveTimer(); // Перезапускаем таймер неактивности
+
+      // Защита от зацикливания после разблокировки
+      if (_lastUnlockTime != null && resumeTime.difference(_lastUnlockTime!) < const Duration(seconds: 2)) {
+        print("Ignoring resume event shortly after unlock.");
+        _pausedTime = null;
+        return;
+      }
+
+      bool requireLockDueToTimeout = false;
+      if (_pausedTime != null) {
+        final durationInBackground = resumeTime.difference(_pausedTime!);
+        if (durationInBackground >= _lockTimeout) {
+          requireLockDueToTimeout = true;
+          print("Lock timeout exceeded (${durationInBackground.inSeconds}s >= ${_lockTimeout.inSeconds}s). Lock screen required.");
         }
+         _pausedTime = null; // Сбрасываем время паузы
+      } else {
+          print("App Resumed (no pause time recorded). No timeout lock needed.");
+          // Если нужно блокировать КАЖДЫЙ раз при возобновлении, а не по таймауту,
+          // то вызываем _checkLockOnStart() здесь БЕЗ условия requireLockDueToTimeout
+          // _checkLockOnStart();
+      }
+
+      // Показываем LockScreen по ТАЙМ-АУТУ
+      if (requireLockDueToTimeout) {
+        _showLockScreen();
       }
     }
   }
-  // ---------------------
+
+  // Показ экрана блокировки
+  Future<void> _showLockScreen() async {
+    // Предотвращаем повторный показ
+    if (_isLockScreenVisible || FirebaseAuth.instance.currentUser == null || !mounted) return;
+
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final pinEnabled = await _storage.read(key: 'pin_enabled_$userId') == 'true';
+    final bioEnabled = await _storage.read(key: 'bio_enabled_$userId') == 'true';
+
+    // Показываем, только если ПИН или Биометрия включены
+    if ((pinEnabled || bioEnabled) && mounted) {
+      print("Showing lock screen modally...");
+      setState(() => _isLockScreenVisible = true); // Ставим флаг
+
+       // Показываем LockScreen как модальный диалог поверх всего
+       // Используем push для возможности вернуться (хотя LockScreen сам себя закроет)
+      bool? unlocked = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => const LockScreen(),
+          fullscreenDialog: true, // Открывает как полное модальное окно
+        ),
+      );
+      // Альтернатива через GoRouter (если роут /lock определен):
+      // bool? unlocked = await context.push<bool>('/lock');
+
+      print("Lock screen result: $unlocked");
+
+      // Обработка результата
+      if (unlocked == true) {
+        _lastUnlockTime = DateTime.now(); // Запоминаем время успешной разблокировки
+        _resetInactiveTimer(); // Перезапускаем таймер неактивности
+        print("Screen unlocked successfully.");
+      } else {
+        // Пользователь нажал "Выйти" на LockScreen ИЛИ закрыл его иначе (маловероятно)
+        // Мы уже вышли из системы внутри LockScreen -> _logout()
+        print("User did not unlock or logged out from LockScreen.");
+        // AuthWrapper/GoRouter должны перенаправить на /login
+      }
+
+       // Сбрасываем флаг в любом случае ПОСЛЕ закрытия экрана
+       if (mounted) {
+         setState(() => _isLockScreenVisible = false);
+       }
+    } else {
+       print("Lock screen skipped (PIN/Bio disabled).");
+        _resetInactiveTimer(); // Все равно перезапустим таймер на случай, если настройки изменились
+    }
+  }
+  // ----------------------------------------------------
+
+  // Методы навигации (_onItemTapped, _onPageChanged) остаются без изменений
+  void _onItemTapped(int index) { /* ... */ }
+  void _onPageChanged(int index) { /* ... */ }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Получаем асинхронное состояние пользователя из authStateProvider
-    final authState = ref.watch(authStateProvider);
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget build(BuildContext context) {
+    // Оборачиваем PageView в Listener для отслеживания касаний
+    // и GestureDetector для других взаимодействий, чтобы сбрасывать таймер неактивности
+    return Listener(
+       onPointerDown: _handleUserInteraction, // Срабатывает при касании
+       child: GestureDetector(
+          // Срабатывает на другие взаимодействия (скролл, тап и т.д.)
+          // Это может быть избыточно, если Listener достаточно
+          // onTap: () => _handleUserInteraction(null),
+          // onPanDown: _handleUserInteraction,
+          // onScaleStart: _handleUserInteraction,
 
-    // Используем .when для обработки состояний AsyncValue
-    return authState.when(
-      // --- Состояние Загрузки ---
-      loading:
-          () => const Scaffold(
-            // Можно оставить AppBar пустым или с заголовком "Загрузка..."
-            appBar: null, // Убираем AppBar пока грузится
-            body: Center(child: CircularProgressIndicator()),
-          ),
-      // --- Состояние Ошибки ---
-      error:
-          (error, stackTrace) => Scaffold(
-            appBar: AppBar(title: const Text('Ошибка')),
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text('Ошибка загрузки профиля: $error'),
-              ),
+          child: Scaffold(
+            body: PageView( // PageView остается как был
+              controller: _pageController,
+              onPageChanged: _onPageChanged,
+              children: _pages,
+            ),
+            bottomNavigationBar: BottomNavigationBar( // BottomNavigationBar остается как был
+              currentIndex: _selectedIndex,
+              onTap: (index){
+                 _onItemTapped(index);
+                 _resetInactiveTimer(); // Сбрасываем таймер при смене вкладки
+              },
+              items: const [ /* ... */ ],
             ),
           ),
-      // --- Состояние Данных (успешно загружено) ---
-      data: (user) {
-        // Если данные есть, но user == null (маловероятно из-за редиректа, но проверим)
-        if (user == null) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Профиль')),
-            body: const Center(child: Text('Пользователь не найден.')),
-          );
-        }
-
-        // --- Строим основной UI ---
-        return Scaffold(
-          // AppBar теперь здесь, когда данные пользователя `user` доступны
-          appBar: AppBar(
-            title: const Text('Профиль'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Редактировать профиль',
-                onPressed: () {
-                  // TODO: Создать EditProfilePage и определить роут '/profile/edit'
-                  // Переход на экран редактирования
-                  // AppRouter.push(context, '/profile/edit', extra: user);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Экран редактирования еще не создан'),
-                    ),
-                  );
-                },
-              ),
-              // Можно добавить иконку настроек прямо в AppBar
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                tooltip: 'Настройки',
-                onPressed: () {
-                  // TODO: Создать SettingsScreen и определить роут '/settings'
-                  // AppRouter.push(context, '/settings');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Экран настроек еще не создан'),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 16.0,
-            ),
-            children: [
-              // --- Секция Аватара и Имени ---
-              Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 55,
-                        backgroundColor: colorScheme.secondaryContainer,
-                        backgroundImage:
-                            (user.profilePictureUrl != null &&
-                                    user.profilePictureUrl!.isNotEmpty)
-                                ? NetworkImage(
-                                  user.profilePictureUrl!,
-                                ) // Загружаем из сети, если есть URL
-                                : const AssetImage(
-                                      'assets/images/default_avatar.png',
-                                    )
-                                    as ImageProvider, // Иначе - заглушка
-                        // Можно добавить обработку ошибок загрузки NetworkImage
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        // Используем getter fullName из модели User
-                        user.fullName,
-                        style: textTheme.headlineSmall,
-                        textAlign: TextAlign.center,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          user.email, // Используем поле 'email'
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          'Роль: ${user.role}', // Используем поле 'role'
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                  .animate()
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.2), // Анимация как в старом коде
-              const SizedBox(height: 24),
-
-              // --- Секция Информации о Студенте ---
-              // Показываем эту секцию, если роль 'student' (хотя мы и так в StudentHomeScreen)
-              if (user.role == 'student')
-                Card(
-                      child: Column(
-                        children:
-                            [
-                                  // Используем поля из нашей модели User
-                                  if (user.course != null)
-                                    _buildInfoTile(
-                                      context,
-                                      icon: Icons.school_outlined,
-                                      title: 'Курс',
-                                      value: '${user.course} курс',
-                                    ),
-                                  if (user.groupName != null &&
-                                      user.groupName!.isNotEmpty)
-                                    _buildInfoTile(
-                                      context,
-                                      icon: Icons.group_outlined,
-                                      title: 'Группа',
-                                      value: user.groupName!,
-                                    ),
-                                  if (user.specialty != null &&
-                                      user.specialty!.isNotEmpty)
-                                    _buildInfoTile(
-                                      context,
-                                      icon: Icons.computer_outlined,
-                                      title: 'Специальность',
-                                      value: user.specialty!,
-                                    ),
-                                  if (user.phone != null &&
-                                      user.phone!.isNotEmpty)
-                                    _buildInfoTile(
-                                      context,
-                                      icon: Icons.phone_outlined,
-                                      title: 'Телефон',
-                                      value: user.phone!,
-                                      isLast: true,
-                                    ), // Отмечаем последнее поле
-                                  // Добавь другие нужные поля из модели User...
-                                  // Например, если у тебя был studentId в старой модели:
-                                  // _buildInfoTile(context, icon: Icons.badge_outlined, title: 'Студ. ID', value: user.studentSpecificId ?? 'Не указан'), // Пример
-                                ]
-                                .where((tile) => tile != null)
-                                .toList()
-                                .cast<
-                                  Widget
-                                >(), // Убираем null элементы, если поля опциональны
-                      ),
-                    )
-                    .animate(delay: 200.ms)
-                    .fadeIn(duration: 400.ms)
-                    .slideX(begin: -0.1), // Анимация
-              const SizedBox(height: 16),
-
-              // --- Ссылка на Настройки (можно убрать, если есть иконка в AppBar) ---
-              // Card(
-              //   child: _buildInfoTile(
-              //     context,
-              //     icon: Icons.settings_outlined,
-              //     title: 'Настройки',
-              //     value: '',
-              //     isLast: true,
-              //     onTap: () { /* TODO: Navigate to settings */ },
-              //   ),
-              // ).animate(delay: 300.ms).fadeIn(duration: 400.ms),
-              // const SizedBox(height: 16),
-
-              // --- Кнопка Выхода ---
-              Card(
-                color: colorScheme.errorContainer.withOpacity(
-                  0.3,
-                ), // Слегка красный фон для опасного действия
-                child: _buildInfoTile(
-                  context,
-                  icon: Icons.logout,
-                  title: 'Выйти',
-                  value: '',
-                  iconColor: colorScheme.error,
-                  titleColor: colorScheme.error,
-                  isLast: true,
-                  onTap:
-                      () => _signOut(
-                        context,
-                        ref,
-                      ), // Вызываем нашу функцию выхода
-                ),
-              ).animate(delay: 400.ms).fadeIn(duration: 400.ms), // Анимация
-            ],
-          ),
-        );
-      },
+       ),
     );
   }
-
-  // --- Вспомогательный виджет для отображения строки информации ---
-  // (Скопирован из твоего старого кода, немного адаптирован под тему)
-  Widget _buildInfoTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    Color? iconColor,
-    Color? titleColor,
-    bool isLast = false,
-    VoidCallback? onTap,
-  }) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    // Убрали dividerTheme, используем стандартный Divider
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          leading: Icon(
-            icon,
-            color: iconColor ?? colorScheme.primary, // Используем цвет из темы
-            size: 24,
-          ),
-          title: Text(
-            title,
-            style: textTheme.titleMedium?.copyWith(
-              color: titleColor,
-            ), // Стиль M3
-          ),
-          trailing:
-              value.isNotEmpty
-                  ? Text(
-                    value,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color:
-                          colorScheme
-                              .onSurfaceVariant, // Цвет для второстепенного текста
-                    ),
-                  )
-                  : (onTap != null
-                      ? const Icon(Icons.chevron_right)
-                      : null), // Иконка ">" если есть onTap и нет value
-          onTap: onTap,
-          dense: false, // Используем стандартные отступы
-          minVerticalPadding: 12, // Немного увеличим вертикальный отступ
-        ),
-        // Добавляем стандартный разделитель
-        if (!isLast)
-          const Divider(
-            height: 1, // Стандартная высота
-            thickness: 1, // Стандартная толщина
-            indent:
-                56, // Отступ слева (примерно ширина иконки + отступ ListTile)
-            endIndent: 16, // Отступ справа
-            // Цвет берется из DividerTheme темы Material 3
-          ),
-      ],
-    );
-  }
-
-  // -------------------------------------------------------------
-}
+} // Конец _HomeScreenState

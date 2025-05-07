@@ -198,9 +198,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Следим за темой как и раньше
-    final themeMode = ref.watch(themeNotifierProvider);
+    final themeModeAsync = ref.watch(themeNotifierProvider);
+
     final themeNotifier = ref.read(themeNotifierProvider.notifier);
+
+    final currentThemeMode = themeModeAsync.valueOrSystem;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Настройки')),
@@ -220,7 +222,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           RadioListTile<ThemeMode>(
             title: const Text('Как в системе'),
             value: ThemeMode.system,
-            groupValue: themeMode, // Используем текущее состояние из провайдера
+            groupValue:
+                currentThemeMode, // Используем текущее состояние из провайдера
             onChanged: (value) {
               if (value != null) {
                 themeNotifier.setThemeMode(value); // Вызываем метод Notifier'я
@@ -230,7 +233,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           RadioListTile<ThemeMode>(
             title: const Text('Только светлая'),
             value: ThemeMode.light,
-            groupValue: themeMode,
+            groupValue: currentThemeMode,
             onChanged: (value) {
               if (value != null) themeNotifier.setThemeMode(value);
             },
@@ -238,7 +241,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           RadioListTile<ThemeMode>(
             title: const Text('Только темная'),
             value: ThemeMode.dark,
-            groupValue: themeMode,
+            groupValue: currentThemeMode,
             onChanged: (value) {
               if (value != null) themeNotifier.setThemeMode(value);
             },

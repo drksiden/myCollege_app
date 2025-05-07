@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart'; // Для context.pop()
 
 class PinSetupScreen extends StatefulWidget {
   // Убрали const, т.к. StatefulWidget не должен быть const по умолчанию
-  PinSetupScreen({super.key});
+  const PinSetupScreen({super.key});
 
   @override
   State<PinSetupScreen> createState() => _PinSetupScreenState();

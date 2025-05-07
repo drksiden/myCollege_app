@@ -24,7 +24,8 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    final themeMode = ref.watch(themeNotifierProvider);
+    final themeModeAsync = ref.watch(themeNotifierProvider);
+    final currentThemeMode = themeModeAsync.valueOrSystem;
 
     // --- Генерируем Цветовую Схему ---
     final lightColorScheme = ColorScheme.fromSeed(
@@ -247,7 +248,7 @@ class MyApp extends ConsumerWidget {
       title: 'myCollege App',
       theme: lightTheme,
       darkTheme: darkTheme,
-      themeMode: themeMode,
+      themeMode: currentThemeMode,
       debugShowCheckedModeBanner: false,
     );
   }

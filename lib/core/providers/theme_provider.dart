@@ -1,101 +1,72 @@
 // lib/core/providers/theme_provider.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Ключ для сохранения темы
 const String _themePrefsKey = 'appThemeMode';
 
-// 1. Определяем StateNotifier
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  // Получаем ссылку на Reader для доступа к SharedPreferences в будущем (если нужно)
-  // Либо передаем SharedPreferences через конструктор
-  ThemeNotifier(this._prefs) : super(ThemeMode.system) {
-    // Загружаем сохраненную тему при инициализации
-    _loadTheme();
-  }
+// Используем AsyncNotifierProvider для управления асинхронным состоянием ThemeMode
+final themeNotifierProvider = AsyncNotifierProvider<ThemeNotifier, ThemeMode>(
+  () {
+    return ThemeNotifier();
+  },
+);
 
-  final SharedPreferences _prefs;
+// Наш AsyncNotifier
+class ThemeNotifier extends AsyncNotifier<ThemeMode> {
+  late SharedPreferences _prefs; // SharedPreferences будут загружены в build
 
-  // Загрузка темы
-  void _loadTheme() {
+  // Метод build вызывается один раз для инициализации состояния
+  @override
+  FutureOr<ThemeMode> build() async {
+    // Асинхронно загружаем SharedPreferences
+    _prefs = await SharedPreferences.getInstance();
+    // Загружаем сохраненную тему или возвращаем системную по умолчанию
     final savedThemeIndex = _prefs.getInt(_themePrefsKey);
+    ThemeMode initialMode;
     if (savedThemeIndex != null && savedThemeIndex < ThemeMode.values.length) {
-      state = ThemeMode.values[savedThemeIndex];
+      initialMode = ThemeMode.values[savedThemeIndex];
     } else {
-      state = ThemeMode.system; // По умолчанию системная
+      initialMode = ThemeMode.system;
     }
+    debugPrint("[ThemeNotifier] Initialized with theme: $initialMode");
+    return initialMode;
   }
 
-  // Установка и сохранение новой темы
+  // Метод для установки и сохранения новой темы
   Future<void> setThemeMode(ThemeMode mode) async {
-    if (state == mode) return; // Ничего не делаем, если режим тот же
-    state = mode;
-    await _prefs.setInt(_themePrefsKey, mode.index);
-  }
+    // Проверяем, отличается ли новая тема от текущей УСПЕШНО ЗАГРУЖЕННОЙ
+    if (state.valueOrNull == mode) return;
 
-  // Удобный метод для Switch (если нужен будет)
-  Future<void> toggleTheme(bool isDarkMode) async {
-    await setThemeMode(isDarkMode ? ThemeMode.dark : ThemeMode.light);
-  }
+    // Оптимистично обновляем состояние на новое значение
+    state = AsyncData(mode);
+    debugPrint("[ThemeNotifier] Setting theme: $mode");
 
-  // Метод для определения текущей яркости (учитывая системную)
-  Brightness getCurrentBrightness(BuildContext context) {
-    switch (state) {
-      case ThemeMode.light:
-        return Brightness.light;
-      case ThemeMode.dark:
-        return Brightness.dark;
-      case ThemeMode.system:
-        // Используем MediaQuery.platformBrightnessOf вместо deprecated platformBrightness
-        return MediaQuery.platformBrightnessOf(context);
+    // Пытаемся сохранить в SharedPreferences
+    try {
+      await _prefs.setInt(_themePrefsKey, mode.index);
+    } catch (e) {
+      // Если сохранить не удалось, можно откатить состояние или показать ошибку
+      debugPrint("Error saving theme: $e");
+      // state = AsyncError(e, StackTrace.current); // Пример отката состояния
     }
   }
 
-  // Удобный getter для проверки, активна ли темная тема
-  bool isDarkMode(BuildContext context) =>
-      getCurrentBrightness(context) == Brightness.dark;
+  // --- Вспомогательные методы для определения текущей темы ---
+  // (Лучше вызывать их там, где есть BuildContext, передавая текущее состояние)
+  // Этот метод теперь менее полезен внутри Notifier, лучше использовать в UI:
+  // Brightness getCurrentBrightness(BuildContext context) { ... }
+  // bool isDarkMode(BuildContext context) => ... ;
 }
 
-// 2. Определяем Provider
-// Используем FutureProvider для асинхронной инициализации SharedPreferences
-final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
-  ref,
-) async {
-  return await SharedPreferences.getInstance();
-});
+// Убираем отдельный sharedPreferencesProvider, т.к. он теперь загружается внутри AsyncNotifier
 
-// Провайдер для нашего ThemeNotifier
-// Он зависит от sharedPreferencesProvider
-final themeNotifierProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((
-  ref,
-) {
-  // Следим за FutureProvider, получаем SharedPreferences когда они готовы
-  final prefs = ref
-      .watch(sharedPreferencesProvider)
-      .maybeWhen(
-        data: (value) => value, // Если данные готовы, используем их
-        orElse:
-            () =>
-                null, // Иначе null (в этом случае Notifier не создастся пока prefs не готовы)
-      );
-
-  // Важно: Создаем Notifier только когда SharedPreferences готовы
-  if (prefs != null) {
-    return ThemeNotifier(prefs);
-  }
-  // Пока SharedPreferences грузятся, можно вернуть "заглушку" или обработать иначе,
-  // но зависимость от FutureProvider гарантирует, что Notifier создастся после загрузки.
-  // На практике, т.к. SharedPreferences грузятся быстро, это состояние почти незаметно.
-  // Для избежания ошибки во время загрузки, можно сделать так:
-  // Возвращаем временный Notifier с пустыми SharedPreferences, пока грузятся реальные.
-  // Но лучше полагаться на механизм зависимостей Riverpod.
-  // Пока что для простоты вернем временное состояние, хотя это не идеально:
-  throw Exception(
-    'SharedPreferences not loaded yet for ThemeNotifier',
-  ); // Или покажи заглушку
-  // return ThemeNotifier(InMemorySharedPreferences()); // Как вариант
-});
-
-// Опционально: Класс для имитации SharedPreferences, пока грузятся реальные
-// class InMemorySharedPreferences implements SharedPreferences { ... }
+// --- Вспомогательная функция для использования в UI (например, в SettingsScreen) ---
+// Помогает получить текущее значение ThemeMode или дефолтное, если идет загрузка/ошибка
+extension ThemeModeValue on AsyncValue<ThemeMode> {
+  ThemeMode get valueOrSystem => maybeWhen(
+    data: (mode) => mode,
+    orElse: () => ThemeMode.system, // Возвращаем system по умолчанию
+  );
+}

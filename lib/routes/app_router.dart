@@ -22,60 +22,73 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/loading',
     redirect: (context, state) {
-      final location = state.uri.toString(); // Куда пытаемся перейти
+      final location = state.uri.toString();
+      // Следим за AsyncValue<User?>
+      final authState = ref.watch(authStateProvider);
 
-      // --- НОВАЯ ЛОГИКА РЕДИРЕКТА ---
-
-      // 1. Если authState еще грузится И мы находимся на /loading, остаемся там.
-      if (authState.isLoading && location == '/loading') {
-        debugPrint(
-          '[GoRouter Redirect] Auth state loading, staying on /loading',
-        );
-        return null; // Остаемся на /loading
+      // 1. Если authState еще грузится, остаемся на /loading (если мы там)
+      // Или идем на /loading, если еще не там (на случай прямого входа по ссылке)
+      if (authState.isLoading) {
+        debugPrint('[GoRouter Redirect] Auth state loading...');
+        return location == '/loading' ? null : '/loading';
       }
 
-      // 2. Если authState загрузился, но с ошибкой (можно показать экран ошибки?)
+      // 2. Если ошибка загрузки authState
       if (authState.hasError && location != '/login') {
         debugPrint(
           '[GoRouter Redirect] Auth state error, redirecting to /login',
         );
-        // Можно перенаправить на логин или на спец. экран ошибки
         return '/login';
       }
 
-      // 3. Определяем, вошел ли пользователь (после загрузки/ошибки)
+      // 3. authState загружен (есть данные или null)
       final isLoggedIn = authState.valueOrNull != null;
-
-      // 4. Определяем, пытается ли пользователь попасть на страницы входа/регистрации/загрузки
       final isLoggingArea =
           location == '/login' ||
           location == '/register' ||
           location == '/loading';
 
       debugPrint(
-        '[GoRouter Redirect] Current location: $location, isLoggedIn: $isLoggedIn, isLoggingArea: $isLoggingArea',
+        '[GoRouter Redirect] Location: $location, isLoggedIn: $isLoggedIn, isLoggingArea: $isLoggingArea',
       );
 
-      // 5. Если пользователь НЕ вошел И пытается попасть НЕ в зону входа -> на /login
-      if (!isLoggedIn && !isLoggingArea) {
+      // --- НОВАЯ ЛОГИКА ДЛЯ /loading ---
+      // 4. Если мы на /loading И пользователь НЕ вошел -> на /login
+      if (location == '/loading' && !isLoggedIn) {
         debugPrint(
-          '[GoRouter Redirect] Redirecting to /login (not logged in, not in logging area)',
+          '[GoRouter Redirect] Redirecting from /loading to /login (logged out)',
         );
         return '/login';
       }
-
-      // 6. Если пользователь ВОШЕЛ И пытается попасть В зону входа -> на /home
-      if (isLoggedIn && isLoggingArea) {
+      // 5. Если мы на /loading И пользователь ВОШЕЛ -> на /home
+      if (location == '/loading' && isLoggedIn) {
         debugPrint(
-          '[GoRouter Redirect] Redirecting to /home (logged in, tried logging area)',
+          '[GoRouter Redirect] Redirecting from /loading to /home (logged in)',
         );
         return '/home';
       }
+      // ---------------------------------
 
-      // 7. Во всех остальных случаях (вошел и идет куда можно, не вошел и идет на /login) - разрешаем
+      // --- Старая логика для других случаев ---
+      // 6. Если НЕ вошел И НЕ в зоне входа -> на /login
+      if (!isLoggedIn && !isLoggingArea) {
+        debugPrint(
+          '[GoRouter Redirect] Redirecting to /login (not logged in, outside logging area)',
+        );
+        return '/login';
+      }
+      // 7. Если ВОШЕЛ И В зоне входа (кроме /loading, уже обработано) -> на /home
+      if (isLoggedIn && (location == '/login' || location == '/register')) {
+        debugPrint(
+          '[GoRouter Redirect] Redirecting to /home (logged in, tried login/register)',
+        );
+        return '/home';
+      }
+      // ---------------------------------------
+
+      // 8. Во всех остальных случаях - разрешаем
       debugPrint('[GoRouter Redirect] No redirection needed.');
       return null;
-      // ---------------------------
     },
     routes: <RouteBase>[
       GoRoute(

@@ -126,8 +126,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   textCapitalization: TextCapitalization.words,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty)
+                    if (value == null || value.trim().isEmpty) {
                       return 'Пожалуйста, введите фамилию';
+                    }
                     return null;
                   },
                 ),
@@ -141,8 +142,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   textCapitalization: TextCapitalization.words,
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty)
+                    if (value == null || value.trim().isEmpty) {
                       return 'Пожалуйста, введите имя';
+                    }
                     return null;
                   },
                 ),
@@ -169,12 +171,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
                     /* ... валидация email ... */
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Пожалуйста, введите email';
+                    }
                     if (!RegExp(
                       r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value))
+                    ).hasMatch(value)) {
                       return 'Введите корректный email';
+                    }
                     return null;
                   },
                 ),
@@ -188,10 +192,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   validator: (value) {
                     /* ... валидация пароля ... */
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Пожалуйста, введите пароль';
-                    if (value.length < 6)
+                    }
+                    if (value.length < 6) {
                       return 'Пароль должен быть не менее 6 символов';
+                    }
                     return null;
                   },
                 ),
@@ -205,10 +211,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   validator: (value) {
                     /* ... валидация подтверждения пароля ... */
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Пожалуйста, подтвердите пароль';
-                    if (value != _passwordController.text)
+                    }
+                    if (value != _passwordController.text) {
                       return 'Пароли не совпадают';
+                    }
                     return null;
                   },
                 ),
