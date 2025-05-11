@@ -67,8 +67,9 @@ extension GradeValue on Grade {
   // Цвет для оценки (пример)
   Color getColor(BuildContext context) {
     final numeric = numericGrade;
-    if (numeric == null)
+    if (numeric == null) {
       return Colors.grey.shade600; // Для нечисловых/неизвестных
+    }
 
     // Примерная логика для 5-балльной системы (можно адаптировать)
     // Либо использовать процентную систему, если оценки до 100

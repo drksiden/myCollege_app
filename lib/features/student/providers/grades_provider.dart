@@ -2,7 +2,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../../../models/user.dart';
 import '../../../models/grade.dart'; // Наша модель Grade
 import '../../../core/auth_service.dart'; // Для authStateProvider
 
