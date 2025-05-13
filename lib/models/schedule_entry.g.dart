@@ -8,6 +8,7 @@ part of 'schedule_entry.dart';
 
 _$ScheduleEntryImpl _$$ScheduleEntryImplFromJson(Map<String, dynamic> json) =>
     _$ScheduleEntryImpl(
+      id: json['id'] as String?,
       dayOfWeek: (json['dayOfWeek'] as num).toInt(),
       lessonNumber: (json['lessonNumber'] as num).toInt(),
       startTime: json['startTime'] as String,
@@ -22,6 +23,7 @@ _$ScheduleEntryImpl _$$ScheduleEntryImplFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$$ScheduleEntryImplToJson(_$ScheduleEntryImpl instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'dayOfWeek': instance.dayOfWeek,
       'lessonNumber': instance.lessonNumber,
       'startTime': instance.startTime,

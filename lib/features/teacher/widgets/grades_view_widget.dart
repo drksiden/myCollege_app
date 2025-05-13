@@ -5,7 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 
 // Провайдеры
-import '../providers/journal_providers.dart'; // Нужен JournalService
+import '../providers/journal_providers.dart'; // Нужен JournalService и GroupInfo
 // Модели
 import '../../../models/user.dart';
 import '../../../models/grade.dart';
@@ -14,9 +14,9 @@ import '../../../models/attendance_record.dart'; // Хоть и не испол�
 class GradesViewWidget extends ConsumerWidget {
   final List<User> students;
   final List<Grade> allGradesForSubject;
-  final GroupInfo selectedGroupInfo; // Нужен для groupId
-  final String selectedSubject; // Нужен для subject
-  final DateTime selectedDateForDialog; // Для даты по умолчанию в диалоге
+  final GroupInfo selectedGroupInfo;
+  final String selectedSubject;
+  final DateTime selectedDateForDialog;
 
   const GradesViewWidget({
     super.key,
@@ -33,14 +33,13 @@ class GradesViewWidget extends ConsumerWidget {
       return const Center(child: Text('В выбранной группе нет студентов.'));
     }
 
-    // Группируем оценки по studentId для быстрого доступа
     final gradesByStudent = groupBy<Grade, String>(
       allGradesForSubject,
       (g) => g.studentId,
     );
 
     return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 80), // Отступ снизу для FAB
+      padding: const EdgeInsets.only(bottom: 80),
       itemCount: students.length,
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
@@ -57,9 +56,8 @@ class GradesViewWidget extends ConsumerWidget {
                   ? Text(
                     'Нет оценок',
                     style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                          .withAlpha(179), // 0.7 * 255 ≈ 179
                     ),
                   )
                   : SizedBox(
@@ -74,17 +72,16 @@ class GradesViewWidget extends ConsumerWidget {
                                   (grade) => Padding(
                                     padding: const EdgeInsets.only(right: 6.0),
                                     child: InkWell(
-                                      onTap: () {
-                                        _showAddEditGradeDialog(
-                                          context,
-                                          ref,
-                                          student,
-                                          selectedGroupInfo,
-                                          selectedSubject,
-                                          selectedDateForDialog,
-                                          grade,
-                                        );
-                                      },
+                                      onTap:
+                                          () => _showAddEditGradeDialog(
+                                            context,
+                                            ref,
+                                            student,
+                                            grade,
+                                            selectedGroupInfo,
+                                            selectedSubject,
+                                            selectedDateForDialog,
+                                          ),
                                       borderRadius: BorderRadius.circular(8),
                                       child: Chip(
                                         label: Text(
@@ -99,11 +96,11 @@ class GradesViewWidget extends ConsumerWidget {
                                         ),
                                         backgroundColor: grade
                                             .getColor(context)
-                                            .withOpacity(0.1),
+                                            .withAlpha(26), // 0.1 * 255 ≈ 26
                                         side: BorderSide(
                                           color: grade
                                               .getColor(context)
-                                              .withOpacity(0.3),
+                                              .withAlpha(77), // 0.3 * 255 ≈ 77
                                         ),
                                         visualDensity: VisualDensity.compact,
                                       ),
@@ -120,33 +117,32 @@ class GradesViewWidget extends ConsumerWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
             tooltip: 'Добавить оценку',
-            onPressed: () {
-              _showAddEditGradeDialog(
-                context,
-                ref,
-                student,
-                selectedGroupInfo,
-                selectedSubject,
-                selectedDateForDialog,
-              );
-            },
+            onPressed:
+                () => _showAddEditGradeDialog(
+                  context,
+                  ref,
+                  student,
+                  null,
+                  selectedGroupInfo,
+                  selectedSubject,
+                  selectedDateForDialog,
+                ),
           ),
         );
       },
     );
   }
 
-  // Диалог добавления/редактирования ОЦЕНКИ
   Future<void> _showAddEditGradeDialog(
-    BuildContext context, // Передаем BuildContext
-    WidgetRef ref, // Передаем WidgetRef
+    BuildContext context,
+    WidgetRef ref,
     User student,
-    GroupInfo selectedGroupInfo,
-    String selectedSubject,
-    DateTime selectedDateForDialog, [ // Используем эту дату по умолчанию
     Grade? existingGrade,
-  ]) async {
-    final _formKey = GlobalKey<FormState>();
+    GroupInfo currentSelectedGroupInfo,
+    String currentSelectedSubject,
+    DateTime currentSelectedDateForDialog,
+  ) async {
+    final formKey = GlobalKey<FormState>();
     final gradeController = TextEditingController(
       text: existingGrade?.grade ?? '',
     );
@@ -154,9 +150,7 @@ class GradesViewWidget extends ConsumerWidget {
       text: existingGrade?.comment ?? '',
     );
     String? selectedGradeType = existingGrade?.gradeType;
-    DateTime dateOfGrade =
-        existingGrade?.date ??
-        selectedDateForDialog; // Инициализируем датой из фильтра или существующей оценки
+    DateTime dateOfGrade = existingGrade?.date ?? currentSelectedDateForDialog;
 
     final List<String> gradeTypes = [
       'Обычная',
@@ -171,7 +165,6 @@ class GradesViewWidget extends ConsumerWidget {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        // Используем dialogContext
         return StatefulBuilder(
           builder: (sfbContext, setDialogState) {
             return AlertDialog(
@@ -181,7 +174,7 @@ class GradesViewWidget extends ConsumerWidget {
                     : 'Редакт. оценки: ${student.shortName}',
               ),
               content: Form(
-                key: _formKey,
+                key: formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -216,7 +209,15 @@ class GradesViewWidget extends ConsumerWidget {
                             (value) =>
                                 setDialogState(() => selectedGradeType = value),
                         validator:
-                            (value) => (value == null) ? 'Выберите тип' : null,
+                            (value) =>
+                                (value == null &&
+                                        (gradeController.text.toLowerCase() !=
+                                                'зачет' &&
+                                            gradeController.text
+                                                    .toLowerCase() !=
+                                                'незачет'))
+                                    ? 'Выберите тип'
+                                    : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -235,7 +236,7 @@ class GradesViewWidget extends ConsumerWidget {
                         trailing: const Icon(Icons.calendar_today),
                         onTap: () async {
                           final picked = await showDatePicker(
-                            context: dialogContext, // Используем dialogContext
+                            context: dialogContext,
                             initialDate: dateOfGrade,
                             firstDate: DateTime(2020),
                             lastDate: DateTime.now().add(
@@ -258,12 +259,12 @@ class GradesViewWidget extends ConsumerWidget {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
+                    if (formKey.currentState!.validate()) {
                       final grade = Grade(
                         studentId: student.id,
                         studentName: student.shortName,
-                        groupId: selectedGroupInfo.id,
-                        subject: selectedSubject,
+                        groupId: currentSelectedGroupInfo.id,
+                        subject: currentSelectedSubject,
                         grade: gradeController.text.trim(),
                         gradeType: selectedGradeType,
                         comment:
@@ -271,9 +272,8 @@ class GradesViewWidget extends ConsumerWidget {
                                 ? commentController.text.trim()
                                 : null,
                         date: dateOfGrade,
-                        teacherId: '', // Будет установлено в сервисе
+                        teacherId: '',
                         teacherName: '',
-                        // gradeId: existingGrade?.id, // TODO: Для обновления оценки
                       );
                       Navigator.of(dialogContext).pop(grade);
                     }

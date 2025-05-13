@@ -21,8 +21,8 @@ ScheduleEntry _$ScheduleEntryFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ScheduleEntry {
-  // Используем @JsonKey для связи с полями Firestore, если имена отличаются
-  // Или просто называем поля так же, как в Firestore
+  String? get id =>
+      throw _privateConstructorUsedError; // ID документа в Firestore
   int get dayOfWeek =>
       throw _privateConstructorUsedError; // 1=Пн, 2=Вт, ..., 7=Вс
   int get lessonNumber =>
@@ -59,6 +59,7 @@ abstract class $ScheduleEntryCopyWith<$Res> {
   ) = _$ScheduleEntryCopyWithImpl<$Res, ScheduleEntry>;
   @useResult
   $Res call({
+    String? id,
     int dayOfWeek,
     int lessonNumber,
     String startTime,
@@ -87,6 +88,7 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = freezed,
     Object? dayOfWeek = null,
     Object? lessonNumber = null,
     Object? startTime = null,
@@ -100,6 +102,11 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
   }) {
     return _then(
       _value.copyWith(
+            id:
+                freezed == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
+                        as String?,
             dayOfWeek:
                 null == dayOfWeek
                     ? _value.dayOfWeek
@@ -166,6 +173,7 @@ abstract class _$$ScheduleEntryImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
+    String? id,
     int dayOfWeek,
     int lessonNumber,
     String startTime,
@@ -193,6 +201,7 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? id = freezed,
     Object? dayOfWeek = null,
     Object? lessonNumber = null,
     Object? startTime = null,
@@ -206,6 +215,11 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
   }) {
     return _then(
       _$ScheduleEntryImpl(
+        id:
+            freezed == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
+                    as String?,
         dayOfWeek:
             null == dayOfWeek
                 ? _value.dayOfWeek
@@ -265,6 +279,7 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ScheduleEntryImpl extends _ScheduleEntry {
   const _$ScheduleEntryImpl({
+    this.id,
     required this.dayOfWeek,
     required this.lessonNumber,
     required this.startTime,
@@ -280,8 +295,9 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
   factory _$ScheduleEntryImpl.fromJson(Map<String, dynamic> json) =>
       _$$ScheduleEntryImplFromJson(json);
 
-  // Используем @JsonKey для связи с полями Firestore, если имена отличаются
-  // Или просто называем поля так же, как в Firestore
+  @override
+  final String? id;
+  // ID документа в Firestore
   @override
   final int dayOfWeek;
   // 1=Пн, 2=Вт, ..., 7=Вс
@@ -314,7 +330,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
 
   @override
   String toString() {
-    return 'ScheduleEntry(dayOfWeek: $dayOfWeek, lessonNumber: $lessonNumber, startTime: $startTime, endTime: $endTime, subject: $subject, teacherId: $teacherId, teacherName: $teacherName, classroom: $classroom, lessonType: $lessonType, groupId: $groupId)';
+    return 'ScheduleEntry(id: $id, dayOfWeek: $dayOfWeek, lessonNumber: $lessonNumber, startTime: $startTime, endTime: $endTime, subject: $subject, teacherId: $teacherId, teacherName: $teacherName, classroom: $classroom, lessonType: $lessonType, groupId: $groupId)';
   }
 
   @override
@@ -322,6 +338,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ScheduleEntryImpl &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.dayOfWeek, dayOfWeek) ||
                 other.dayOfWeek == dayOfWeek) &&
             (identical(other.lessonNumber, lessonNumber) ||
@@ -345,6 +362,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
   @override
   int get hashCode => Object.hash(
     runtimeType,
+    id,
     dayOfWeek,
     lessonNumber,
     startTime,
@@ -373,6 +391,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
 
 abstract class _ScheduleEntry extends ScheduleEntry {
   const factory _ScheduleEntry({
+    final String? id,
     required final int dayOfWeek,
     required final int lessonNumber,
     required final String startTime,
@@ -389,8 +408,8 @@ abstract class _ScheduleEntry extends ScheduleEntry {
   factory _ScheduleEntry.fromJson(Map<String, dynamic> json) =
       _$ScheduleEntryImpl.fromJson;
 
-  // Используем @JsonKey для связи с полями Firestore, если имена отличаются
-  // Или просто называем поля так же, как в Firestore
+  @override
+  String? get id; // ID документа в Firestore
   @override
   int get dayOfWeek; // 1=Пн, 2=Вт, ..., 7=Вс
   @override

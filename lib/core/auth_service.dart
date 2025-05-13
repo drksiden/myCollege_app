@@ -5,101 +5,107 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'; // Для debugPrint
 
-// Импортируем нашу модель User без псевдонима, если нет конфликтов
-// или используем 'as app_user' если есть конфликт имен
-import '../models/user.dart';
+import '../models/user.dart' as app; // Используем псевдоним 'app'
 
 // --- Riverpod Провайдеры ---
-
-// Провайдер для самого сервиса
 final authServiceProvider = Provider((ref) => AuthService());
 
-// Провайдер для стрима состояния аутентификации с данными пользователя
-final authStateProvider = StreamProvider<User?>((ref) {
-  // Следим за authServiceProvider, чтобы получить экземпляр AuthService
+final authStateProvider = StreamProvider<app.User?>((ref) {
   final authService = ref.watch(authServiceProvider);
   return authService
-      .authStateChanges; // Возвращаем стрим кастомного пользователя
+      .userStream(); // Используем userStream для кастомного пользователя
 });
 
 // --- Класс Сервиса Аутентификации ---
-
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Экземпляр Firestore
 
-  User? get currentUser => _auth.currentUser;
+  // --- ИСПРАВЛЕННЫЙ ГЕТТЕР currentUser ---
+  /// Асинхронно получает текущего пользователя приложения (из Firestore).
+  /// Рекомендуется использовать authStateProvider для реактивного получения пользователя.
+  Future<app.User?> get currentUser async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser != null) {
+      return await _getUserData(firebaseUser.uid);
+    }
+    return null;
+  }
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  // --- Упрощенный геттер authStateChanges (теперь вызывает userStream) ---
+  /// Стрим, который выдает нашего кастомного пользователя [app.User] или null.
+  /// По сути, это то же самое, что и userStream().
+  Stream<app.User?> get authStateChanges => userStream();
 
-  /// Стрим, который выдает нашего кастомного пользователя [User] или null.
-  Stream<User?> userStream() {
-    // Слушаем изменения состояния в Firebase Auth
+  /// Стрим, который выдает нашего кастомного пользователя [app.User] или null.
+  Stream<app.User?> userStream() {
     return _auth.authStateChanges().asyncMap((firebaseUser) async {
-      // Используем debugPrint для логов, они не попадают в релизный билд
       debugPrint(
-        '[AuthService] AuthState изменился. Firebase User ID: ${firebaseUser?.uid}',
+        '[AuthService] AuthState изменился (userStream). Firebase User ID: ${firebaseUser?.uid}',
       );
       if (firebaseUser == null) {
-        // Если пользователя нет в Firebase Auth, возвращаем null
         return null;
       }
-      // Если пользователь есть, пытаемся получить его данные из Firestore
       final appUser = await _getUserData(firebaseUser.uid);
       debugPrint(
-        '[AuthService] Получен app_user: ${appUser?.id}, role: ${appUser?.role}',
+        '[AuthService] Получен app_user (userStream): ${appUser?.id}, role: ${appUser?.role}',
       );
-      return appUser; // Возвращаем нашего пользователя или null, если данных нет
+      return appUser;
     });
   }
 
-  /// Вспомогательный метод для загрузки данных пользователя из Firestore.
-  Future<User?> _getUserData(String uid) async {
+  Future<app.User?> _getUserData(String uid) async {
     try {
-      final DocumentReference userDocRef = FirebaseFirestore.instance
+      final DocumentReference userDocRef = _firestore
           .collection('users')
-          .doc(uid);
+          .doc(uid); // Используем экземпляр _firestore
       debugPrint('[AuthService] Пытаюсь получить документ: ${userDocRef.path}');
       final DocumentSnapshot userDoc = await userDocRef.get();
 
       if (userDoc.exists) {
         debugPrint('[AuthService] Документ пользователя $uid существует.');
-        // Получаем данные как Map<String, dynamic>
         final userData = userDoc.data() as Map<String, dynamic>;
         debugPrint('[AuthService] Данные пользователя $uid: $userData');
 
-        // Явно добавляем ID документа в Map перед передачей в fromJson,
-        // если User.fromJson ожидает поле 'id'.
-        userData['id'] = uid;
+        // Добавляем ID документа, если он не является частью данных Firestore,
+        // и если User.fromJson ожидает его.
+        // Если ваша модель User уже имеет поле id, помеченное как
+        // @JsonKey(includeFromJson: false, includeToJson: false),
+        // то fromJson не будет его ожидать, и ID нужно будет добавить через copyWith после создания объекта.
+        // Однако, если User.fromJson принимает Map и ожидает 'id' в этой карте, то это правильно:
+        if (!userData.containsKey('id')) {
+          // Добавляем, только если его нет
+          userData['id'] = uid;
+        }
 
-        // Создаем наш объект User из данных Firestore
-        return User.fromJson(userData);
+        return app.User.fromJson(userData);
       } else {
-        // Документа нет - это может быть проблемой (например, ошибка при записи во время регистрации)
         debugPrint(
           '[AuthService] ОШИБКА: Документ пользователя $uid НЕ НАЙДЕН в Firestore.',
         );
         return null;
       }
-    } on FirebaseException catch (e) {
-      // Ошибка при чтении из Firestore (например, нет прав доступа)
+    } on FirebaseException catch (e, stackTrace) {
+      // Добавляем stackTrace
       debugPrint(
-        '[AuthService] ОШИБКА Firestore при получении данных пользователя $uid: ${e.code} - ${e.message}',
+        '[AuthService] ОШИБКА Firestore при получении данных пользователя $uid: ${e.code} - ${e.message}\n$stackTrace',
       );
       return null;
-    } catch (e) {
-      // Любая другая неожиданная ошибка
+    } catch (e, stackTrace) {
+      // Добавляем stackTrace
       debugPrint(
-        '[AuthService] НЕИЗВЕСТНАЯ ОШИБКА при получении данных пользователя $uid: $e',
+        '[AuthService] НЕИЗВЕСТНАЯ ОШИБКА при получении данных пользователя $uid: $e\n$stackTrace',
       );
       return null;
     }
   }
 
-  /// Вход пользователя по email и паролю.
   Future<UserCredential> signInWithEmailAndPassword(
     String email,
     String password,
   ) async {
+    // try-catch без изменений
     try {
       debugPrint('[AuthService] Попытка входа для: $email');
       return await _auth.signInWithEmailAndPassword(
@@ -107,19 +113,19 @@ class AuthService {
         password: password,
       );
     } catch (e) {
-      throw Exception('Failed to sign in: $e');
+      debugPrint('[AuthService] Ошибка входа: $e'); // Лучше логировать ошибку
+      throw Exception(
+        'Failed to sign in: $e',
+      ); // Пробрасываем как есть или кастомное исключение
     }
   }
 
-  /// Регистрация нового пользователя с email, паролем, именем и ролью.
   Future<UserCredential?> createUserWithEmailAndPassword(
     String email,
     String password,
-    // --- Принимаем раздельные ФИО ---
     String lastName,
     String firstName,
-    String? patronymic, // Отчество опционально
-    // --------------------------------
+    String? patronymic,
     String role,
   ) async {
     try {
@@ -134,67 +140,65 @@ class AuthService {
         debugPrint(
           '[AuthService] Пользователь создан в Auth: ${firebaseUser.uid}',
         );
-        // --- Сохраняем раздельные ФИО в Firestore ---
         final userData = {
-          'lastName': lastName.trim(), // Убираем лишние пробелы
+          'lastName': lastName.trim(),
           'firstName': firstName.trim(),
-          'patronymic':
-              patronymic?.trim() ?? '', // Сохраняем пустоту, если null
+          'patronymic': patronymic?.trim() ?? '',
           'email': email,
           'role': role,
           'createdAt': FieldValue.serverTimestamp(),
-          // Добавь сюда другие поля по умолчанию, если нужно (groupId, course и т.д.
-          // могут добавляться позже админом или при привязке к группе)
+          // 'id': firebaseUser.uid, // Не нужно добавлять ID сюда, если он не является частью данных документа Firestore
+          // и если fromJson его не ожидает напрямую (как мы обсуждали для _getUserData).
+          // Если модель Group и User имеют @JsonKey(includeFromJson: false) для id,
+          // то Firestore не будет пытаться записать это поле.
         };
-        // ------------------------------------------
 
         try {
-          await FirebaseFirestore.instance
+          await _firestore
               .collection('users')
               .doc(firebaseUser.uid)
-              // Добавляем 'id' в данные перед сохранением, если fromJson его ожидает
-              // .set({...userData, 'id': firebaseUser.uid});
-              .set(userData); // Используем set
+              .set(userData); // Используем экземпляр _firestore
           debugPrint(
             '[AuthService] Данные пользователя ${firebaseUser.uid} сохранены в Firestore.',
           );
-        } on FirebaseException catch (e) {
+        } on FirebaseException catch (e, stackTrace) {
+          // Добавляем stackTrace
           debugPrint(
-            '[AuthService] ОШИБКА Firestore при сохранении данных пользователя ${firebaseUser.uid}: ${e.code} - ${e.message}',
+            '[AuthService] ОШИБКА Firestore при сохранении данных пользователя ${firebaseUser.uid}: ${e.code} - ${e.message}\n$stackTrace',
           );
-          // ... (обработка ошибки сохранения) ...
+          // Здесь можно решить, что делать: удалить пользователя из Auth или оставить
         }
         return credential;
       } else {
-        // Это не должно произойти, если createUserWithEmailAndPassword не выбросил исключение
         debugPrint(
           '[AuthService] ОШИБКА: credential.user == null после регистрации.',
         );
         return null;
       }
-    } on FirebaseAuthException catch (e) {
-      // Обрабатываем ошибки создания пользователя (слабый пароль, email уже используется и т.д.)
+    } on FirebaseAuthException catch (e, stackTrace) {
+      // Добавляем stackTrace
       debugPrint(
-        '[AuthService] ОШИБКА FirebaseAuth при регистрации: ${e.code} - ${e.message}',
+        '[AuthService] ОШИБКА FirebaseAuth при регистрации: ${e.code} - ${e.message}\n$stackTrace',
       );
-      return null; // Возвращаем null при ошибке
-    } catch (e) {
-      debugPrint('[AuthService] НЕИЗВЕСТНАЯ ОШИБКА при регистрации: $e');
+      return null;
+    } catch (e, stackTrace) {
+      // Добавляем stackTrace
+      debugPrint(
+        '[AuthService] НЕИЗВЕСТНАЯ ОШИБКА при регистрации: $e\n$stackTrace',
+      );
       return null;
     }
   }
 
-  /// Выход пользователя.
   Future<void> signOut() async {
+    // try-catch без изменений
     try {
       debugPrint('[AuthService] Выход пользователя...');
       await _auth.signOut();
       debugPrint('[AuthService] Выход выполнен.');
-    } catch (e) {
-      debugPrint('[AuthService] ОШИБКА при выходе: $e');
+    } catch (e, stackTrace) {
+      // Добавляем stackTrace
+      debugPrint('[AuthService] ОШИБКА при выходе: $e\n$stackTrace');
     }
   }
-
-  // --- Другие методы сервиса (если нужны) ---
-  // Например: сброс пароля, обновление профиля и т.д.
 }

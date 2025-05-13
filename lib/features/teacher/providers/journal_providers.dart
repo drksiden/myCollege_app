@@ -182,27 +182,61 @@ class JournalService {
 
   // --- Оценки ---
   Future<void> addOrUpdateGrade(Grade grade) async {
-    // TODO: Добавить логику: если оценка с таким studentId, subject, date, gradeType уже есть - обновить, иначе добавить
-    // Возможно, ID оценки нужно генерировать на основе этих полей? Или использовать Firestore ID.
-    // Пока просто добавляем новую запись.
     final teacher = _ref.read(authStateProvider).valueOrNull;
     if (teacher == null) throw Exception("Учитель не авторизован");
 
-    final newGradeData =
+    // Подготавливаем данные для записи
+    final gradeData =
         grade
-            .copyWith(
-              teacherId: teacher.id,
-              teacherName: teacher.shortName, // Или fullName
-            )
+            .copyWith(teacherId: teacher.id, teacherName: teacher.shortName)
             .toJson();
 
-    await _firestore.collection('grades').add(newGradeData);
-    // TODO: Инвалидировать кэш groupSubjectGradesProvider
+    // Ищем существующую оценку с такими же параметрами
+    final query = _firestore
+        .collection('grades')
+        .where('studentId', isEqualTo: grade.studentId)
+        .where('subject', isEqualTo: grade.subject)
+        .where('gradeType', isEqualTo: grade.gradeType)
+        .where('date', isEqualTo: Timestamp.fromDate(grade.date))
+        .limit(1);
+
+    final snapshot = await query.get();
+
+    if (snapshot.docs.isNotEmpty) {
+      // Если нашли существующую оценку - обновляем её
+      final docId = snapshot.docs.first.id;
+      await _firestore.collection('grades').doc(docId).update(gradeData);
+    } else {
+      // Если не нашли - создаем новую запись
+      await _firestore.collection('grades').add(gradeData);
+    }
+
+    // Инвалидируем кэш провайдера оценок
+    _ref.invalidate(
+      groupSubjectGradesProvider((
+        groupId: grade.groupId ?? '',
+        subject: grade.subject,
+      )),
+    );
   }
 
   Future<void> deleteGrade(String gradeId) async {
+    // Получаем данные оценки перед удалением для инвалидации кэша
+    final gradeDoc = await _firestore.collection('grades').doc(gradeId).get();
+    if (!gradeDoc.exists) return;
+
+    final grade = Grade.fromJson(gradeDoc.data()!);
     await _firestore.collection('grades').doc(gradeId).delete();
-    // TODO: Инвалидировать кэш groupSubjectGradesProvider
+
+    // Инвалидируем кэш провайдера оценок
+    if (grade.groupId != null) {
+      _ref.invalidate(
+        groupSubjectGradesProvider((
+          groupId: grade.groupId!,
+          subject: grade.subject,
+        )),
+      );
+    }
   }
 
   // --- Посещаемость ---
@@ -258,7 +292,15 @@ class JournalService {
       // Записи нет - создаем новую
       await _firestore.collection('attendance').add(updatedRecordData);
     }
-    // TODO: Инвалидировать кэш attendanceProvider
+
+    // Инвалидируем кэш провайдера посещаемости
+    _ref.invalidate(
+      attendanceProvider((
+        groupId: record.groupId,
+        date: record.date,
+        lessonNumber: record.lessonNumber,
+      )),
+    );
   }
 
   // Удаление записи о посещаемости (может и не нужно?)
@@ -291,7 +333,6 @@ final teacherLessonsForDayProvider = FutureProvider.autoDispose.family<
                 entry.groupId == params.groupId &&
                 entry.subject == params.subject &&
                 entry.dayOfWeek == dayOfWeek,
-            // TODO: Добавить проверку на диапазон дат (dateRange) или тип недели (weekType), если они используются в ScheduleEntry
           )
           .toList();
 

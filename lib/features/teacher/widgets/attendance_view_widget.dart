@@ -45,30 +45,21 @@ class AttendanceViewWidget extends ConsumerWidget {
       error:
           (err, st) =>
               Center(child: Text('Ошибка загрузки посещаемости: $err')),
-      data: (records) {
-        // Группируем записи по studentId для быстрого доступа
+      data: (attendanceRecords) {
         final recordsByStudent = groupBy<AttendanceRecord, String>(
-          records,
+          attendanceRecords,
           (r) => r.studentId,
         );
 
-        // Строим список студентов со статусами
         return ListView.separated(
-          padding: const EdgeInsets.only(bottom: 80), // Отступ для FAB
+          padding: const EdgeInsets.only(bottom: 80),
           itemCount: students.length,
           separatorBuilder: (context, index) => const Divider(height: 1),
           itemBuilder: (context, index) {
             final student = students[index];
-            // Находим запись о посещаемости для этого студента (может быть null)
-            final record =
-                recordsByStudent[student.id]
-                    ?.firstOrNull; // Берем первую, если вдруг дубликаты
-            final status =
-                record?.status ??
-                AttendanceStatus.absentInvalid; // По умолчанию - пропуск
-            final statusDisplay = _getStatusDisplay(
-              status,
-            ); // Используем хелпер
+            final record = recordsByStudent[student.id]?.firstOrNull;
+            final status = record?.status ?? AttendanceStatus.absentInvalid;
+            final statusDisplay = _getStatusDisplay(status);
             final statusColor = _getStatusColor(context, status);
             final statusIcon = _getStatusIcon(status);
 
@@ -78,21 +69,19 @@ class AttendanceViewWidget extends ConsumerWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               trailing: Tooltip(
-                // Добавляем подсказку
                 message: _getStatusTooltip(status),
                 child: InkWell(
-                  onTap: () {
-                    _showAttendanceStatusDialog(
-                      context,
-                      ref,
-                      student,
-                      selectedGroupInfo,
-                      selectedSubject,
-                      selectedDate,
-                      selectedLessonNumber,
-                      record,
-                    );
-                  },
+                  onTap:
+                      () => _showAttendanceStatusDialog(
+                        context,
+                        ref,
+                        student,
+                        selectedGroupInfo,
+                        selectedSubject,
+                        selectedDate,
+                        selectedLessonNumber,
+                        record,
+                      ),
                   borderRadius: BorderRadius.circular(8),
                   child: Chip(
                     label: Text(
@@ -104,7 +93,7 @@ class AttendanceViewWidget extends ConsumerWidget {
                       ),
                     ),
                     avatar: Icon(statusIcon, color: statusColor, size: 18),
-                    backgroundColor: statusColor.withOpacity(0.15),
+                    backgroundColor: statusColor.withAlpha(38),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 6,
@@ -118,6 +107,123 @@ class AttendanceViewWidget extends ConsumerWidget {
         );
       },
     );
+  }
+
+  // --- Диалог изменения статуса посещаемости ---
+  Future<void> _showAttendanceStatusDialog(
+    BuildContext context,
+    WidgetRef ref,
+    User student,
+    GroupInfo selectedGroupInfo,
+    String selectedSubject,
+    DateTime selectedDate,
+    int selectedLessonNumber,
+    AttendanceRecord? currentRecord,
+  ) async {
+    final statuses = AttendanceStatus.values;
+    AttendanceStatus groupValueStatus =
+        currentRecord?.status ?? AttendanceStatus.absentInvalid;
+    String reasonText = currentRecord?.reason ?? '';
+    final reasonController = TextEditingController(text: reasonText);
+
+    bool showReasonField(AttendanceStatus status) {
+      return status == AttendanceStatus.absentValid ||
+          status == AttendanceStatus.absentInvalid;
+    }
+
+    AttendanceStatus? resultStatus = await showDialog<AttendanceStatus>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (sfbContext, setDialogState) {
+            return AlertDialog(
+              title: Text("Статус: ${student.shortName}"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...statuses.map((status) {
+                      return RadioListTile<AttendanceStatus>(
+                        title: Text(_getStatusTooltip(status)),
+                        secondary: Icon(
+                          _getStatusIcon(status),
+                          color: _getStatusColor(sfbContext, status),
+                        ),
+                        value: status,
+                        groupValue: groupValueStatus,
+                        visualDensity: VisualDensity.compact,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(() {
+                              groupValueStatus = value;
+                            });
+                          }
+                        },
+                      );
+                    }),
+                    if (showReasonField(groupValueStatus))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12.0),
+                        child: TextFormField(
+                          controller: reasonController,
+                          decoration: const InputDecoration(
+                            labelText: 'Причина отсутствия',
+                            hintText: 'Например, "Болел(а)" (если есть)',
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(null),
+                  child: const Text('Отмена'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(groupValueStatus);
+                  },
+                  child: const Text('Сохранить'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (resultStatus != null) {
+      final recordToSave = AttendanceRecord(
+        studentId: student.id,
+        studentName: student.shortName,
+        groupId: selectedGroupInfo.id,
+        date: selectedDate,
+        lessonNumber: selectedLessonNumber,
+        subject: selectedSubject,
+        status: resultStatus,
+        reason:
+            showReasonField(resultStatus) ? reasonController.text.trim() : null,
+        recordedByTeacherId: '',
+        timestamp: DateTime.now(),
+      );
+
+      final journalService = ref.read(journalServiceProvider);
+      try {
+        await journalService.addOrUpdateAttendanceRecord(recordToSave);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка обновления статуса: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   // --- Хелперы для отображения статуса ---
@@ -171,124 +277,6 @@ class AttendanceViewWidget extends ConsumerWidget {
         return Icons.cancel_outlined;
       case AttendanceStatus.late:
         return Icons.watch_later_outlined;
-    }
-  }
-  // -------------------------------------
-
-  // --- Диалог изменения статуса посещаемости ---
-  Future<void> _showAttendanceStatusDialog(
-    BuildContext context,
-    WidgetRef ref, // Передаем context и ref
-    User student,
-    GroupInfo selectedGroupInfo,
-    String selectedSubject,
-    DateTime selectedDate,
-    int selectedLessonNumber,
-    AttendanceRecord? currentRecord,
-  ) async {
-    final journalService = ref.read(journalServiceProvider);
-    final statuses = AttendanceStatus.values; // Все возможные статусы
-
-    AttendanceStatus? selectedStatus = await showDialog<AttendanceStatus>(
-      context: context,
-      builder: (dialogContext) {
-        // Используем dialogContext
-        String? reason = currentRecord?.reason ?? ''; // Для ввода причины
-        final reasonController = TextEditingController(text: reason);
-
-        return AlertDialog(
-          title: Text("Статус: ${student.shortName}"),
-          content: SingleChildScrollView(
-            // Добавляем прокрутку
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...statuses.map((status) {
-                  // Используем spread operator
-                  return RadioListTile<AttendanceStatus>(
-                    title: Text(
-                      _getStatusTooltip(status),
-                    ), // Используем полное название
-                    secondary: Icon(
-                      _getStatusIcon(status),
-                      color: _getStatusColor(context, status),
-                    ),
-                    value: status,
-                    groupValue: currentRecord?.status,
-                    visualDensity: VisualDensity.compact,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged:
-                        (value) => Navigator.of(
-                          dialogContext,
-                        ).pop(value), // Закрываем при выборе
-                  );
-                }).toList(),
-                // Поле для ввода причины (показываем для У и Н)
-                if (currentRecord?.status == AttendanceStatus.absentValid ||
-                    currentRecord?.status == AttendanceStatus.absentInvalid ||
-                    // Показываем и если выбран новый статус У или Н
-                    (selectedStatus == AttendanceStatus.absentValid ||
-                        selectedStatus == AttendanceStatus.absentInvalid))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12.0),
-                    child: TextFormField(
-                      controller: reasonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Причина отсутствия (необязательно)',
-                        hintText: 'Например, "Болел(а)"',
-                      ),
-                      onChanged:
-                          (value) =>
-                              reason = value, // Обновляем причину при вводе
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Отмена'),
-            ),
-            // Кнопку "Сохранить" можно убрать, так как выбор в RadioListTile сразу закрывает диалог
-          ],
-        );
-      },
-    );
-
-    if (selectedStatus != null) {
-      final recordToSave = AttendanceRecord(
-        studentId: student.id,
-        studentName: student.shortName,
-        groupId: selectedGroupInfo.id,
-        date: selectedDate,
-        lessonNumber: selectedLessonNumber,
-        subject: selectedSubject,
-        status: selectedStatus,
-        // Сохраняем причину, только если статус У или Н
-        reason:
-            (selectedStatus == AttendanceStatus.absentValid ||
-                    selectedStatus == AttendanceStatus.absentInvalid)
-                ? currentRecord
-                    ?.reason // TODO: Передавать введенную причину из диалога
-                : null,
-        recordedByTeacherId: '', // Будет установлено в JournalService
-        timestamp: DateTime.now(),
-      );
-      try {
-        await journalService.addOrUpdateAttendanceRecord(recordToSave);
-        // Не нужно явно показывать SnackBar, UI обновится через провайдер
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ошибка обновления статуса: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
     }
   }
 

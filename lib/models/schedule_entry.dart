@@ -9,8 +9,7 @@ part 'schedule_entry.g.dart';
 @freezed
 class ScheduleEntry with _$ScheduleEntry {
   const factory ScheduleEntry({
-    // Используем @JsonKey для связи с полями Firestore, если имена отличаются
-    // Или просто называем поля так же, как в Firestore
+    String? id, // ID документа в Firestore
     required int dayOfWeek, // 1=Пн, 2=Вт, ..., 7=Вс
     required int lessonNumber, // Номер пары/урока
     required String startTime, // Время начала (HH:mm)
