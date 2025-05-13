@@ -37,7 +37,9 @@ mixin _$ScheduleEntry {
   String? get teacherName =>
       throw _privateConstructorUsedError; // Имя преподавателя
   String? get classroom => throw _privateConstructorUsedError; // Аудитория
-  String? get lessonType => throw _privateConstructorUsedError;
+  String? get lessonType =>
+      throw _privateConstructorUsedError; // Тип занятия ("Лекция", "Практика", и т.д.)
+  String? get groupId => throw _privateConstructorUsedError;
 
   /// Serializes this ScheduleEntry to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -66,6 +68,7 @@ abstract class $ScheduleEntryCopyWith<$Res> {
     String? teacherName,
     String? classroom,
     String? lessonType,
+    String? groupId,
   });
 }
 
@@ -93,6 +96,7 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
     Object? teacherName = freezed,
     Object? classroom = freezed,
     Object? lessonType = freezed,
+    Object? groupId = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -141,6 +145,11 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
                     ? _value.lessonType
                     : lessonType // ignore: cast_nullable_to_non_nullable
                         as String?,
+            groupId:
+                freezed == groupId
+                    ? _value.groupId
+                    : groupId // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -166,6 +175,7 @@ abstract class _$$ScheduleEntryImplCopyWith<$Res>
     String? teacherName,
     String? classroom,
     String? lessonType,
+    String? groupId,
   });
 }
 
@@ -192,6 +202,7 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
     Object? teacherName = freezed,
     Object? classroom = freezed,
     Object? lessonType = freezed,
+    Object? groupId = freezed,
   }) {
     return _then(
       _$ScheduleEntryImpl(
@@ -240,6 +251,11 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
                 ? _value.lessonType
                 : lessonType // ignore: cast_nullable_to_non_nullable
                     as String?,
+        groupId:
+            freezed == groupId
+                ? _value.groupId
+                : groupId // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -258,6 +274,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
     this.teacherName,
     this.classroom,
     this.lessonType,
+    this.groupId,
   }) : super._();
 
   factory _$ScheduleEntryImpl.fromJson(Map<String, dynamic> json) =>
@@ -291,10 +308,13 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
   // Аудитория
   @override
   final String? lessonType;
+  // Тип занятия ("Лекция", "Практика", и т.д.)
+  @override
+  final String? groupId;
 
   @override
   String toString() {
-    return 'ScheduleEntry(dayOfWeek: $dayOfWeek, lessonNumber: $lessonNumber, startTime: $startTime, endTime: $endTime, subject: $subject, teacherId: $teacherId, teacherName: $teacherName, classroom: $classroom, lessonType: $lessonType)';
+    return 'ScheduleEntry(dayOfWeek: $dayOfWeek, lessonNumber: $lessonNumber, startTime: $startTime, endTime: $endTime, subject: $subject, teacherId: $teacherId, teacherName: $teacherName, classroom: $classroom, lessonType: $lessonType, groupId: $groupId)';
   }
 
   @override
@@ -317,7 +337,8 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
             (identical(other.classroom, classroom) ||
                 other.classroom == classroom) &&
             (identical(other.lessonType, lessonType) ||
-                other.lessonType == lessonType));
+                other.lessonType == lessonType) &&
+            (identical(other.groupId, groupId) || other.groupId == groupId));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -333,6 +354,7 @@ class _$ScheduleEntryImpl extends _ScheduleEntry {
     teacherName,
     classroom,
     lessonType,
+    groupId,
   );
 
   /// Create a copy of ScheduleEntry
@@ -360,6 +382,7 @@ abstract class _ScheduleEntry extends ScheduleEntry {
     final String? teacherName,
     final String? classroom,
     final String? lessonType,
+    final String? groupId,
   }) = _$ScheduleEntryImpl;
   const _ScheduleEntry._() : super._();
 
@@ -385,7 +408,9 @@ abstract class _ScheduleEntry extends ScheduleEntry {
   @override
   String? get classroom; // Аудитория
   @override
-  String? get lessonType;
+  String? get lessonType; // Тип занятия ("Лекция", "Практика", и т.д.)
+  @override
+  String? get groupId;
 
   /// Create a copy of ScheduleEntry
   /// with the given fields replaced by the non-null parameter values.

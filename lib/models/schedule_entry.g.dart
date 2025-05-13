@@ -17,6 +17,7 @@ _$ScheduleEntryImpl _$$ScheduleEntryImplFromJson(Map<String, dynamic> json) =>
       teacherName: json['teacherName'] as String?,
       classroom: json['classroom'] as String?,
       lessonType: json['lessonType'] as String?,
+      groupId: json['groupId'] as String?,
     );
 
 Map<String, dynamic> _$$ScheduleEntryImplToJson(_$ScheduleEntryImpl instance) =>
@@ -30,4 +31,5 @@ Map<String, dynamic> _$$ScheduleEntryImplToJson(_$ScheduleEntryImpl instance) =>
       'teacherName': instance.teacherName,
       'classroom': instance.classroom,
       'lessonType': instance.lessonType,
+      'groupId': instance.groupId,
     };

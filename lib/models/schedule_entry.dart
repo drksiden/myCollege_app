@@ -20,10 +20,10 @@ class ScheduleEntry with _$ScheduleEntry {
     String? teacherName, // Имя преподавателя
     String? classroom, // Аудитория
     String? lessonType, // Тип занятия ("Лекция", "Практика", и т.д.)
-    // Добавь опциональные поля, если они есть в твоей структуре Firestore
+    String? groupId,
     // Timestamp? date, // Для конкретной даты (если нужно переопределить день недели)
     // String? weekType, // Четная/нечетная неделя
-    // bool? isRecurring,
+    // bool? isRecurring,2q
 
     // Не будем добавлять @JsonKey(ignore: true) TimeOfDay,
     // т.к. парсинг лучше делать при отображении

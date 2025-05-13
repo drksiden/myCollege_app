@@ -12,33 +12,29 @@ import '../models/user.dart';
 // --- Riverpod Провайдеры ---
 
 // Провайдер для самого сервиса
-final authServiceProvider = Provider<AuthService>((ref) {
-  // Можно передать зависимости, если они нужны, например, ref
-  return AuthService(FirebaseAuth.instance, FirebaseFirestore.instance);
-});
+final authServiceProvider = Provider((ref) => AuthService());
 
 // Провайдер для стрима состояния аутентификации с данными пользователя
 final authStateProvider = StreamProvider<User?>((ref) {
   // Следим за authServiceProvider, чтобы получить экземпляр AuthService
   final authService = ref.watch(authServiceProvider);
-  return authService.userStream(); // Возвращаем стрим кастомного пользователя
+  return authService
+      .authStateChanges; // Возвращаем стрим кастомного пользователя
 });
 
 // --- Класс Сервиса Аутентификации ---
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth;
-  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  AuthService(
-    this._firebaseAuth,
-    this._firestore,
-  ); // Получаем зависимости через конструктор
+  User? get currentUser => _auth.currentUser;
+
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   /// Стрим, который выдает нашего кастомного пользователя [User] или null.
   Stream<User?> userStream() {
     // Слушаем изменения состояния в Firebase Auth
-    return _firebaseAuth.authStateChanges().asyncMap((firebaseUser) async {
+    return _auth.authStateChanges().asyncMap((firebaseUser) async {
       // Используем debugPrint для логов, они не попадают в релизный билд
       debugPrint(
         '[AuthService] AuthState изменился. Firebase User ID: ${firebaseUser?.uid}',
@@ -59,7 +55,7 @@ class AuthService {
   /// Вспомогательный метод для загрузки данных пользователя из Firestore.
   Future<User?> _getUserData(String uid) async {
     try {
-      final DocumentReference userDocRef = _firestore
+      final DocumentReference userDocRef = FirebaseFirestore.instance
           .collection('users')
           .doc(uid);
       debugPrint('[AuthService] Пытаюсь получить документ: ${userDocRef.path}');
@@ -100,29 +96,18 @@ class AuthService {
   }
 
   /// Вход пользователя по email и паролю.
-  Future<UserCredential?> signInWithEmailAndPassword(
+  Future<UserCredential> signInWithEmailAndPassword(
     String email,
     String password,
   ) async {
     try {
       debugPrint('[AuthService] Попытка входа для: $email');
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      return await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      debugPrint('[AuthService] Вход успешен для: ${credential.user?.uid}');
-      return credential;
-    } on FirebaseAuthException catch (e) {
-      // Обрабатываем специфичные ошибки Firebase Auth
-      debugPrint(
-        '[AuthService] ОШИБКА FirebaseAuth при входе: ${e.code} - ${e.message}',
-      );
-      // Здесь можно выбросить кастомное исключение или вернуть код ошибки
-      // для отображения в UI
-      return null; // Возвращаем null при ошибке
     } catch (e) {
-      debugPrint('[AuthService] НЕИЗВЕСТНАЯ ОШИБКА при входе: $e');
-      return null;
+      throw Exception('Failed to sign in: $e');
     }
   }
 
@@ -139,7 +124,7 @@ class AuthService {
   ) async {
     try {
       debugPrint('[AuthService] Попытка регистрации для: $email');
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+      final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -164,7 +149,7 @@ class AuthService {
         // ------------------------------------------
 
         try {
-          await _firestore
+          await FirebaseFirestore.instance
               .collection('users')
               .doc(firebaseUser.uid)
               // Добавляем 'id' в данные перед сохранением, если fromJson его ожидает
@@ -203,7 +188,7 @@ class AuthService {
   Future<void> signOut() async {
     try {
       debugPrint('[AuthService] Выход пользователя...');
-      await _firebaseAuth.signOut();
+      await _auth.signOut();
       debugPrint('[AuthService] Выход выполнен.');
     } catch (e) {
       debugPrint('[AuthService] ОШИБКА при выходе: $e');
