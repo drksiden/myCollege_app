@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/teacher/providers/teacher_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/assignment.dart';
 import '../models/group.dart';
 import '../services/firebase_service.dart';
-import '../providers/teacher_providers.dart';
 
 class AssignmentsPage extends ConsumerStatefulWidget {
   @override
