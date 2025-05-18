@@ -22,7 +22,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
     SchedulePage(),
     GradesPage(),
     AssignmentsPage(),
-    TeacherProfilePage(),
+    ProfilePage(),
   ];
 
   final List<String> _titles = [
@@ -61,19 +61,19 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-          
+             label:  'Расписание',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.grade),
-          
+             label: 'Оценки',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
-          
+             label:  'Задания',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            
+             label: 'Профиль',
           ),
         ],
       ),
