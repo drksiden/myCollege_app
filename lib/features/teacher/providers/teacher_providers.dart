@@ -16,3 +16,8 @@ final assignmentsProvider = StreamProvider<List<Assignment>>((ref) {
   final teacherId = ref.watch(teacherIdProvider);
   return ref.watch(firebaseServiceProvider).getAssignmentsByTeacher(teacherId);
 });
+
+final teacherNameProvider = Provider<String>((ref) {
+  // Заглушка — замени на реальное получение имени, например из Firebase или локального хранилища
+  return 'Имя Учителя';
+});

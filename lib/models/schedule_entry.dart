@@ -93,4 +93,8 @@ class ScheduleEntry with _$ScheduleEntry {
     }
     return '??';
   }
+
+  get dateTime => null;
+
+  get subjectName => null;
 }

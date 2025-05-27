@@ -5,8 +5,6 @@ import 'package:flutter_application_1/models/user.dart';
 import 'package:flutter_application_1/routes/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 
 // import 'edit_profile_page.dart';
@@ -81,13 +79,13 @@ class ProfilePage extends ConsumerWidget {
         // Если данные есть, но user == null (маловероятно из-за редиректа, но проверим)
         if (user == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Профиль')),
+           
             body: const Center(child: Text('Пользователь не найден.')),
           );
         }
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Профиль'),
+            
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined),

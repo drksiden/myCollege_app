@@ -7,6 +7,8 @@ class Assignment {
   final String title;
   final String description;
   final DateTime dueDate;
+  final String scheduleEntryId;
+  final DateTime createdAt;
 
   Assignment({
     required this.id,
@@ -15,6 +17,8 @@ class Assignment {
     required this.title,
     required this.description,
     required this.dueDate,
+    required this.scheduleEntryId,
+    required this.createdAt,
   });
 
   factory Assignment.fromMap(Map<String, dynamic> map, String id) {
@@ -25,6 +29,8 @@ class Assignment {
       title: map['title'],
       description: map['description'],
       dueDate: (map['dueDate'] as Timestamp).toDate(),
+      scheduleEntryId: map['scheduleEntryId'] ?? '',
+      createdAt: (map['createdAt'] as Timestamp).toDate(),
     );
   }
 
@@ -35,6 +41,8 @@ class Assignment {
       'title': title,
       'description': description,
       'dueDate': Timestamp.fromDate(dueDate),
+      'scheduleEntryId': scheduleEntryId,
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 }

@@ -4,7 +4,9 @@ class Grade {
   final String id;
   final String studentId;
   final String teacherId;
+  final String teacherName;
   final String groupId;
+  final String subject;
   final int score;
   final DateTime timestamp;
 
@@ -12,7 +14,9 @@ class Grade {
     required this.id,
     required this.studentId,
     required this.teacherId,
+    required this.teacherName,
     required this.groupId,
+    required this.subject,
     required this.score,
     required this.timestamp,
   });
@@ -22,7 +26,9 @@ class Grade {
       id: id,
       studentId: map['studentId'],
       teacherId: map['teacherId'],
+      teacherName: map['teacherName'] ?? 'Без имени',
       groupId: map['groupId'],
+      subject: map['subject'],
       score: map['score'],
       timestamp: (map['timestamp'] as Timestamp).toDate(),
     );
@@ -32,7 +38,9 @@ class Grade {
     return {
       'studentId': studentId,
       'teacherId': teacherId,
+      'teacherName': teacherName,
       'groupId': groupId,
+      'subject': subject,
       'score': score,
       'timestamp': Timestamp.fromDate(timestamp),
     };

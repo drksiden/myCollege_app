@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/teacher_providers.dart';
 
 class SchedulePage extends ConsumerWidget {
+  const SchedulePage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionsAsync = ref.watch(classSessionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Расписание')),
+      
       body: sessionsAsync.when(
         data: (sessions) {
           if (sessions.isEmpty) {

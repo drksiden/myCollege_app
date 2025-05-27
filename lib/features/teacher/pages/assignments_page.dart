@@ -6,6 +6,8 @@ import '../models/group.dart';
 import '../services/firebase_service.dart';
 
 class AssignmentsPage extends ConsumerStatefulWidget {
+  const AssignmentsPage({super.key});
+
   @override
   ConsumerState<AssignmentsPage> createState() => _AssignmentsPageState();
 }
@@ -22,7 +24,7 @@ class _AssignmentsPageState extends ConsumerState<AssignmentsPage> {
     final teacherId = ref.read(teacherIdProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text('Домашние задания')),
+      
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -58,7 +60,9 @@ class _AssignmentsPageState extends ConsumerState<AssignmentsPage> {
                   groupId: selectedGroup!.id,
                   title: title,
                   description: description,
-                  dueDate: dueDate,
+                  dueDate: dueDate, 
+                  scheduleEntryId: '', 
+                  createdAt: DateTime.now(),
                 );
                 await firebaseService.addAssignment(assignment);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Задание добавлено')));
