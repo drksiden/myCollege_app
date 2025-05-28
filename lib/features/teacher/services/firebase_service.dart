@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/schedule_entry.dart';
+import '../../../models/schedule_entry.dart';
 import '../models/class_session.dart';
 import '../models/group.dart';
 import '../models/student.dart';
@@ -11,13 +11,14 @@ class FirebaseService {
 
   // Получить расписание по группе
   Future<List<ScheduleEntry>> getScheduleEntriesForGroup(String groupId) async {
-    final snapshot = await _db
-        .collection('schedule_entries')
-        .where('groupId', isEqualTo: groupId)
-        .get();
+    final snapshot =
+        await _db
+            .collection('schedules')
+            .where('groupId', isEqualTo: groupId)
+            .get();
 
     return snapshot.docs
-        .map((doc) => ScheduleEntry.fromMap(doc.data(), doc.id))
+        .map((doc) => ScheduleEntry.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
   }
 
@@ -27,21 +28,32 @@ class FirebaseService {
         .collection('class_sessions')
         .where('teacherId', isEqualTo: teacherId)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => ClassSession.fromMap(doc.data(), doc.id)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => ClassSession.fromMap(doc.data(), doc.id))
+                  .toList(),
+        );
   }
 
   // Получить список групп
   Future<List<Group>> getGroups() async {
     final snapshot = await _db.collection('groups').get();
-    return snapshot.docs.map((doc) => Group.fromMap(doc.data(), doc.id)).toList();
+    return snapshot.docs
+        .map((doc) => Group.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
   // Получить студентов по группе
   Future<List<Student>> getStudentsByGroup(String groupId) async {
     final snapshot =
-        await _db.collection('students').where('groupId', isEqualTo: groupId).get();
-    return snapshot.docs.map((doc) => Student.fromMap(doc.data(), doc.id)).toList();
+        await _db
+            .collection('students')
+            .where('groupId', isEqualTo: groupId)
+            .get();
+    return snapshot.docs
+        .map((doc) => Student.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
   // Добавить оценку
@@ -60,7 +72,11 @@ class FirebaseService {
         .collection('assignments')
         .where('teacherId', isEqualTo: teacherId)
         .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Assignment.fromMap(doc.data(), doc.id)).toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => Assignment.fromMap(doc.data(), doc.id))
+                  .toList(),
+        );
   }
 }

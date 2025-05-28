@@ -1,37 +1,38 @@
 // lib/models/schedule_entry.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:flutter/material.dart'; // Для TimeOfDay
-// import 'package:cloud_firestore/cloud_firestore.dart'; // Если будешь использовать Timestamp
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 part 'schedule_entry.freezed.dart';
 part 'schedule_entry.g.dart';
 
 @freezed
+@JsonSerializable()
 class ScheduleEntry with _$ScheduleEntry {
   const factory ScheduleEntry({
-    // Используем @JsonKey для связи с полями Firestore, если имена отличаются
-    // Или просто называем поля так же, как в Firestore
-    required int dayOfWeek, // 1=Пн, 2=Вт, ..., 7=Вс
-    required int lessonNumber, // Номер пары/урока
-    required String startTime, // Время начала (HH:mm)
-    required String endTime, // Время конца (HH:mm)
-    required String subject, // Название предмета
-    String? teacherId, // ID преподавателя
-    String? teacherName, // Имя преподавателя
-    String? classroom, // Аудитория
-    String? lessonType, // Тип занятия ("Лекция", "Практика", и т.д.)
-    // Добавь опциональные поля, если они есть в твоей структуре Firestore
-    // Timestamp? date, // Для конкретной даты (если нужно переопределить день недели)
-    // String? weekType, // Четная/нечетная неделя
-    // bool? isRecurring,
-
-    // Не будем добавлять @JsonKey(ignore: true) TimeOfDay,
-    // т.к. парсинг лучше делать при отображении
+    required String id,
+    required String subjectId,
+    required String teacherId,
+    required String groupId,
+    required int dayOfWeek,
+    required String startTime,
+    required String endTime,
+    required String room,
+    required String type,
+    required int duration,
+    required String weekType,
+    required bool isFloating,
+    required int semester,
+    required int year,
   }) = _ScheduleEntry;
 
-  // Конструктор из JSON для Firestore
-  factory ScheduleEntry.fromJson(Map<String, dynamic> json) =>
-      _$ScheduleEntryFromJson(json);
+  factory ScheduleEntry.fromJson(Map<String, dynamic> json) {
+    if (!json.containsKey('id')) {
+      json['id'] =
+          '${json['dayOfWeek']}_${json['startTime']}_${json['subjectId']}';
+    }
+    return _$ScheduleEntryFromJson(json);
+  }
 
   // Пустой приватный конструктор для freezed
   const ScheduleEntry._();
@@ -68,21 +69,14 @@ class ScheduleEntry with _$ScheduleEntry {
 
   // Проверка, идет ли эта пара прямо сейчас
   bool isCurrentLesson() {
-    final start = startTimeOfDay;
-    final end = endTimeOfDay;
-    if (start == null || end == null) return false;
+    final now = DateTime.now();
+    final currentDay = now.weekday;
+    if (currentDay != dayOfWeek) return false;
 
-    final now = TimeOfDay.now();
-    final nowMinutes = now.hour * 60 + now.minute;
-    final startMinutes = start.hour * 60 + start.minute;
-    // Конец пары - не включаем саму минуту конца (например, пара до 10:00 идет до 09:59:59)
-    final endMinutes = end.hour * 60 + end.minute;
-
-    // Проверка дня недели
-    final currentDayOfWeek = DateTime.now().weekday; // 1=Пн, ..., 7=Вс
-    if (currentDayOfWeek != dayOfWeek) return false;
-
-    return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+    final currentTime =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    return currentTime.compareTo(startTime) >= 0 &&
+        currentTime.compareTo(endTime) <= 0;
   }
 
   // Получение названия дня недели
@@ -93,8 +87,14 @@ class ScheduleEntry with _$ScheduleEntry {
     }
     return '??';
   }
-
-  get dateTime => null;
-
-  get subjectName => null;
 }
+
+// Конвертеры для DateTime
+DateTime _timestampFromJson(dynamic value) {
+  if (value is Timestamp) {
+    return value.toDate();
+  }
+  return DateTime.parse(value as String);
+}
+
+dynamic _timestampToJson(DateTime date) => date.toIso8601String();

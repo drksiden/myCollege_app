@@ -71,20 +71,22 @@ dependencies:
   # Хранение токенов
   flutter_secure_storage: ^9.2.4
 
+  # Модели и сериализация
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
   cupertino_icons: ^1.0.8
   table_calendar: ^3.1.1
   percent_indicator: ^4.2.5
   local_auth: ^2.3.0 # Для биометрической аутентификации (если нужно)
-  freezed_annotation: ^2.4.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  freezed: ^2.4.7
-  build_runner: ^2.4.8
+  freezed: ^2.4.5
+  build_runner: ^2.4.6
   json_serializable: ^6.7.1
-  json_annotation: ^4.9.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
