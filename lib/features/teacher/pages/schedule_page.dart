@@ -4,71 +4,78 @@ import '../../../models/schedule_entry.dart';
 import '../providers/schedule_provider.dart';
 
 class SchedulePage extends ConsumerWidget {
-  const SchedulePage({super.key});
+  final bool showAppBar;
+  const SchedulePage({super.key, this.showAppBar = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(teacherScheduleProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Расписание')),
-      body: scheduleAsync.when(
-        data: (schedule) {
-          if (schedule.isEmpty) {
-            return const Center(child: Text('Нет занятий'));
-          }
+    final content = scheduleAsync.when(
+      data: (schedule) {
+        if (schedule.isEmpty) {
+          return const Center(child: Text('Нет занятий'));
+        }
 
-          // Группируем занятия по дням недели
-          final groupedSchedule = <int, List<ScheduleEntry>>{};
-          for (final entry in schedule) {
-            (groupedSchedule[entry.dayOfWeek] ??= []).add(entry);
-          }
+        // Группируем занятия по дням недели
+        final groupedSchedule = <int, List<ScheduleEntry>>{};
+        for (final entry in schedule) {
+          (groupedSchedule[entry.dayOfWeek] ??= []).add(entry);
+        }
 
-          // Сортируем дни недели
-          final sortedDays = groupedSchedule.keys.toList()..sort();
+        // Сортируем дни недели
+        final sortedDays = groupedSchedule.keys.toList()..sort();
 
-          return ListView.builder(
-            itemCount: sortedDays.length,
-            itemBuilder: (context, index) {
-              final day = sortedDays[index];
-              final daySchedule = groupedSchedule[day]!;
-              daySchedule.sort((a, b) => a.startTime.compareTo(b.startTime));
+        return ListView.builder(
+          itemCount: sortedDays.length,
+          itemBuilder: (context, index) {
+            final day = sortedDays[index];
+            final daySchedule = groupedSchedule[day]!;
+            daySchedule.sort((a, b) => a.startTime.compareTo(b.startTime));
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      _getDayName(day),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    _getDayName(day),
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  ...daySchedule.map(
-                    (entry) => _buildScheduleEntry(context, entry),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (error, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Ошибка загрузки расписания'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => ref.refresh(teacherScheduleProvider),
-                    child: const Text('Повторить'),
-                  ),
-                ],
-              ),
+                ),
+                ...daySchedule.map(
+                  (entry) => _buildScheduleEntry(context, entry),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error:
+          (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Ошибка загрузки расписания'),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(teacherScheduleProvider),
+                  child: const Text('Повторить'),
+                ),
+              ],
             ),
-      ),
+          ),
     );
+
+    if (showAppBar) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Расписание')),
+        body: content,
+      );
+    } else {
+      return content;
+    }
   }
 
   Widget _buildScheduleEntry(BuildContext context, ScheduleEntry entry) {

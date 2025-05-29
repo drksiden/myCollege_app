@@ -15,6 +15,8 @@ import 'profile_page.dart';
 import 'schedule_page.dart';
 import 'grades_page.dart';
 import 'performance_page.dart';
+import '../chat/chats_page.dart';
+import '../news/news_feed_page.dart';
 // import 'activities_page.dart'; // Если нужен раздел активностей
 
 // --- Виджет для сохранения состояния вкладки ---
@@ -67,17 +69,6 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
   ); // Таймаут неактивности
   String? _userId; // ID текущего пользователя
   bool _wasResumed = true; // Флаг, что приложение было активно перед паузой
-
-  // Список виджетов-страниц для PageView
-  final List<Widget> _pages = const [
-    KeepAliveWrapper(child: SchedulePage()), // Индекс 0
-    KeepAliveWrapper(child: GradesPage()), // Индекс 1
-    KeepAliveWrapper(child: PerformancePage()), // Индекс 2 (Посещаемость)
-    // KeepAliveWrapper(child: ActivitiesPage()), // Индекс 3 (Активности, если нужно)
-    KeepAliveWrapper(
-      child: ProfilePage(),
-    ), // Индекс 4 -> 3 (если Активности убрать)
-  ];
 
   @override
   void initState() {
@@ -332,13 +323,22 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
   @override
   Widget build(BuildContext context) {
     // Оборачиваем Scaffold в Listener для отслеживания касаний
+    final pages = [
+      const KeepAliveWrapper(child: SchedulePage()),
+      const KeepAliveWrapper(child: GradesPage()),
+      const KeepAliveWrapper(child: PerformancePage()),
+      if (_userId != null)
+        KeepAliveWrapper(child: ChatsPage(currentUserId: _userId!)),
+      const KeepAliveWrapper(child: NewsFeedPage()),
+      const KeepAliveWrapper(child: ProfilePage()),
+    ];
     return Listener(
       onPointerDown: _handleUserInteraction, // Сброс таймера при касании
       child: Scaffold(
         body: PageView(
           controller: _pageController,
           onPageChanged: _onPageChanged, // Вызывает setState и сброс таймера
-          children: _pages,
+          children: pages,
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
@@ -361,17 +361,27 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
               activeIcon: Icon(Icons.checklist_rtl),
               label: 'Посещ.',
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              activeIcon: Icon(Icons.chat_bubble),
+              label: 'Чаты',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.newspaper),
+              activeIcon: Icon(Icons.newspaper),
+              label: 'Новости',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Профиль',
+            ),
             // Раскомментируй, если есть ActivitiesPage
             // BottomNavigationBarItem(
             //   icon: Icon(Icons.celebration_outlined),
             //   activeIcon: Icon(Icons.celebration),
             //   label: 'Активности',
             // ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Профиль',
-            ),
             // --------------------------
           ],
         ),

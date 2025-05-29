@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Импорт нужных страниц
 import 'pages/schedule_page.dart';
 import 'pages/grades_page.dart';
 import 'pages/assignments_page.dart';
 import 'pages/profile_page.dart';
+import '../../features/chat/chats_page.dart';
+import '../../features/news/news_feed_page.dart';
 
 class TeacherHomeScreen extends ConsumerStatefulWidget {
   const TeacherHomeScreen({super.key});
@@ -18,10 +21,12 @@ class TeacherHomeScreen extends ConsumerStatefulWidget {
 class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages =  [
+  final List<Widget> _pages = [
     SchedulePage(),
     GradesPage(),
     AssignmentsPage(),
+    ChatsPage(currentUserId: ''),
+    NewsFeedPage(),
     ProfilePage(),
   ];
 
@@ -29,8 +34,24 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
     'Расписание',
     'Оценки',
     'Задания',
+    'Чаты',
+    'Новости',
     'Профиль',
   ];
+
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Получаем текущий userId
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = FirebaseAuth.instance.currentUser;
+      setState(() {
+        _userId = user?.uid;
+      });
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -40,41 +61,57 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      SchedulePage(showAppBar: false),
+      GradesPage(),
+      AssignmentsPage(showAppBar: false),
+      if (_userId != null)
+        ChatsPage(
+          currentUserId: _userId!,
+          showAppBar: false,
+          showAddButton: true,
+        ),
+      NewsFeedPage(showAppBar: false),
+      ProfilePage(),
+    ];
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
-        actions: _selectedIndex == 3
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await ref.read(authServiceProvider).signOut();
-                  },
-                ),
-              ]
-            : null,
+        actions:
+            _selectedIndex == _titles.length - 1
+                ? [
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: () async {
+                      await ref.read(authServiceProvider).signOut();
+                    },
+                  ),
+                ]
+                : null,
       ),
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-             label:  'Расписание',
+            label: 'Расписание',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grade),
-             label: 'Оценки',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.grade), label: 'Оценки'),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
-             label:  'Задания',
+            label: 'Задания',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-             label: 'Профиль',
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Чаты',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.newspaper),
+            label: 'Новости',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Профиль'),
         ],
       ),
     );

@@ -9,4 +9,18 @@ class UserService {
     if (!doc.exists) return null;
     return User.fromJson({...doc.data()!, 'id': doc.id});
   }
+
+  Stream<List<User>> getAllUsers() {
+    return _db
+        .collection('users')
+        .orderBy('lastName')
+        .orderBy('firstName')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => User.fromJson({...doc.data(), 'id': doc.id}))
+                  .toList(),
+        );
+  }
 }
