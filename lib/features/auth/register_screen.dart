@@ -1,11 +1,13 @@
-// lib/features/auth/register_screen.dart (Исправленный)
+// lib/features/auth/register_screen.dart (ИСПРАВЛЕННЫЙ И ОБНОВЛЕННЫЙ)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../core/auth_service.dart';
-import '../../routes/app_router.dart'; // Не используется напрямую, но может понадобиться
+// --- ДОБАВЛЕНО ---: Импорт для работы с Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Используем ConsumerStatefulWidget
+import '../../routes/app_router.dart'; // Используется для навигации
+
+// Используем ConsumerStatefulWidget для будущего расширения, хотя ref здесь не используется
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -18,12 +20,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  // --- ДОБАВЛЯЕМ РАЗДЕЛЬНЫЕ КОНТРОЛЛЕРЫ ДЛЯ ФИО ---
   final _lastNameController = TextEditingController();
   final _firstNameController = TextEditingController();
-  final _patronymicController = TextEditingController(); // Опционально
-  // --- УБИРАЕМ _nameController ---
-  // final _nameController = TextEditingController();
+  final _middleNameController = TextEditingController(); // Отчество
+
+  // --- ДОБАВЛЕНО ---: Контроллеры для опциональных полей
+  final _iinController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -33,39 +36,100 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    // --- НЕ ЗАБЫВАЕМ УДАЛИТЬ НОВЫЕ КОНТРОЛЛЕРЫ ---
     _lastNameController.dispose();
     _firstNameController.dispose();
-    _patronymicController.dispose();
+    _middleNameController.dispose();
+    _iinController.dispose(); // --- ДОБАВЛЕНО ---
+    _phoneController.dispose(); // --- ДОБАВЛЕНО ---
     super.dispose();
   }
 
+  // --- ИЗМЕНЕНО ---: Полностью переписана логика регистрации
   Future<void> _register() async {
+    // 1. Валидация формы
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    final authService = ref.read(authServiceProvider);
 
     try {
-      // Передаем значения из новых контроллеров
-      final credential = await authService.createUserWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-        _lastNameController.text.trim(),
-        _firstNameController.text.trim(),
-        _patronymicController.text.trim(),
-        'student',
-      );
+      // ШАГ 1: Создание пользователя в Firebase Authentication
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
-      if (credential == null && mounted) {
-        setState(() {
-          _errorMessage = 'Не удалось зарегистрироваться.';
-        });
+      final user = userCredential.user;
+      if (user == null) {
+        // Это маловероятно, но лучше проверить
+        throw Exception('Не удалось создать пользователя, user is null.');
       }
-      // Успешная регистрация обработается редиректом GoRouter
+      final String uid = user.uid;
+
+      // ШАГ 2: Создание документа пользователя в Firestore со статусом "ожидает подтверждения"
+
+      // Готовим данные для Firestore
+      final userData = {
+        'uid': uid,
+        'email': _emailController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'firstName': _firstNameController.text.trim(),
+        'middleName':
+            _middleNameController.text.trim().isNotEmpty
+                ? _middleNameController.text.trim()
+                : null,
+        'iin':
+            _iinController.text.trim().isNotEmpty
+                ? _iinController.text.trim()
+                : null,
+        'phone':
+            _phoneController.text.trim().isNotEmpty
+                ? _phoneController.text.trim()
+                : null,
+        'role': 'pending_approval', // <-- КЛЮЧЕВОЙ МОМЕНТ
+        'status': 'pending_approval', // <-- КЛЮЧЕВОЙ МОМЕНТ
+        'photoURL': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // Записываем данные в Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set(userData);
+
+      // ШАГ 3: Обратная связь пользователю и навигация
+      if (mounted) {
+        // Показываем диалог об успешной отправке заявки
+        await showDialog(
+          context: context,
+          barrierDismissible: false, // Пользователь должен нажать "ОК"
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Регистрация завершена'),
+                content: const Text(
+                  'Ваша заявка отправлена на рассмотрение администратору. Вы сможете войти в аккаунт после одобрения.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Закрыть диалог
+                    },
+                    child: const Text('ОК'),
+                  ),
+                ],
+              ),
+        );
+
+        // Перенаправляем на экран входа
+        if (mounted) {
+          AppRouter.go(context, '/login');
+        }
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() {
@@ -73,12 +137,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         });
       }
     } catch (e) {
+      // Обработка других ошибок (например, при записи в Firestore)
+      // ВАЖНО: Если здесь произошла ошибка, пользователь уже может быть создан в Auth.
+      // В идеале, нужно реализовать механизм отката (удаление пользователя из Auth),
+      // но для начала покажем общую ошибку.
+      debugPrint('Ошибка при регистрации или записи в Firestore: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'Произошла неизвестная ошибка.';
+          _errorMessage =
+              'Произошла непредвиденная ошибка. Пожалуйста, попробуйте снова.';
         });
       }
-      debugPrint('Неизвестная ошибка регистрации: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -89,22 +158,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String _mapFirebaseAuthExceptionMessage(String code) {
-    // ... (код маппинга ошибок остается прежним) ...
     switch (code) {
       case 'weak-password':
         return 'Пароль слишком слабый.';
       case 'email-already-in-use':
-        return 'Пользователь с таким email уже существует.';
+        return 'Этот email уже используется.';
       case 'invalid-email':
         return 'Некорректный формат email.';
       default:
-        return 'Ошибка регистрации. Код: $code';
+        return 'Ошибка регистрации. Попробуйте позже.';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Используем ConsumerWidget для доступа к ref, если нужно, но здесь пока не требуется
     return Scaffold(
       appBar: AppBar(title: const Text('Регистрация')),
       body: Center(
@@ -116,62 +183,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // --- ОБНОВЛЕННЫЕ ПОЛЯ ДЛЯ ФИО ---
+                // --- Поля для ФИО ---
                 TextFormField(
-                  controller:
-                      _lastNameController, // Используем новый контроллер
-                  decoration: const InputDecoration(
-                    labelText: 'Фамилия',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                  controller: _lastNameController,
+                  decoration: const InputDecoration(labelText: 'Фамилия'),
                   textCapitalization: TextCapitalization.words,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Пожалуйста, введите фамилию';
-                    }
-                    return null;
-                  },
+                  validator:
+                      (value) =>
+                          (value?.trim().isEmpty ?? true)
+                              ? 'Пожалуйста, введите фамилию'
+                              : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller:
-                      _firstNameController, // Используем новый контроллер
-                  decoration: const InputDecoration(
-                    labelText: 'Имя',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                  controller: _firstNameController,
+                  decoration: const InputDecoration(labelText: 'Имя'),
                   textCapitalization: TextCapitalization.words,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Пожалуйста, введите имя';
-                    }
-                    return null;
-                  },
+                  validator:
+                      (value) =>
+                          (value?.trim().isEmpty ?? true)
+                              ? 'Пожалуйста, введите имя'
+                              : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller:
-                      _patronymicController, // Используем новый контроллер
+                  controller: _middleNameController,
                   decoration: const InputDecoration(
                     labelText: 'Отчество (если есть)',
-                    prefixIcon: Icon(Icons.person_outline),
                   ),
                   textCapitalization: TextCapitalization.words,
-                  // Валидатор не нужен
                 ),
+                const SizedBox(height: 16),
 
-                // --- КОНЕЦ ОБНОВЛЕННЫХ ПОЛЕЙ ФИО ---
-                const SizedBox(height: 16), // Отступ перед Email
+                // --- ДОБАВЛЕНО: Поля для ИИН и Телефона (опциональные) ---
+                TextFormField(
+                  controller: _iinController,
+                  decoration: const InputDecoration(
+                    labelText: 'ИИН (если есть)',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Телефон (если есть)',
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+
+                // --- Поля для Email и Пароля ---
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    /* ... валидация email ... */
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Пожалуйста, введите email';
                     }
                     if (!RegExp(
@@ -186,12 +254,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Пароль',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Пароль'),
                   validator: (value) {
-                    /* ... валидация пароля ... */
                     if (value == null || value.isEmpty) {
                       return 'Пожалуйста, введите пароль';
                     }
@@ -207,13 +271,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Подтвердите пароль',
-                    prefixIcon: Icon(Icons.lock_reset_outlined),
                   ),
                   validator: (value) {
-                    /* ... валидация подтверждения пароля ... */
-                    if (value == null || value.isEmpty) {
-                      return 'Пожалуйста, подтвердите пароль';
-                    }
                     if (value != _passwordController.text) {
                       return 'Пароли не совпадают';
                     }
@@ -221,10 +280,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   },
                 ),
 
-                // Убрали выбор роли DropdownButton (если он был)
                 if (_errorMessage != null)
                   Padding(
-                    /* ... отображение ошибки ... */
                     padding: const EdgeInsets.only(top: 16.0),
                     child: Text(
                       _errorMessage!,
@@ -236,7 +293,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  /* ... кнопка регистрации с индикатором ... */
                   onPressed: _isLoading ? null : _register,
                   child:
                       _isLoading
@@ -248,19 +304,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               color: Colors.white,
                             ),
                           )
-                          : const Text('Зарегистрироваться'),
+                          : const Text('Отправить заявку'), // --- ИЗМЕНЕНО ---
                 ),
                 const SizedBox(height: 16),
                 TextButton(
-                  /* ... кнопка перехода на вход ... */
                   onPressed:
-                      _isLoading
-                          ? null
-                          : () => AppRouter.go(
-                            context,
-                            '/login',
-                          ), // Используем AppRouter если нужно
-                  // onPressed: _isLoading ? null : () => GoRouter.of(context).go('/login'), // Или так
+                      _isLoading ? null : () => AppRouter.go(context, '/login'),
                   child: const Text('Уже есть аккаунт? Войти'),
                 ),
               ],

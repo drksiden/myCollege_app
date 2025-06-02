@@ -1,11 +1,13 @@
-// lib/features/auth/login_screen.dart
+// lib/features/auth/login_screen.dart (ИСПРАВЛЕННЫЙ И ОБНОВЛЕННЫЙ)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Для FirebaseAuthException
-import '../../core/auth_service.dart'; // Импорт провайдера authServiceProvider
-import '../../routes/app_router.dart'; // Импорт AppRouter для навигации
+import 'package:firebase_auth/firebase_auth.dart';
+// --- ДОБАВЛЕНО ---: Импорт для работы с Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Используем ConsumerStatefulWidget для доступа к ref
+import '../../routes/app_router.dart';
+
+// Используем ConsumerStatefulWidget, так как в будущем может понадобиться ref
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,9 +18,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>(); // Ключ для валидации формы
-  bool _isLoading = false; // Состояние для индикатора загрузки
-  String? _errorMessage; // Сообщение об ошибке для отображения
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -27,52 +29,95 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  // --- ИЗМЕНЕНО ---: Полностью переписана логика входа
   Future<void> _login() async {
-    // Проверяем валидность формы
     if (!(_formKey.currentState?.validate() ?? false)) {
-      return; // Не продолжаем, если форма не валидна
+      return;
     }
 
     setState(() {
-      _isLoading = true; // Показываем индикатор загрузки
-      _errorMessage = null; // Сбрасываем предыдущую ошибку
+      _isLoading = true;
+      _errorMessage = null;
     });
 
-    // Получаем сервис аутентификации через ref.read (т.к. нам не нужно слушать изменения сервиса здесь)
-    final authService = ref.read(authServiceProvider);
-
     try {
-      final credential = await authService.signInWithEmailAndPassword(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      // ШАГ 1: Аутентификация пользователя через Firebase Auth
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
-      // Проверка результата (хотя редирект обычно управляется authStateProvider)
-      if (credential == null && mounted) {
-        // Эта ветка может не понадобиться, если AuthService всегда бросает исключение при ошибке
-        setState(() {
-          _errorMessage = 'Не удалось войти. Попробуйте снова.';
-        });
+      final user = userCredential.user;
+      if (user == null) {
+        // Маловероятно, но для надежности
+        throw Exception('Ошибка входа. Попробуйте снова.');
       }
-      // Если вход успешен, authStateProvider изменится, и GoRouter сам перенаправит
-      // на /home благодаря redirect в app_router.dart. Дополнительная навигация здесь не нужна.
+
+      // ШАГ 2: Получение документа пользователя из Firestore для проверки статуса
+      final DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+      if (!userDoc.exists) {
+        // Неконсистентность данных: пользователь есть в Auth, но нет в Firestore
+        await FirebaseAuth.instance
+            .signOut(); // Выходим из системы для безопасности
+        throw Exception(
+          'Профиль пользователя не найден. Обратитесь к администратору.',
+        );
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>?;
+      final String status = userData?['status'] ?? 'inactive';
+
+      // ШАГ 3: Проверка статуса пользователя
+      if (status == 'active') {
+        // СТАТУС АКТИВЕН: Все в порядке.
+        // authStateProvider обработает изменение состояния и GoRouter выполнит редирект.
+        // Ничего больше делать не нужно.
+      } else {
+        // СТАТУС НЕ АКТИВЕН: Вход запрещен.
+        // КРИТИЧЕСКИ ВАЖНО: сначала выходим из системы, чтобы authStateProvider не сработал.
+        await FirebaseAuth.instance.signOut();
+
+        String message;
+        switch (status) {
+          case 'pending_approval':
+            message = 'Ваша заявка ожидает одобрения администратором.';
+            break;
+          case 'suspended':
+            message = 'Ваша учетная запись заблокирована.';
+            break;
+          default:
+            message = 'Вход невозможен. Ваша учетная запись неактивна.';
+        }
+
+        if (mounted) {
+          setState(() {
+            _errorMessage = message;
+          });
+        }
+      }
     } on FirebaseAuthException catch (e) {
-      // Обрабатываем известные ошибки FirebaseAuth
       if (mounted) {
         setState(() {
           _errorMessage = _mapFirebaseAuthExceptionMessage(e.code);
         });
       }
     } catch (e) {
-      // Обрабатываем прочие ошибки
       if (mounted) {
         setState(() {
-          _errorMessage = 'Произошла неизвестная ошибка.';
+          _errorMessage = e.toString().replaceFirst(
+            'Exception: ',
+            '',
+          ); // Показываем чистое сообщение об ошибке
         });
         debugPrint('Неизвестная ошибка входа: $e');
       }
     } finally {
-      // Убираем индикатор загрузки в любом случае
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -81,45 +126,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  // Вспомогательная функция для перевода кодов ошибок Firebase
   String _mapFirebaseAuthExceptionMessage(String code) {
     switch (code) {
       case 'user-not-found':
-        return 'Пользователь с таким email не найден.';
+      case 'INVALID_LOGIN_CREDENTIALS': // Новый код ошибки для неверного email/пароля
+        return 'Неверный email или пароль.';
       case 'wrong-password':
         return 'Неверный пароль.';
       case 'invalid-email':
         return 'Некорректный формат email.';
       case 'user-disabled':
         return 'Учетная запись пользователя отключена.';
-      case 'too-many-requests':
-        return 'Слишком много попыток входа. Попробуйте позже.';
-      // Добавьте другие коды по мере необходимости
       default:
-        return 'Ошибка входа. Код: $code';
+        return 'Ошибка входа. Попробуйте позже.';
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Структура виджета остается без изменений
     return Scaffold(
       appBar: AppBar(title: const Text('Вход в myCollege')),
       body: Center(
-        // Центрируем содержимое
         child: SingleChildScrollView(
-          // Позволяет скроллить на маленьких экранах
           padding: const EdgeInsets.all(24.0),
           child: Form(
-            // Оборачиваем в Form для валидации
             key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment:
-                  CrossAxisAlignment.stretch, // Растягиваем элементы по ширине
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Можно добавить логотип
-                // Image.asset('assets/images/logo.png', height: 80),
-                // const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -128,7 +164,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Пожалуйста, введите email';
                     }
                     if (!RegExp(
@@ -154,7 +190,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     return null;
                   },
                 ),
-                // Отображение сообщения об ошибке
                 if (_errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 16.0),
@@ -167,9 +202,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 const SizedBox(height: 24),
-                // Кнопка входа с индикатором загрузки
                 ElevatedButton(
-                  // Выключаем кнопку во время загрузки
                   onPressed: _isLoading ? null : _login,
                   child:
                       _isLoading
@@ -185,18 +218,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
                 TextButton(
-                  // Переход на экран регистрации
                   onPressed:
                       _isLoading
                           ? null
                           : () => AppRouter.go(context, '/register'),
                   child: const Text('Нет аккаунта? Зарегистрироваться'),
                 ),
-                // Можно добавить кнопку "Забыли пароль?"
-                // TextButton(
-                //   onPressed: _isLoading ? null : () { /* TODO: Implement password reset */ },
-                //   child: const Text('Забыли пароль?'),
-                // ),
               ],
             ),
           ),

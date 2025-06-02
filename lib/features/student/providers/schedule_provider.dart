@@ -32,24 +32,19 @@ final scheduleProvider = StreamProvider.autoDispose<List<ScheduleEntry>>((ref) {
 final groupedScheduleProvider =
     Provider.autoDispose<Map<int, List<ScheduleEntry>>>((ref) {
       final asyncSchedule = ref.watch(scheduleProvider);
-
-      return asyncSchedule.maybeWhen(
-        data: (scheduleList) {
-          print('DEBUG: Grouping ${scheduleList.length} schedule entries');
+      return asyncSchedule.when(
+        data: (lessons) {
           final grouped = <int, List<ScheduleEntry>>{};
-          for (final entry in scheduleList) {
-            (grouped[entry.dayOfWeek] ??= []).add(entry);
+          for (var lesson in lessons) {
+            grouped.putIfAbsent(lesson.dayOfWeek, () => []).add(lesson);
           }
-          // Сортируем занятия по времени начала
-          for (final dayLessons in grouped.values) {
+          // Сортируем уроки по времени начала
+          for (var dayLessons in grouped.values) {
             dayLessons.sort((a, b) => a.startTime.compareTo(b.startTime));
           }
-          print('DEBUG: Grouped into ${grouped.length} days');
           return grouped;
         },
-        orElse: () {
-          print('DEBUG: No schedule data available');
-          return {};
-        },
+        loading: () => {},
+        error: (_, __) => {},
       );
     });

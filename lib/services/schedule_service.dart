@@ -19,27 +19,63 @@ class ScheduleService {
             return [];
           }
 
+          // Get the first schedule document (there should be only one per group)
           final scheduleDoc = snapshot.docs.first;
-          print('DEBUG: ScheduleService: Processing schedule document');
-          final data = scheduleDoc.data();
-          print('DEBUG: ScheduleService: Schedule document data: $data');
+          final scheduleData = scheduleDoc.data();
+          print('DEBUG: ScheduleService: Schedule data: $scheduleData');
 
-          final lessons = data['lessons'] as List<dynamic>;
-          print('DEBUG: ScheduleService: Found ${lessons.length} lessons');
+          // Extract lessons array from the schedule document
+          final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+          print('DEBUG: ScheduleService: Lessons array: $lessons');
 
-          return lessons.map((lesson) {
-            print('DEBUG: ScheduleService: Processing lesson: $lesson');
-            final lessonData = lesson as Map<String, dynamic>;
+          return lessons.map((lessonData) {
+            print('DEBUG: ScheduleService: Processing lesson: $lessonData');
+            try {
+              final entry = ScheduleEntry.fromJson({
+                ...lessonData,
+                'id': lessonData['id'],
+              });
+              print('DEBUG: ScheduleService: Created ScheduleEntry: $entry');
+              return entry;
+            } catch (e, stackTrace) {
+              print('DEBUG: ScheduleService: Error creating ScheduleEntry: $e');
+              print('DEBUG: ScheduleService: Stack trace: $stackTrace');
+              rethrow;
+            }
+          }).toList();
+        });
+  }
+
+  Stream<List<ScheduleEntry>> getTeacherSchedule(String teacherId) {
+    print('DEBUG: ScheduleService: Getting schedule for teacher $teacherId');
+    return _firestore.collection('schedules').snapshots().map((snapshot) {
+      print(
+        'DEBUG: ScheduleService: Received ${snapshot.docs.length} schedule documents',
+      );
+      if (snapshot.docs.isEmpty) {
+        print('DEBUG: ScheduleService: No schedule documents found');
+        return [];
+      }
+
+      // Collect all lessons from all schedules where teacherId matches
+      final allLessons = <ScheduleEntry>[];
+
+      for (final scheduleDoc in snapshot.docs) {
+        final scheduleData = scheduleDoc.data();
+        final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+
+        for (final lessonData in lessons) {
+          if (lessonData['teacherId'] == teacherId) {
             final entry = ScheduleEntry.fromJson({
               ...lessonData,
               'id': lessonData['id'],
-              'groupId': groupId,
-              'semester': data['semester'] ?? 1,
-              'year': data['year'] ?? 2025,
             });
-            print('DEBUG: ScheduleService: Created ScheduleEntry: $entry');
-            return entry;
-          }).toList();
-        });
+            allLessons.add(entry);
+          }
+        }
+      }
+
+      return allLessons;
+    });
   }
 }

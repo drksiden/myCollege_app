@@ -42,8 +42,36 @@ service cloud.firestore {
 
     // Правила для коллекции users
     match /users/{userId} {
+      // Все аутентифицированные пользователи могут читать профили (можно ужесточить при необходимости)
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || isTeacher();
+
+      // Разрешить новому пользователю создавать свой собственный документ
+      allow create: if request.auth != null && request.auth.uid == userId && // Пользователь создает документ для себя
+                       request.resource.data.uid == request.auth.uid && // uid в документе должен совпадать
+                       request.resource.data.email == request.auth.token.email && // email должен совпадать с email в Auth
+                       request.resource.data.role == 'pending_approval' && // Начальная роль
+                       request.resource.data.status == 'pending_approval' && // Начальный статус
+                       // Пользователь не может устанавливать эти поля при создании
+                       !("groupId" in request.resource.data) &&
+                       !("specialization" in request.resource.data) &&
+                       !("subjects" in request.resource.data) && // и другие поля, которые назначает администратор
+                       request.resource.data.keys().hasOnly(['uid', 'email', 'lastName', 'firstName', 'middleName', 'iin', 'phone', 'role', 'status', 'photoURL', 'createdAt', 'updatedAt']); // Явно перечисляем разрешенные поля при создании
+
+      // Разрешить обновление документа
+      allow update: if isAuthenticated() && (
+                      (isAdmin() || isTeacher()) || // Администраторы или учителя могут обновлять любые поля
+                      (request.auth.uid == userId && // Пользователь обновляет свой собственный профиль
+                       // Пользователь НЕ МОЖЕТ изменять эти поля
+                       request.resource.data.role == resource.data.role &&
+                       request.resource.data.status == resource.data.status &&
+                       request.resource.data.email == resource.data.email && // Email обычно не меняется пользователем
+                       request.resource.data.uid == resource.data.uid &&
+                       (request.resource.data.groupId == resource.data.groupId || !("groupId" in request.resource.data.keys())) &&
+                       (request.resource.data.specialization == resource.data.specialization || !("specialization" in request.resource.data.keys()))
+                       // Пользователь МОЖЕТ обновлять другие поля, такие как firstName, lastName, photoURL, phone и т.д.
+                      )
+                    );
+      allow delete: if isAdmin(); // Только администратор может удалять пользователей
     }
 
     // Правила для коллекции groups

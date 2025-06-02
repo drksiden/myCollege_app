@@ -22,6 +22,7 @@ _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
   attendance: (json['attendance'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, e as String),
   ),
+  status: json['status'] as String? ?? 'pending_approval',
 );
 
 Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
@@ -39,4 +40,5 @@ Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
       'specialty': instance.specialty,
       'phone': instance.phone,
       'attendance': instance.attendance,
+      'status': instance.status,
     };

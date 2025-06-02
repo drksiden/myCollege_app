@@ -5,43 +5,35 @@ import '../../../core/auth_service.dart';
 
 final scheduleServiceProvider = Provider((ref) => ScheduleService());
 
-final teacherScheduleProvider = StreamProvider.autoDispose<List<ScheduleEntry>>(
-  (ref) {
-    final authState = ref.watch(authStateProvider);
-    final user = authState.valueOrNull;
-    final scheduleService = ref.watch(scheduleServiceProvider);
-
-    if (user == null) {
-      return Stream.value([]);
-    }
-
-    return scheduleService.getTeacherSchedule(user.id);
-  },
-);
-
-final groupScheduleProvider = StreamProvider.autoDispose
-    .family<List<ScheduleEntry>, String>((ref, groupId) {
+final teacherScheduleProvider =
+    StreamProvider.family<List<ScheduleEntry>, String>((ref, teacherId) {
       final scheduleService = ref.watch(scheduleServiceProvider);
-      return scheduleService.getGroupSchedule(groupId);
+      return scheduleService.getTeacherSchedule(teacherId);
+    });
+
+final groupScheduleProvider =
+    StreamProvider.family<List<ScheduleEntry>, String>((ref, groupId) {
+      final scheduleService = ref.watch(scheduleServiceProvider);
+      return scheduleService.getScheduleByGroup(groupId);
     });
 
 // Провайдер для сгруппированного расписания по дням недели
-final groupedTeacherScheduleProvider =
-    Provider.autoDispose<Map<int, List<ScheduleEntry>>>((ref) {
-      final asyncSchedule = ref.watch(teacherScheduleProvider);
-
-      return asyncSchedule.maybeWhen(
-        data: (scheduleList) {
+final groupedScheduleProvider =
+    Provider.family<Map<int, List<ScheduleEntry>>, String>((ref, groupId) {
+      final scheduleAsync = ref.watch(groupScheduleProvider(groupId));
+      return scheduleAsync.when(
+        data: (lessons) {
           final grouped = <int, List<ScheduleEntry>>{};
-          for (final entry in scheduleList) {
-            (grouped[entry.dayOfWeek] ??= []).add(entry);
+          for (var lesson in lessons) {
+            grouped.putIfAbsent(lesson.dayOfWeek, () => []).add(lesson);
           }
-          // Сортируем занятия по времени начала
-          for (final dayLessons in grouped.values) {
+          // Сортируем уроки по времени начала
+          for (var dayLessons in grouped.values) {
             dayLessons.sort((a, b) => a.startTime.compareTo(b.startTime));
           }
           return grouped;
         },
-        orElse: () => {},
+        loading: () => {},
+        error: (_, __) => {},
       );
     });

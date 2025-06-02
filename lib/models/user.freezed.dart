@@ -22,21 +22,29 @@ User _$UserFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$User {
   String get id =>
-      throw _privateConstructorUsedError; // --- Раздельные поля ФИО ---
-  String get lastName => throw _privateConstructorUsedError; // Фамилия
-  String get firstName => throw _privateConstructorUsedError; // Имя
+      throw _privateConstructorUsedError; // Соответствует uid в BaseUser
+  String get lastName => throw _privateConstructorUsedError;
+  String get firstName => throw _privateConstructorUsedError;
   String? get patronymic =>
-      throw _privateConstructorUsedError; // Отчество (опционально)
-  // --------------------------
+      throw _privateConstructorUsedError; // Соответствует middleName в BaseUser
   String get email => throw _privateConstructorUsedError;
-  String get role => throw _privateConstructorUsedError;
-  String? get profilePicture => throw _privateConstructorUsedError;
-  String? get groupId => throw _privateConstructorUsedError;
-  int? get course => throw _privateConstructorUsedError;
-  String? get groupName => throw _privateConstructorUsedError;
-  String? get specialty => throw _privateConstructorUsedError;
-  String? get phone => throw _privateConstructorUsedError;
-  Map<String, String>? get attendance => throw _privateConstructorUsedError;
+  String get role =>
+      throw _privateConstructorUsedError; // Строка, должна соответствовать значениям UserRole
+  String? get profilePicture =>
+      throw _privateConstructorUsedError; // Соответствует photoURL в BaseUser
+  String? get groupId =>
+      throw _privateConstructorUsedError; // Специфично для студента
+  int? get course =>
+      throw _privateConstructorUsedError; // Было в Group, теперь здесь для User?
+  String? get groupName =>
+      throw _privateConstructorUsedError; // Денормализованное поле для отображения
+  String? get specialty =>
+      throw _privateConstructorUsedError; // Может быть специализацией преподавателя или студента (денорм.)
+  String? get phone =>
+      throw _privateConstructorUsedError; // Соответствует phone в BaseUser
+  Map<String, String>? get attendance =>
+      throw _privateConstructorUsedError; // Новое поле, не обсуждалось ранее
+  String get status => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -66,6 +74,7 @@ abstract class $UserCopyWith<$Res> {
     String? specialty,
     String? phone,
     Map<String, String>? attendance,
+    String status,
   });
 }
 
@@ -97,6 +106,7 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? specialty = freezed,
     Object? phone = freezed,
     Object? attendance = freezed,
+    Object? status = null,
   }) {
     return _then(
       _value.copyWith(
@@ -165,6 +175,11 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                     ? _value.attendance
                     : attendance // ignore: cast_nullable_to_non_nullable
                         as Map<String, String>?,
+            status:
+                null == status
+                    ? _value.status
+                    : status // ignore: cast_nullable_to_non_nullable
+                        as String,
           )
           as $Val,
     );
@@ -193,6 +208,7 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
     String? specialty,
     String? phone,
     Map<String, String>? attendance,
+    String status,
   });
 }
 
@@ -221,6 +237,7 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? specialty = freezed,
     Object? phone = freezed,
     Object? attendance = freezed,
+    Object? status = null,
   }) {
     return _then(
       _$UserImpl(
@@ -289,6 +306,11 @@ class __$$UserImplCopyWithImpl<$Res>
                 ? _value._attendance
                 : attendance // ignore: cast_nullable_to_non_nullable
                     as Map<String, String>?,
+        status:
+            null == status
+                ? _value.status
+                : status // ignore: cast_nullable_to_non_nullable
+                    as String,
       ),
     );
   }
@@ -311,6 +333,7 @@ class _$UserImpl implements _User {
     this.specialty,
     this.phone,
     final Map<String, String>? attendance,
+    this.status = 'pending_approval',
   }) : _attendance = attendance;
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
@@ -318,34 +341,39 @@ class _$UserImpl implements _User {
 
   @override
   final String id;
-  // --- Раздельные поля ФИО ---
+  // Соответствует uid в BaseUser
   @override
   final String lastName;
-  // Фамилия
   @override
   final String firstName;
-  // Имя
   @override
   final String? patronymic;
-  // Отчество (опционально)
-  // --------------------------
+  // Соответствует middleName в BaseUser
   @override
   final String email;
   @override
   final String role;
+  // Строка, должна соответствовать значениям UserRole
   @override
   final String? profilePicture;
+  // Соответствует photoURL в BaseUser
   @override
   final String? groupId;
+  // Специфично для студента
   @override
   final int? course;
+  // Было в Group, теперь здесь для User?
   @override
   final String? groupName;
+  // Денормализованное поле для отображения
   @override
   final String? specialty;
+  // Может быть специализацией преподавателя или студента (денорм.)
   @override
   final String? phone;
+  // Соответствует phone в BaseUser
   final Map<String, String>? _attendance;
+  // Соответствует phone в BaseUser
   @override
   Map<String, String>? get attendance {
     final value = _attendance;
@@ -355,9 +383,14 @@ class _$UserImpl implements _User {
     return EqualUnmodifiableMapView(value);
   }
 
+  // Новое поле, не обсуждалось ранее
+  @override
+  @JsonKey()
+  final String status;
+
   @override
   String toString() {
-    return 'User(id: $id, lastName: $lastName, firstName: $firstName, patronymic: $patronymic, email: $email, role: $role, profilePicture: $profilePicture, groupId: $groupId, course: $course, groupName: $groupName, specialty: $specialty, phone: $phone, attendance: $attendance)';
+    return 'User(id: $id, lastName: $lastName, firstName: $firstName, patronymic: $patronymic, email: $email, role: $role, profilePicture: $profilePicture, groupId: $groupId, course: $course, groupName: $groupName, specialty: $specialty, phone: $phone, attendance: $attendance, status: $status)';
   }
 
   @override
@@ -386,7 +419,8 @@ class _$UserImpl implements _User {
             const DeepCollectionEquality().equals(
               other._attendance,
               _attendance,
-            ));
+            ) &&
+            (identical(other.status, status) || other.status == status));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -406,6 +440,7 @@ class _$UserImpl implements _User {
     specialty,
     phone,
     const DeepCollectionEquality().hash(_attendance),
+    status,
   );
 
   /// Create a copy of User
@@ -437,37 +472,39 @@ abstract class _User implements User {
     final String? specialty,
     final String? phone,
     final Map<String, String>? attendance,
+    final String status,
   }) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
 
   @override
-  String get id; // --- Раздельные поля ФИО ---
+  String get id; // Соответствует uid в BaseUser
   @override
-  String get lastName; // Фамилия
+  String get lastName;
   @override
-  String get firstName; // Имя
+  String get firstName;
   @override
-  String? get patronymic; // Отчество (опционально)
-  // --------------------------
+  String? get patronymic; // Соответствует middleName в BaseUser
   @override
   String get email;
   @override
-  String get role;
+  String get role; // Строка, должна соответствовать значениям UserRole
   @override
-  String? get profilePicture;
+  String? get profilePicture; // Соответствует photoURL в BaseUser
   @override
-  String? get groupId;
+  String? get groupId; // Специфично для студента
   @override
-  int? get course;
+  int? get course; // Было в Group, теперь здесь для User?
   @override
-  String? get groupName;
+  String? get groupName; // Денормализованное поле для отображения
   @override
-  String? get specialty;
+  String? get specialty; // Может быть специализацией преподавателя или студента (денорм.)
   @override
-  String? get phone;
+  String? get phone; // Соответствует phone в BaseUser
   @override
-  Map<String, String>? get attendance;
+  Map<String, String>? get attendance; // Новое поле, не обсуждалось ранее
+  @override
+  String get status;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.

@@ -22,12 +22,12 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    SchedulePage(),
-    GradesPage(),
-    AssignmentsPage(),
+    const SchedulePage(),
+    const GradesPage(),
+    const AssignmentsPage(),
     ChatsPage(currentUserId: ''),
-    NewsFeedPage(),
-    ProfilePage(),
+    const NewsFeedPage(),
+    const ProfilePage(),
   ];
 
   final List<String> _titles = [
@@ -62,17 +62,17 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      SchedulePage(showAppBar: false),
-      GradesPage(),
-      AssignmentsPage(showAppBar: false),
+      const SchedulePage(),
+      const GradesPage(),
+      const AssignmentsPage(showAppBar: false),
       if (_userId != null)
         ChatsPage(
           currentUserId: _userId!,
           showAppBar: false,
           showAddButton: true,
         ),
-      NewsFeedPage(showAppBar: false),
-      ProfilePage(),
+      const NewsFeedPage(showAppBar: false),
+      const ProfilePage(),
     ];
     return Scaffold(
       appBar: AppBar(

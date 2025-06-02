@@ -17,9 +17,17 @@ class FirebaseService {
             .where('groupId', isEqualTo: groupId)
             .get();
 
-    return snapshot.docs
-        .map((doc) => ScheduleEntry.fromJson({...doc.data(), 'id': doc.id}))
-        .toList();
+    if (snapshot.docs.isEmpty) {
+      return [];
+    }
+
+    final scheduleDoc = snapshot.docs.first;
+    final scheduleData = scheduleDoc.data();
+    final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+
+    return lessons.map((lessonData) {
+      return ScheduleEntry.fromJson({...lessonData, 'id': lessonData['id']});
+    }).toList();
   }
 
   // Получить занятия преподавателя (поток)

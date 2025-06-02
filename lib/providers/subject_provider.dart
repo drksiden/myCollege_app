@@ -7,15 +7,33 @@ import '../services/user_service.dart';
 import '../models/user.dart';
 import '../services/teacher_service.dart';
 import '../models/teacher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final subjectServiceProvider = Provider((ref) => SubjectService());
 final userServiceProvider = Provider((ref) => UserService());
 final teacherServiceProvider = Provider((ref) => TeacherService());
 
-// Провайдер для всех предметов
-final subjectsProvider = StreamProvider.autoDispose<List<Subject>>((ref) {
-  final subjectService = ref.watch(subjectServiceProvider);
-  return subjectService.getAllSubjects();
+// Провайдер для получения всех предметов
+final subjectsProvider = StreamProvider<Map<String, Subject>>((ref) {
+  return FirebaseFirestore.instance.collection('subjects').snapshots().map((
+    snapshot,
+  ) {
+    final subjects = <String, Subject>{};
+    for (var doc in snapshot.docs) {
+      subjects[doc.id] = Subject.fromJson({...doc.data(), 'id': doc.id});
+    }
+    return subjects;
+  });
+});
+
+// Провайдер для получения предмета по ID
+final subjectByIdProvider = Provider.family<Subject?, String>((ref, subjectId) {
+  final subjects = ref.watch(subjectsProvider);
+  return subjects.when(
+    data: (subjectsMap) => subjectsMap[subjectId],
+    loading: () => null,
+    error: (_, __) => null,
+  );
 });
 
 // Провайдер для предметов текущего преподавателя

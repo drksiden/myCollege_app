@@ -23,7 +23,9 @@ Subject _$SubjectFromJson(Map<String, dynamic> json) {
 mixin _$Subject {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get description => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String? get department => throw _privateConstructorUsedError;
+  bool get isActive => throw _privateConstructorUsedError;
   int get credits => throw _privateConstructorUsedError;
   int get hours => throw _privateConstructorUsedError;
   int get hoursPerSemester => throw _privateConstructorUsedError;
@@ -53,7 +55,9 @@ abstract class $SubjectCopyWith<$Res> {
   $Res call({
     String id,
     String name,
-    String description,
+    String? description,
+    String? department,
+    bool isActive,
     int credits,
     int hours,
     int hoursPerSemester,
@@ -85,7 +89,9 @@ class _$SubjectCopyWithImpl<$Res, $Val extends Subject>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? description = null,
+    Object? description = freezed,
+    Object? department = freezed,
+    Object? isActive = null,
     Object? credits = null,
     Object? hours = null,
     Object? hoursPerSemester = null,
@@ -109,10 +115,20 @@ class _$SubjectCopyWithImpl<$Res, $Val extends Subject>
                     : name // ignore: cast_nullable_to_non_nullable
                         as String,
             description:
-                null == description
+                freezed == description
                     ? _value.description
                     : description // ignore: cast_nullable_to_non_nullable
-                        as String,
+                        as String?,
+            department:
+                freezed == department
+                    ? _value.department
+                    : department // ignore: cast_nullable_to_non_nullable
+                        as String?,
+            isActive:
+                null == isActive
+                    ? _value.isActive
+                    : isActive // ignore: cast_nullable_to_non_nullable
+                        as bool,
             credits:
                 null == credits
                     ? _value.credits
@@ -175,7 +191,9 @@ abstract class _$$SubjectImplCopyWith<$Res> implements $SubjectCopyWith<$Res> {
   $Res call({
     String id,
     String name,
-    String description,
+    String? description,
+    String? department,
+    bool isActive,
     int credits,
     int hours,
     int hoursPerSemester,
@@ -206,7 +224,9 @@ class __$$SubjectImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? description = null,
+    Object? description = freezed,
+    Object? department = freezed,
+    Object? isActive = null,
     Object? credits = null,
     Object? hours = null,
     Object? hoursPerSemester = null,
@@ -230,10 +250,20 @@ class __$$SubjectImplCopyWithImpl<$Res>
                 : name // ignore: cast_nullable_to_non_nullable
                     as String,
         description:
-            null == description
+            freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
-                    as String,
+                    as String?,
+        department:
+            freezed == department
+                ? _value.department
+                : department // ignore: cast_nullable_to_non_nullable
+                    as String?,
+        isActive:
+            null == isActive
+                ? _value.isActive
+                : isActive // ignore: cast_nullable_to_non_nullable
+                    as bool,
         credits:
             null == credits
                 ? _value.credits
@@ -290,7 +320,9 @@ class _$SubjectImpl implements _Subject {
   const _$SubjectImpl({
     required this.id,
     required this.name,
-    required this.description,
+    this.description,
+    this.department,
+    this.isActive = false,
     required this.credits,
     required this.hours,
     required this.hoursPerSemester,
@@ -312,7 +344,12 @@ class _$SubjectImpl implements _Subject {
   @override
   final String name;
   @override
-  final String description;
+  final String? description;
+  @override
+  final String? department;
+  @override
+  @JsonKey()
+  final bool isActive;
   @override
   final int credits;
   @override
@@ -342,7 +379,7 @@ class _$SubjectImpl implements _Subject {
 
   @override
   String toString() {
-    return 'Subject(id: $id, name: $name, description: $description, credits: $credits, hours: $hours, hoursPerSemester: $hoursPerSemester, hoursPerWeek: $hoursPerWeek, teacherId: $teacherId, type: $type, groups: $groups, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Subject(id: $id, name: $name, description: $description, department: $department, isActive: $isActive, credits: $credits, hours: $hours, hoursPerSemester: $hoursPerSemester, hoursPerWeek: $hoursPerWeek, teacherId: $teacherId, type: $type, groups: $groups, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -354,6 +391,10 @@ class _$SubjectImpl implements _Subject {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.description, description) ||
                 other.description == description) &&
+            (identical(other.department, department) ||
+                other.department == department) &&
+            (identical(other.isActive, isActive) ||
+                other.isActive == isActive) &&
             (identical(other.credits, credits) || other.credits == credits) &&
             (identical(other.hours, hours) || other.hours == hours) &&
             (identical(other.hoursPerSemester, hoursPerSemester) ||
@@ -377,6 +418,8 @@ class _$SubjectImpl implements _Subject {
     id,
     name,
     description,
+    department,
+    isActive,
     credits,
     hours,
     hoursPerSemester,
@@ -406,7 +449,9 @@ abstract class _Subject implements Subject {
   const factory _Subject({
     required final String id,
     required final String name,
-    required final String description,
+    final String? description,
+    final String? department,
+    final bool isActive,
     required final int credits,
     required final int hours,
     required final int hoursPerSemester,
@@ -427,7 +472,11 @@ abstract class _Subject implements Subject {
   @override
   String get name;
   @override
-  String get description;
+  String? get description;
+  @override
+  String? get department;
+  @override
+  bool get isActive;
   @override
   int get credits;
   @override

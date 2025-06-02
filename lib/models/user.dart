@@ -7,28 +7,26 @@ part 'user.g.dart';
 @freezed
 class User with _$User {
   const factory User({
-    required String id,
-    // --- Раздельные поля ФИО ---
-    required String lastName, // Фамилия
-    required String firstName, // Имя
-    String? patronymic, // Отчество (опционально)
-    // --------------------------
+    required String id, // Соответствует uid в BaseUser
+    required String lastName,
+    required String firstName,
+    String? patronymic, // Соответствует middleName в BaseUser
     required String email,
-    required String role,
-    String? profilePicture,
-    String? groupId,
-    int? course,
-    String? groupName,
-    String? specialty,
-    String? phone,
-    Map<String, String>? attendance,
-    // Timestamp? createdAt,
-  }) = _User; // Убедись, что имя приватного класса совпадает (_User)
+    required String role, // Строка, должна соответствовать значениям UserRole
+    String? profilePicture, // Соответствует photoURL в BaseUser
+    String? groupId, // Специфично для студента
+    int? course, // Было в Group, теперь здесь для User?
+    String? groupName, // Денормализованное поле для отображения
+    String?
+    specialty, // Может быть специализацией преподавателя или студента (денорм.)
+    String? phone, // Соответствует phone в BaseUser
+    Map<String, String>? attendance, // Новое поле, не обсуждалось ранее
+    @Default('pending_approval')
+    String status, // Статус пользователя: pending_approval, active, rejected
+    // Timestamp? createdAt,   // Закомментировано, но ОЧЕНЬ ВАЖНО
+  }) = _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
-
-  // --- УБИРАЕМ GETTER ОТСЮДА ---
-  // String get fullName { ... }
 }
 
 // --- ДОБАВЛЯЕМ GETTER В EXTENSION ПОСЛЕ КЛАССА ---

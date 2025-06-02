@@ -24,10 +24,21 @@ mixin _$News {
   String get id => throw _privateConstructorUsedError;
   String get authorId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
-  String get content => throw _privateConstructorUsedError;
-  DateTime get createdAt => throw _privateConstructorUsedError;
+  String get content =>
+      throw _privateConstructorUsedError; // Используем конвертеры для обязательного поля
+  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+  DateTime get createdAt => throw _privateConstructorUsedError; // Используем конвертеры для НЕобязательных (nullable) полей
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  bool? get isPublished => throw _privateConstructorUsedError;
+  bool? get isPublished =>
+      throw _privateConstructorUsedError; // Используем конвертеры для НЕобязательных (nullable) полей
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   DateTime? get publishedAt => throw _privateConstructorUsedError;
   List<String>? get images => throw _privateConstructorUsedError;
   List<String>? get tags => throw _privateConstructorUsedError;
@@ -51,9 +62,18 @@ abstract class $NewsCopyWith<$Res> {
     String authorId,
     String title,
     String content,
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
     DateTime createdAt,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     DateTime? updatedAt,
     bool? isPublished,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     DateTime? publishedAt,
     List<String>? images,
     List<String>? tags,
@@ -157,9 +177,18 @@ abstract class _$$NewsImplCopyWith<$Res> implements $NewsCopyWith<$Res> {
     String authorId,
     String title,
     String content,
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
     DateTime createdAt,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     DateTime? updatedAt,
     bool? isPublished,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     DateTime? publishedAt,
     List<String>? images,
     List<String>? tags,
@@ -254,9 +283,18 @@ class _$NewsImpl implements _News {
     required this.authorId,
     required this.title,
     required this.content,
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
     required this.createdAt,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     this.updatedAt,
     this.isPublished,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     this.publishedAt,
     final List<String>? images,
     final List<String>? tags,
@@ -274,13 +312,25 @@ class _$NewsImpl implements _News {
   final String title;
   @override
   final String content;
+  // Используем конвертеры для обязательного поля
   @override
+  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
   final DateTime createdAt;
+  // Используем конвертеры для НЕобязательных (nullable) полей
   @override
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   final DateTime? updatedAt;
   @override
   final bool? isPublished;
+  // Используем конвертеры для НЕобязательных (nullable) полей
   @override
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   final DateTime? publishedAt;
   final List<String>? _images;
   @override
@@ -365,9 +415,18 @@ abstract class _News implements News {
     required final String authorId,
     required final String title,
     required final String content,
+    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
     required final DateTime createdAt,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     final DateTime? updatedAt,
     final bool? isPublished,
+    @JsonKey(
+      fromJson: _nullableDateTimeFromTimestamp,
+      toJson: _nullableDateTimeToTimestamp,
+    )
     final DateTime? publishedAt,
     final List<String>? images,
     final List<String>? tags,
@@ -382,14 +441,23 @@ abstract class _News implements News {
   @override
   String get title;
   @override
-  String get content;
+  String get content; // Используем конвертеры для обязательного поля
   @override
-  DateTime get createdAt;
+  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
+  DateTime get createdAt; // Используем конвертеры для НЕобязательных (nullable) полей
   @override
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   DateTime? get updatedAt;
   @override
-  bool? get isPublished;
+  bool? get isPublished; // Используем конвертеры для НЕобязательных (nullable) полей
   @override
+  @JsonKey(
+    fromJson: _nullableDateTimeFromTimestamp,
+    toJson: _nullableDateTimeToTimestamp,
+  )
   DateTime? get publishedAt;
   @override
   List<String>? get images;

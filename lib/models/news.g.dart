@@ -11,16 +11,12 @@ _$NewsImpl _$$NewsImplFromJson(Map<String, dynamic> json) => _$NewsImpl(
   authorId: json['authorId'] as String,
   title: json['title'] as String,
   content: json['content'] as String,
-  createdAt: DateTime.parse(json['createdAt'] as String),
-  updatedAt:
-      json['updatedAt'] == null
-          ? null
-          : DateTime.parse(json['updatedAt'] as String),
+  createdAt: _dateTimeFromTimestamp(json['createdAt'] as Timestamp),
+  updatedAt: _nullableDateTimeFromTimestamp(json['updatedAt'] as Timestamp?),
   isPublished: json['isPublished'] as bool?,
-  publishedAt:
-      json['publishedAt'] == null
-          ? null
-          : DateTime.parse(json['publishedAt'] as String),
+  publishedAt: _nullableDateTimeFromTimestamp(
+    json['publishedAt'] as Timestamp?,
+  ),
   images: (json['images'] as List<dynamic>?)?.map((e) => e as String).toList(),
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
 );
@@ -31,10 +27,10 @@ Map<String, dynamic> _$$NewsImplToJson(_$NewsImpl instance) =>
       'authorId': instance.authorId,
       'title': instance.title,
       'content': instance.content,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt?.toIso8601String(),
+      'createdAt': _dateTimeToTimestamp(instance.createdAt),
+      'updatedAt': _nullableDateTimeToTimestamp(instance.updatedAt),
       'isPublished': instance.isPublished,
-      'publishedAt': instance.publishedAt?.toIso8601String(),
+      'publishedAt': _nullableDateTimeToTimestamp(instance.publishedAt),
       'images': instance.images,
       'tags': instance.tags,
     };

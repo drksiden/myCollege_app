@@ -9,7 +9,9 @@ class Subject with _$Subject {
   const factory Subject({
     required String id,
     required String name,
-    required String description,
+    String? description,
+    String? department,
+    @Default(false) bool isActive,
     required int credits,
     required int hours,
     required int hoursPerSemester,

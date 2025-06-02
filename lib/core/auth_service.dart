@@ -37,22 +37,32 @@ class AuthService {
 
   /// Стрим, который выдает нашего кастомного пользователя [User] или null.
   Stream<User?> userStream() {
-    // Слушаем изменения состояния в Firebase Auth
     return _firebaseAuth.authStateChanges().asyncMap((firebaseUser) async {
-      // Используем debugPrint для логов, они не попадают в релизный билд
       debugPrint(
         '[AuthService] AuthState изменился. Firebase User ID: ${firebaseUser?.uid}',
       );
       if (firebaseUser == null) {
-        // Если пользователя нет в Firebase Auth, возвращаем null
         return null;
       }
-      // Если пользователь есть, пытаемся получить его данные из Firestore
+      // Если пользователь аутентифицирован, загружаем его полный профиль.
       final appUser = await _getUserData(firebaseUser.uid);
+
+      // ВАЖНО: если у пользователя статус не 'active', мы не должны его пускать.
+      // Но эту проверку мы уже делаем на экране входа. Здесь же мы можем добавить
+      // дополнительную защиту: если профиль не найден или неактивен, возвращаем null.
+      if (appUser == null || appUser.status != 'active') {
+        debugPrint(
+          '[AuthService] Пользователь ${firebaseUser.uid} не активен или его профиль не найден. Возвращаем null.',
+        );
+        // Можно также принудительно разлогинить, если appUser.status не active, для надежности.
+        // await signOut();
+        return null;
+      }
+
       debugPrint(
-        '[AuthService] Получен app_user: ${appUser?.id}, role: ${appUser?.role}',
+        '[AuthService] Получен активный пользователь: ${appUser.id}, role: ${appUser.role}',
       );
-      return appUser; // Возвращаем нашего пользователя или null, если данных нет
+      return appUser;
     });
   }
 

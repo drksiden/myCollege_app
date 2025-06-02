@@ -1,44 +1,61 @@
 // lib/models/schedule_entry.dart
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 part 'schedule_entry.freezed.dart';
 part 'schedule_entry.g.dart';
 
+// Конвертер для преобразования Firestore Timestamp в DateTime и обратно
+class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
+  const TimestampConverter();
+
+  @override
+  DateTime fromJson(Timestamp timestamp) {
+    return timestamp.toDate();
+  }
+
+  @override
+  Timestamp toJson(DateTime date) => Timestamp.fromDate(date);
+}
+
 @freezed
-@JsonSerializable()
 class ScheduleEntry with _$ScheduleEntry {
   const factory ScheduleEntry({
     required String id,
+    @Default(1) int dayOfWeek,
+    required String endTime,
+    required String groupId,
+    required String room,
+    required String semesterId,
+    required String startTime,
     required String subjectId,
     required String teacherId,
-    required String groupId,
-    required int dayOfWeek,
-    required String startTime,
-    required String endTime,
-    required String room,
-    required String type,
-    required int duration,
-    required String weekType,
-    required bool isFloating,
-    required int semester,
-    required int year,
+    @Default('lecture') String type,
+    @Default('all') String weekType,
+    @Default(90) int duration,
+    @Default(false) bool isFloating,
+    @TimestampConverter() DateTime? createdAt,
+    @TimestampConverter() DateTime? updatedAt,
   }) = _ScheduleEntry;
 
+  // Эта фабрика будет использовать сгенерированный код
   factory ScheduleEntry.fromJson(Map<String, dynamic> json) {
-    if (!json.containsKey('id')) {
-      json['id'] =
-          '${json['dayOfWeek']}_${json['startTime']}_${json['subjectId']}';
+    print('DEBUG: ScheduleEntry.fromJson: Input JSON: $json');
+    try {
+      final result = _$ScheduleEntryFromJson(json);
+      print('DEBUG: ScheduleEntry.fromJson: Created entry: $result');
+      return result;
+    } catch (e, stackTrace) {
+      print('DEBUG: ScheduleEntry.fromJson: Error: $e');
+      print('DEBUG: ScheduleEntry.fromJson: Stack trace: $stackTrace');
+      rethrow;
     }
-    return _$ScheduleEntryFromJson(json);
   }
+}
 
-  // Пустой приватный конструктор для freezed
-  const ScheduleEntry._();
-
-  // --- Вспомогательные геттеры ---
-
+// --- Вспомогательные методы ---
+extension ScheduleEntryX on ScheduleEntry {
   // Парсинг времени начала (может вернуть null при ошибке формата)
   TimeOfDay? get startTimeOfDay {
     try {
@@ -73,10 +90,17 @@ class ScheduleEntry with _$ScheduleEntry {
     final currentDay = now.weekday;
     if (currentDay != dayOfWeek) return false;
 
-    final currentTime =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    return currentTime.compareTo(startTime) >= 0 &&
-        currentTime.compareTo(endTime) <= 0;
+    final start = startTimeOfDay;
+    final end = endTimeOfDay;
+    if (start == null || end == null) return false;
+
+    final nowTime = TimeOfDay.fromDateTime(now);
+
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes = end.hour * 60 + end.minute;
+    final nowMinutes = nowTime.hour * 60 + nowTime.minute;
+
+    return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
   }
 
   // Получение названия дня недели
@@ -88,13 +112,3 @@ class ScheduleEntry with _$ScheduleEntry {
     return '??';
   }
 }
-
-// Конвертеры для DateTime
-DateTime _timestampFromJson(dynamic value) {
-  if (value is Timestamp) {
-    return value.toDate();
-  }
-  return DateTime.parse(value as String);
-}
-
-dynamic _timestampToJson(DateTime date) => date.toIso8601String();
