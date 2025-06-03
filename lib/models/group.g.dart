@@ -13,8 +13,11 @@ _$GroupImpl _$$GroupImplFromJson(Map<String, dynamic> json) => _$GroupImpl(
   year: (json['year'] as num).toInt(),
   curatorId: json['curatorId'] as String?,
   description: json['description'] as String?,
-  studentIds:
-      (json['studentIds'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  subjectIds:
+      (json['subjectIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
   createdAt: _$JsonConverterFromJson<Timestamp, DateTime>(
     json['createdAt'],
     const TimestampConverter().fromJson,
@@ -34,7 +37,7 @@ Map<String, dynamic> _$$GroupImplToJson(_$GroupImpl instance) =>
       'year': instance.year,
       'curatorId': instance.curatorId,
       'description': instance.description,
-      'studentIds': instance.studentIds,
+      'subjectIds': instance.subjectIds,
       'createdAt': _$JsonConverterToJson<Timestamp, DateTime>(
         instance.createdAt,
         const TimestampConverter().toJson,

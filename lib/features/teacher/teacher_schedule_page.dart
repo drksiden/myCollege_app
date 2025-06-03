@@ -133,8 +133,8 @@ class _LessonListTile extends ConsumerWidget {
 
     // Получаем название предмета
     final subjectAsync = ref.watch(subjectProvider(lesson.subjectId));
-    // Получаем название группы
-    final groupAsync = ref.watch(groupProvider(lesson.groupId));
+    // ИСПРАВЛЕНО: Используем groupNameProvider вместо groupProvider
+    final groupNameAsync = ref.watch(groupNameProvider(lesson.groupId));
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -214,31 +214,32 @@ class _LessonListTile extends ConsumerWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
-                  groupAsync.when(
-                    data: (group) {
-                      print(
-                        'DEBUG: _LessonListTile: Group data received: $group',
-                      );
-                      return Text(
-                        'Группа: ${group?.name ?? lesson.groupId}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      );
-                    },
-                    loading: () => const Text('Загрузка...'),
-                    error: (error, stack) {
-                      print(
-                        'DEBUG: _LessonListTile: Error loading group: $error',
-                      );
-                      print('DEBUG: _LessonListTile: Stack trace: $stack');
-                      return Text(
-                        'Группа: ${lesson.groupId}',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      );
-                    },
+                  Expanded(
+                    child: groupNameAsync.when(
+                      data: (groupName) {
+                        print(
+                          'DEBUG: _LessonListTile: Group name received: $groupName',
+                        );
+                        return Text(
+                          'Группа: $groupName',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        );
+                      },
+                      loading: () => const Text('Загрузка группы...'),
+                      error: (error, stack) {
+                        print(
+                          'DEBUG: _LessonListTile: Error loading group name: $error',
+                        );
+                        return Text(
+                          'Группа: ${lesson.groupId}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),

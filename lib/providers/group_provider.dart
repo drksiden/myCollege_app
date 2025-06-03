@@ -5,67 +5,6 @@ import 'package:flutter/foundation.dart';
 import '../models/group.dart';
 import '../services/group_service.dart';
 
-// Тестовые данные для групп
-final _mockGroups = [
-  Group(
-    id: 'group_1',
-    name: 'П2Г',
-    specialization: 'Программирование',
-    year: 2,
-    description: 'Группа программистов 2 курса',
-    curatorId: 'teacher_1',
-    curatorName: 'Петров П.П.',
-    studentIds: ['student_1', 'student_2'],
-  ),
-  Group(
-    id: 'group_2',
-    name: 'П1Г',
-    specialization: 'Программирование',
-    year: 1,
-    description: 'Группа программистов 1 курса',
-    curatorId: 'teacher_2',
-    curatorName: 'Сидорова С.С.',
-    studentIds: ['student_3', 'student_4'],
-  ),
-  Group(
-    id: 'group_3',
-    name: 'В2Г',
-    specialization: 'Веб-разработка',
-    year: 2,
-    description: 'Группа веб-разработчиков 2 курса',
-    curatorId: 'teacher_3',
-    curatorName: 'Козлов К.К.',
-    studentIds: ['student_5', 'student_6'],
-  ),
-  Group(
-    id: 'group_4',
-    name: 'В1Г',
-    specialization: 'Веб-разработка',
-    year: 1,
-    description: 'Группа веб-разработчиков 1 курса',
-    curatorId: 'teacher_4',
-    curatorName: 'Иванова И.И.',
-    studentIds: ['student_7', 'student_8'],
-  ),
-];
-
-// Провайдер для получения всех групп
-final groupsProvider = FutureProvider<List<Group>>((ref) async {
-  // В реальном приложении здесь будет запрос к Firestore
-  // Сейчас возвращаем тестовые данные
-  await Future.delayed(const Duration(seconds: 1)); // Имитация задержки сети
-  return _mockGroups;
-});
-
-// Провайдер для получения группы по ID
-final groupByIdProvider = FutureProvider.family<Group?, String>((
-  ref,
-  groupId,
-) async {
-  final groups = await ref.watch(groupsProvider.future);
-  return groups.firstWhere((group) => group.id == groupId);
-});
-
 // Провайдер для получения всех групп из Firestore
 final allGroupsProvider = StreamProvider<List<Group>>((ref) {
   return FirebaseFirestore.instance
@@ -111,20 +50,17 @@ final groupStudentCountProvider = FutureProvider.family<int, String>((
   }
 });
 
-// Тестовые данные для групп
-final _mockGroupsNames = {
-  'П2Г': 'Программирование 2 курс, группа Г',
-  'П1А': 'Программирование 1 курс, группа А',
-  'П1Б': 'Программирование 1 курс, группа Б',
-  'П3В': 'Программирование 3 курс, группа В',
-};
-
-// Провайдер для получения названия группы по ID
+// ИСПРАВЛЕННЫЙ провайдер для получения названия группы по ID
 final groupNameProvider = FutureProvider.family<String, String>((
   ref,
   groupId,
 ) async {
-  if (groupId.isEmpty) return 'Группа не указана';
+  print('DEBUG: groupNameProvider called with groupId: $groupId');
+
+  if (groupId.isEmpty) {
+    print('DEBUG: groupId is empty');
+    return 'Группа не указана';
+  }
 
   try {
     final groupDoc =
@@ -133,28 +69,80 @@ final groupNameProvider = FutureProvider.family<String, String>((
             .doc(groupId)
             .get();
 
+    print('DEBUG: Group document exists: ${groupDoc.exists}');
+
     if (!groupDoc.exists) {
+      print('DEBUG: Group document does not exist for groupId: $groupId');
       return 'Группа не найдена';
     }
 
     final data = groupDoc.data()!;
+    print('DEBUG: Group document data: $data');
+
     final name = data['name'] as String? ?? '';
     final year = data['year'] as int? ?? 0;
     final specialization = data['specialization'] as String? ?? '';
 
-    return '$specialization $year курс, группа $name';
-  } catch (e) {
-    debugPrint('Error getting group name for $groupId: $e');
-    return 'Ошибка загрузки группы';
+    if (name.isEmpty) {
+      return 'Группа без названия';
+    }
+
+    // Формируем полное название группы
+    String fullName = name;
+    if (specialization.isNotEmpty && year > 0) {
+      fullName = '$specialization $year курс, группа $name';
+    } else if (specialization.isNotEmpty) {
+      fullName = '$specialization, группа $name';
+    } else if (year > 0) {
+      fullName = '$year курс, группа $name';
+    }
+
+    print('DEBUG: Final group name: $fullName');
+    return fullName;
+  } catch (e, stackTrace) {
+    print('DEBUG: Error getting group name for $groupId: $e');
+    print('DEBUG: Stack trace: $stackTrace');
+    return 'Ошибка загрузки группы: $e';
   }
 });
 
 final groupServiceProvider = Provider((ref) => GroupService());
 
+// ИСПРАВЛЕННЫЙ провайдер для получения группы по ID
 final groupProvider = FutureProvider.family<Group?, String>((
   ref,
   groupId,
 ) async {
-  final groupService = ref.watch(groupServiceProvider);
-  return groupService.getGroup(groupId);
+  print('DEBUG: groupProvider called with groupId: $groupId');
+
+  if (groupId.isEmpty) {
+    print('DEBUG: groupId is empty');
+    return null;
+  }
+
+  try {
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('groups')
+            .doc(groupId)
+            .get();
+
+    print('DEBUG: Group document exists: ${doc.exists}');
+
+    if (!doc.exists) {
+      print('DEBUG: Group document does not exist for groupId: $groupId');
+      return null;
+    }
+
+    final data = doc.data()!;
+    print('DEBUG: Group document data: $data');
+
+    final group = Group.fromJson({...data, 'id': doc.id});
+    print('DEBUG: Created Group object: $group');
+    return group;
+  } catch (e, stackTrace) {
+    print('DEBUG: Error getting group: $e');
+    print('DEBUG: Stack trace: $stackTrace');
+    return null;
+  }
 });

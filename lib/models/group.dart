@@ -1,3 +1,4 @@
+// lib/models/group.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -26,11 +27,23 @@ class Group with _$Group {
     required int year,
     String? curatorId,
     String? description,
-    List<String>? studentIds,
+    @Default([]) List<String> subjectIds, // Изменено с studentIds на subjectIds
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
-    String? curatorName,
+    String?
+    curatorName, // Оставляем для совместимости, но может не использоваться
   }) = _Group;
 
   factory Group.fromJson(Map<String, dynamic> json) => _$GroupFromJson(json);
+}
+
+// Добавляем расширение для получения полного названия группы
+extension GroupExtension on Group {
+  String get fullName {
+    return '$specialization $year курс, группа $name';
+  }
+
+  String get shortName {
+    return '$name ($year курс)';
+  }
 }

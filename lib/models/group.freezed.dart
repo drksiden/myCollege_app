@@ -27,7 +27,8 @@ mixin _$Group {
   int get year => throw _privateConstructorUsedError;
   String? get curatorId => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  List<String>? get studentIds => throw _privateConstructorUsedError;
+  List<String> get subjectIds =>
+      throw _privateConstructorUsedError; // Изменено с studentIds на subjectIds
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -55,7 +56,7 @@ abstract class $GroupCopyWith<$Res> {
     int year,
     String? curatorId,
     String? description,
-    List<String>? studentIds,
+    List<String> subjectIds,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
     String? curatorName,
@@ -83,7 +84,7 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
     Object? year = null,
     Object? curatorId = freezed,
     Object? description = freezed,
-    Object? studentIds = freezed,
+    Object? subjectIds = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? curatorName = freezed,
@@ -120,11 +121,11 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
                     ? _value.description
                     : description // ignore: cast_nullable_to_non_nullable
                         as String?,
-            studentIds:
-                freezed == studentIds
-                    ? _value.studentIds
-                    : studentIds // ignore: cast_nullable_to_non_nullable
-                        as List<String>?,
+            subjectIds:
+                null == subjectIds
+                    ? _value.subjectIds
+                    : subjectIds // ignore: cast_nullable_to_non_nullable
+                        as List<String>,
             createdAt:
                 freezed == createdAt
                     ? _value.createdAt
@@ -161,7 +162,7 @@ abstract class _$$GroupImplCopyWith<$Res> implements $GroupCopyWith<$Res> {
     int year,
     String? curatorId,
     String? description,
-    List<String>? studentIds,
+    List<String> subjectIds,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
     String? curatorName,
@@ -188,7 +189,7 @@ class __$$GroupImplCopyWithImpl<$Res>
     Object? year = null,
     Object? curatorId = freezed,
     Object? description = freezed,
-    Object? studentIds = freezed,
+    Object? subjectIds = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
     Object? curatorName = freezed,
@@ -225,11 +226,11 @@ class __$$GroupImplCopyWithImpl<$Res>
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
                     as String?,
-        studentIds:
-            freezed == studentIds
-                ? _value._studentIds
-                : studentIds // ignore: cast_nullable_to_non_nullable
-                    as List<String>?,
+        subjectIds:
+            null == subjectIds
+                ? _value._subjectIds
+                : subjectIds // ignore: cast_nullable_to_non_nullable
+                    as List<String>,
         createdAt:
             freezed == createdAt
                 ? _value.createdAt
@@ -260,11 +261,11 @@ class _$GroupImpl implements _Group {
     required this.year,
     this.curatorId,
     this.description,
-    final List<String>? studentIds,
+    final List<String> subjectIds = const [],
     @TimestampConverter() this.createdAt,
     @TimestampConverter() this.updatedAt,
     this.curatorName,
-  }) : _studentIds = studentIds;
+  }) : _subjectIds = subjectIds;
 
   factory _$GroupImpl.fromJson(Map<String, dynamic> json) =>
       _$$GroupImplFromJson(json);
@@ -281,16 +282,16 @@ class _$GroupImpl implements _Group {
   final String? curatorId;
   @override
   final String? description;
-  final List<String>? _studentIds;
+  final List<String> _subjectIds;
   @override
-  List<String>? get studentIds {
-    final value = _studentIds;
-    if (value == null) return null;
-    if (_studentIds is EqualUnmodifiableListView) return _studentIds;
+  @JsonKey()
+  List<String> get subjectIds {
+    if (_subjectIds is EqualUnmodifiableListView) return _subjectIds;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_subjectIds);
   }
 
+  // Изменено с studentIds на subjectIds
   @override
   @TimestampConverter()
   final DateTime? createdAt;
@@ -302,7 +303,7 @@ class _$GroupImpl implements _Group {
 
   @override
   String toString() {
-    return 'Group(id: $id, name: $name, specialization: $specialization, year: $year, curatorId: $curatorId, description: $description, studentIds: $studentIds, createdAt: $createdAt, updatedAt: $updatedAt, curatorName: $curatorName)';
+    return 'Group(id: $id, name: $name, specialization: $specialization, year: $year, curatorId: $curatorId, description: $description, subjectIds: $subjectIds, createdAt: $createdAt, updatedAt: $updatedAt, curatorName: $curatorName)';
   }
 
   @override
@@ -320,8 +321,8 @@ class _$GroupImpl implements _Group {
             (identical(other.description, description) ||
                 other.description == description) &&
             const DeepCollectionEquality().equals(
-              other._studentIds,
-              _studentIds,
+              other._subjectIds,
+              _subjectIds,
             ) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -341,7 +342,7 @@ class _$GroupImpl implements _Group {
     year,
     curatorId,
     description,
-    const DeepCollectionEquality().hash(_studentIds),
+    const DeepCollectionEquality().hash(_subjectIds),
     createdAt,
     updatedAt,
     curatorName,
@@ -369,7 +370,7 @@ abstract class _Group implements Group {
     required final int year,
     final String? curatorId,
     final String? description,
-    final List<String>? studentIds,
+    final List<String> subjectIds,
     @TimestampConverter() final DateTime? createdAt,
     @TimestampConverter() final DateTime? updatedAt,
     final String? curatorName,
@@ -390,7 +391,7 @@ abstract class _Group implements Group {
   @override
   String? get description;
   @override
-  List<String>? get studentIds;
+  List<String> get subjectIds; // Изменено с studentIds на subjectIds
   @override
   @TimestampConverter()
   DateTime? get createdAt;
