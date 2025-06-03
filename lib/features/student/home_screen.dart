@@ -17,6 +17,7 @@ import 'grades_page.dart';
 import 'performance_page.dart';
 import '../chat/chats_page.dart';
 import '../news/news_feed_page.dart';
+import 'attendance_page.dart';
 // import 'activities_page.dart'; // Если нужен раздел активностей
 
 // --- Виджет для сохранения состояния вкладки ---
@@ -322,16 +323,54 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Оборачиваем Scaffold в Listener для отслеживания касаний
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    // Список страниц для PageView
     final pages = [
       const KeepAliveWrapper(child: SchedulePage()),
+      const KeepAliveWrapper(child: NewsFeedPage()),
       const KeepAliveWrapper(child: GradesPage()),
-      const KeepAliveWrapper(child: PerformancePage()),
+      const KeepAliveWrapper(child: AttendancePage()),
       if (_userId != null)
         KeepAliveWrapper(child: ChatsPage(currentUserId: _userId!)),
-      const KeepAliveWrapper(child: NewsFeedPage()),
       const KeepAliveWrapper(child: ProfilePage()),
     ];
+
+    // Список элементов нижней навигации
+    final bottomNavItems = [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_today_outlined),
+        activeIcon: Icon(Icons.calendar_today),
+        label: 'Расписание',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.newspaper_outlined),
+        activeIcon: Icon(Icons.newspaper),
+        label: 'Новости',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.grade_outlined),
+        activeIcon: Icon(Icons.grade),
+        label: 'Оценки',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_today_outlined),
+        activeIcon: Icon(Icons.calendar_today),
+        label: 'Посещаемость',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.chat_outlined),
+        activeIcon: Icon(Icons.chat),
+        label: 'Чаты',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person_outline),
+        activeIcon: Icon(Icons.person),
+        label: 'Профиль',
+      ),
+    ];
+
     return Listener(
       onPointerDown: _handleUserInteraction, // Сброс таймера при касании
       child: Scaffold(
@@ -344,47 +383,118 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
           currentIndex: _selectedIndex,
           onTap:
               _onItemTapped, // Вызывает анимацию и сброс таймера через onPageChanged
-          items: const [
-            // --- Элементы навигации ---
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today_outlined),
-              activeIcon: Icon(Icons.calendar_today),
-              label: 'Расписание',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.star_border_outlined),
-              activeIcon: Icon(Icons.star),
-              label: 'Оценки',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.checklist_rtl_outlined),
-              activeIcon: Icon(Icons.checklist_rtl),
-              label: 'Посещ.',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
-              activeIcon: Icon(Icons.chat_bubble),
-              label: 'Чаты',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.newspaper),
-              activeIcon: Icon(Icons.newspaper),
-              label: 'Новости',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Профиль',
-            ),
-            // Раскомментируй, если есть ActivitiesPage
-            // BottomNavigationBarItem(
-            //   icon: Icon(Icons.celebration_outlined),
-            //   activeIcon: Icon(Icons.celebration),
-            //   label: 'Активности',
-            // ),
-            // --------------------------
-          ],
+          items: bottomNavItems,
         ),
+        drawer: _buildDrawer(context),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: colorScheme.primary),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: colorScheme.onPrimary,
+                  child: Icon(
+                    Icons.person,
+                    size: 30,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Иванов Иван',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                  ),
+                ),
+                Text(
+                  'П2Г',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimary.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Расписание'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(0);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.newspaper_outlined),
+            title: const Text('Новости'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(1);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.grade_outlined),
+            title: const Text('Оценки'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(2);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Посещаемость'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(3);
+            },
+          ),
+          if (_userId != null)
+            ListTile(
+              leading: const Icon(Icons.chat_outlined),
+              title: const Text('Чаты'),
+              onTap: () {
+                Navigator.pop(context);
+                _pageController.jumpToPage(5);
+              },
+            ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Профиль'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(6);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: const Text('Настройки'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Добавить настройки
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Выйти'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Добавить выход
+            },
+          ),
+        ],
       ),
     );
   }

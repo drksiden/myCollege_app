@@ -15,6 +15,7 @@ import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/student/home_screen.dart';
 import '../core/auth_service.dart';
+import '../features/student/attendance_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -150,6 +151,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 );
               }
             },
+          ),
+          GoRoute(
+            path: 'attendance',
+            builder: (context, state) => const AttendancePage(),
           ),
         ],
       ),

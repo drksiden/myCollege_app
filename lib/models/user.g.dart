@@ -7,38 +7,74 @@ part of 'user.dart';
 // **************************************************************************
 
 _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
-  id: json['id'] as String,
+  uid: json['uid'] as String,
   lastName: json['lastName'] as String,
   firstName: json['firstName'] as String,
-  patronymic: json['patronymic'] as String?,
+  middleName: json['middleName'] as String?,
   email: json['email'] as String,
   role: json['role'] as String,
-  profilePicture: json['profilePicture'] as String?,
+  photoURL: json['photoURL'] as String?,
   groupId: json['groupId'] as String?,
-  course: (json['course'] as num?)?.toInt(),
-  groupName: json['groupName'] as String?,
-  specialty: json['specialty'] as String?,
+  iin: json['iin'] as String?,
+  studentIdNumber: json['studentIdNumber'] as String?,
   phone: json['phone'] as String?,
-  attendance: (json['attendance'] as Map<String, dynamic>?)?.map(
-    (k, e) => MapEntry(k, e as String),
-  ),
   status: json['status'] as String? ?? 'pending_approval',
+  dateOfBirth: _$JsonConverterFromJson<Timestamp, DateTime>(
+    json['dateOfBirth'],
+    const TimestampConverter().fromJson,
+  ),
+  enrollmentDate: _$JsonConverterFromJson<Timestamp, DateTime>(
+    json['enrollmentDate'],
+    const TimestampConverter().fromJson,
+  ),
+  createdAt: _$JsonConverterFromJson<Timestamp, DateTime>(
+    json['createdAt'],
+    const TimestampConverter().fromJson,
+  ),
+  updatedAt: _$JsonConverterFromJson<Timestamp, DateTime>(
+    json['updatedAt'],
+    const TimestampConverter().fromJson,
+  ),
 );
 
 Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'uid': instance.uid,
       'lastName': instance.lastName,
       'firstName': instance.firstName,
-      'patronymic': instance.patronymic,
+      'middleName': instance.middleName,
       'email': instance.email,
       'role': instance.role,
-      'profilePicture': instance.profilePicture,
+      'photoURL': instance.photoURL,
       'groupId': instance.groupId,
-      'course': instance.course,
-      'groupName': instance.groupName,
-      'specialty': instance.specialty,
+      'iin': instance.iin,
+      'studentIdNumber': instance.studentIdNumber,
       'phone': instance.phone,
-      'attendance': instance.attendance,
       'status': instance.status,
+      'dateOfBirth': _$JsonConverterToJson<Timestamp, DateTime>(
+        instance.dateOfBirth,
+        const TimestampConverter().toJson,
+      ),
+      'enrollmentDate': _$JsonConverterToJson<Timestamp, DateTime>(
+        instance.enrollmentDate,
+        const TimestampConverter().toJson,
+      ),
+      'createdAt': _$JsonConverterToJson<Timestamp, DateTime>(
+        instance.createdAt,
+        const TimestampConverter().toJson,
+      ),
+      'updatedAt': _$JsonConverterToJson<Timestamp, DateTime>(
+        instance.updatedAt,
+        const TimestampConverter().toJson,
+      ),
     };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

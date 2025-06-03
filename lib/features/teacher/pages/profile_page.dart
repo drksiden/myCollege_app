@@ -6,7 +6,6 @@ import 'package:flutter_application_1/routes/app_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-
 // import 'edit_profile_page.dart';
 // import '../settings/settings_screen.dart';
 
@@ -79,13 +78,11 @@ class ProfilePage extends ConsumerWidget {
         // Если данные есть, но user == null (маловероятно из-за редиректа, но проверим)
         if (user == null) {
           return Scaffold(
-           
             body: const Center(child: Text('Пользователь не найден.')),
           );
         }
         return Scaffold(
           appBar: AppBar(
-            
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
@@ -120,10 +117,9 @@ class ProfilePage extends ConsumerWidget {
                     radius: 55,
                     backgroundColor: colorScheme.secondaryContainer,
                     backgroundImage:
-                        (user.profilePicture != null &&
-                                user.profilePicture!.isNotEmpty)
+                        (user.photoURL != null && user.photoURL!.isNotEmpty)
                             ? NetworkImage(
-                              user.profilePicture!,
+                              user.photoURL!,
                             ) // Используем user.profilePicture
                             : const AssetImage(
                                   'assets/images/default_avatar.png',
@@ -159,54 +155,87 @@ class ProfilePage extends ConsumerWidget {
               ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
               const SizedBox(height: 24),
 
-              // --- Секция Информации о Студенте ---
-              if (user.role == 'student')
+              // --- Секция Информации о Преподавателе ---
+              if (user.role == 'teacher')
                 Card(
-                  child: Column(
-                    children:
-                        [
-                              // Используем поля из нашей модели User
-                              if (user.course != null)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.school_outlined,
-                                  title: 'Курс',
-                                  value: '${user.course} курс',
-                                ),
-                              if (user.groupName != null &&
-                                  user.groupName!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.group_outlined,
-                                  title: 'Группа',
-                                  value: user.groupName!,
-                                ),
-                              if (user.specialty != null &&
-                                  user.specialty!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.computer_outlined,
-                                  title: 'Специальность',
-                                  value: user.specialty!,
-                                ),
-                              if (user.phone != null && user.phone!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.phone_outlined,
-                                  title: 'Телефон',
-                                  value: user.phone!,
-                                  isLast: true,
-                                ), // Отмечаем последнее поле
-                              // Добавь другие нужные поля из модели User...
-                              // Например, если у тебя был studentId в старой модели:
-                              // _buildInfoTile(context, icon: Icons.badge_outlined, title: 'Студ. ID', value: user.studentSpecificId ?? 'Не указан'), // Пример
-                            ]
-                            .toList()
-                            .cast<
-                              Widget
-                            >(), // Убираем null элементы, если поля опциональны
-                  ),
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms).slideX(begin: -0.1),
+                      child: Column(
+                        children: [
+                          // Личная информация
+                          _buildInfoTile(
+                            context,
+                            icon: Icons.person_outline,
+                            title: 'Фамилия',
+                            value: user.lastName,
+                          ),
+                          _buildInfoTile(
+                            context,
+                            icon: Icons.person_outline,
+                            title: 'Имя',
+                            value: user.firstName,
+                          ),
+                          if (user.middleName != null &&
+                              user.middleName!.isNotEmpty)
+                            _buildInfoTile(
+                              context,
+                              icon: Icons.person_outline,
+                              title: 'Отчество',
+                              value: user.middleName!,
+                            ),
+                          if (user.dateOfBirth != null)
+                            _buildInfoTile(
+                              context,
+                              icon: Icons.cake_outlined,
+                              title: 'Дата рождения',
+                              value:
+                                  '${user.dateOfBirth!.day}.${user.dateOfBirth!.month}.${user.dateOfBirth!.year}',
+                            ),
+                          if (user.iin != null && user.iin!.isNotEmpty)
+                            _buildInfoTile(
+                              context,
+                              icon: Icons.credit_card_outlined,
+                              title: 'ИИН',
+                              value: user.iin!,
+                            ),
+                          // Контактная информация
+                          if (user.phone != null && user.phone!.isNotEmpty)
+                            _buildInfoTile(
+                              context,
+                              icon: Icons.phone_outlined,
+                              title: 'Телефон',
+                              value: user.phone!,
+                              isLast: true,
+                            ),
+                        ],
+                      ),
+                    )
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideX(begin: -0.1),
+              const SizedBox(height: 16),
+
+              // --- Системная информация ---
+              Card(
+                    child: Column(
+                      children: [
+                        _buildInfoTile(
+                          context,
+                          icon: Icons.verified_user_outlined,
+                          title: 'Статус аккаунта',
+                          value: _getStatusDisplayName(user.status),
+                        ),
+                        _buildInfoTile(
+                          context,
+                          icon: Icons.fingerprint,
+                          title: 'ID пользователя',
+                          value: user.uid,
+                          isLast: true,
+                        ),
+                      ],
+                    ),
+                  )
+                  .animate(delay: 300.ms)
+                  .fadeIn(duration: 400.ms)
+                  .slideX(begin: -0.1),
               const SizedBox(height: 16),
 
               // --- Кнопка Выхода ---
@@ -291,5 +320,20 @@ class ProfilePage extends ConsumerWidget {
           ),
       ],
     );
+  }
+
+  String _getStatusDisplayName(String status) {
+    switch (status) {
+      case 'active':
+        return 'Активный';
+      case 'pending_approval':
+        return 'Ожидает подтверждения';
+      case 'rejected':
+        return 'Отклонен';
+      case 'suspended':
+        return 'Заблокирован';
+      default:
+        return status;
+    }
   }
 }

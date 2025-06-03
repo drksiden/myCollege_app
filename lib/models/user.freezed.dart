@@ -21,30 +21,26 @@ User _$UserFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$User {
-  String get id =>
-      throw _privateConstructorUsedError; // Соответствует uid в BaseUser
+  String get uid => throw _privateConstructorUsedError;
   String get lastName => throw _privateConstructorUsedError;
   String get firstName => throw _privateConstructorUsedError;
-  String? get patronymic =>
-      throw _privateConstructorUsedError; // Соответствует middleName в BaseUser
+  String? get middleName => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
-  String get role =>
-      throw _privateConstructorUsedError; // Строка, должна соответствовать значениям UserRole
-  String? get profilePicture =>
-      throw _privateConstructorUsedError; // Соответствует photoURL в BaseUser
-  String? get groupId =>
-      throw _privateConstructorUsedError; // Специфично для студента
-  int? get course =>
-      throw _privateConstructorUsedError; // Было в Group, теперь здесь для User?
-  String? get groupName =>
-      throw _privateConstructorUsedError; // Денормализованное поле для отображения
-  String? get specialty =>
-      throw _privateConstructorUsedError; // Может быть специализацией преподавателя или студента (денорм.)
-  String? get phone =>
-      throw _privateConstructorUsedError; // Соответствует phone в BaseUser
-  Map<String, String>? get attendance =>
-      throw _privateConstructorUsedError; // Новое поле, не обсуждалось ранее
+  String get role => throw _privateConstructorUsedError;
+  String? get photoURL => throw _privateConstructorUsedError;
+  String? get groupId => throw _privateConstructorUsedError;
+  String? get iin => throw _privateConstructorUsedError;
+  String? get studentIdNumber => throw _privateConstructorUsedError;
+  String? get phone => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime? get dateOfBirth => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime? get enrollmentDate => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime? get createdAt => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -61,20 +57,22 @@ abstract class $UserCopyWith<$Res> {
       _$UserCopyWithImpl<$Res, User>;
   @useResult
   $Res call({
-    String id,
+    String uid,
     String lastName,
     String firstName,
-    String? patronymic,
+    String? middleName,
     String email,
     String role,
-    String? profilePicture,
+    String? photoURL,
     String? groupId,
-    int? course,
-    String? groupName,
-    String? specialty,
+    String? iin,
+    String? studentIdNumber,
     String? phone,
-    Map<String, String>? attendance,
     String status,
+    @TimestampConverter() DateTime? dateOfBirth,
+    @TimestampConverter() DateTime? enrollmentDate,
+    @TimestampConverter() DateTime? createdAt,
+    @TimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -93,27 +91,29 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? uid = null,
     Object? lastName = null,
     Object? firstName = null,
-    Object? patronymic = freezed,
+    Object? middleName = freezed,
     Object? email = null,
     Object? role = null,
-    Object? profilePicture = freezed,
+    Object? photoURL = freezed,
     Object? groupId = freezed,
-    Object? course = freezed,
-    Object? groupName = freezed,
-    Object? specialty = freezed,
+    Object? iin = freezed,
+    Object? studentIdNumber = freezed,
     Object? phone = freezed,
-    Object? attendance = freezed,
     Object? status = null,
+    Object? dateOfBirth = freezed,
+    Object? enrollmentDate = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
       _value.copyWith(
-            id:
-                null == id
-                    ? _value.id
-                    : id // ignore: cast_nullable_to_non_nullable
+            uid:
+                null == uid
+                    ? _value.uid
+                    : uid // ignore: cast_nullable_to_non_nullable
                         as String,
             lastName:
                 null == lastName
@@ -125,10 +125,10 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                     ? _value.firstName
                     : firstName // ignore: cast_nullable_to_non_nullable
                         as String,
-            patronymic:
-                freezed == patronymic
-                    ? _value.patronymic
-                    : patronymic // ignore: cast_nullable_to_non_nullable
+            middleName:
+                freezed == middleName
+                    ? _value.middleName
+                    : middleName // ignore: cast_nullable_to_non_nullable
                         as String?,
             email:
                 null == email
@@ -140,46 +140,56 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                     ? _value.role
                     : role // ignore: cast_nullable_to_non_nullable
                         as String,
-            profilePicture:
-                freezed == profilePicture
-                    ? _value.profilePicture
-                    : profilePicture // ignore: cast_nullable_to_non_nullable
+            photoURL:
+                freezed == photoURL
+                    ? _value.photoURL
+                    : photoURL // ignore: cast_nullable_to_non_nullable
                         as String?,
             groupId:
                 freezed == groupId
                     ? _value.groupId
                     : groupId // ignore: cast_nullable_to_non_nullable
                         as String?,
-            course:
-                freezed == course
-                    ? _value.course
-                    : course // ignore: cast_nullable_to_non_nullable
-                        as int?,
-            groupName:
-                freezed == groupName
-                    ? _value.groupName
-                    : groupName // ignore: cast_nullable_to_non_nullable
+            iin:
+                freezed == iin
+                    ? _value.iin
+                    : iin // ignore: cast_nullable_to_non_nullable
                         as String?,
-            specialty:
-                freezed == specialty
-                    ? _value.specialty
-                    : specialty // ignore: cast_nullable_to_non_nullable
+            studentIdNumber:
+                freezed == studentIdNumber
+                    ? _value.studentIdNumber
+                    : studentIdNumber // ignore: cast_nullable_to_non_nullable
                         as String?,
             phone:
                 freezed == phone
                     ? _value.phone
                     : phone // ignore: cast_nullable_to_non_nullable
                         as String?,
-            attendance:
-                freezed == attendance
-                    ? _value.attendance
-                    : attendance // ignore: cast_nullable_to_non_nullable
-                        as Map<String, String>?,
             status:
                 null == status
                     ? _value.status
                     : status // ignore: cast_nullable_to_non_nullable
                         as String,
+            dateOfBirth:
+                freezed == dateOfBirth
+                    ? _value.dateOfBirth
+                    : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            enrollmentDate:
+                freezed == enrollmentDate
+                    ? _value.enrollmentDate
+                    : enrollmentDate // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            createdAt:
+                freezed == createdAt
+                    ? _value.createdAt
+                    : createdAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
+            updatedAt:
+                freezed == updatedAt
+                    ? _value.updatedAt
+                    : updatedAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
           )
           as $Val,
     );
@@ -195,20 +205,22 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
   @override
   @useResult
   $Res call({
-    String id,
+    String uid,
     String lastName,
     String firstName,
-    String? patronymic,
+    String? middleName,
     String email,
     String role,
-    String? profilePicture,
+    String? photoURL,
     String? groupId,
-    int? course,
-    String? groupName,
-    String? specialty,
+    String? iin,
+    String? studentIdNumber,
     String? phone,
-    Map<String, String>? attendance,
     String status,
+    @TimestampConverter() DateTime? dateOfBirth,
+    @TimestampConverter() DateTime? enrollmentDate,
+    @TimestampConverter() DateTime? createdAt,
+    @TimestampConverter() DateTime? updatedAt,
   });
 }
 
@@ -224,27 +236,29 @@ class __$$UserImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? id = null,
+    Object? uid = null,
     Object? lastName = null,
     Object? firstName = null,
-    Object? patronymic = freezed,
+    Object? middleName = freezed,
     Object? email = null,
     Object? role = null,
-    Object? profilePicture = freezed,
+    Object? photoURL = freezed,
     Object? groupId = freezed,
-    Object? course = freezed,
-    Object? groupName = freezed,
-    Object? specialty = freezed,
+    Object? iin = freezed,
+    Object? studentIdNumber = freezed,
     Object? phone = freezed,
-    Object? attendance = freezed,
     Object? status = null,
+    Object? dateOfBirth = freezed,
+    Object? enrollmentDate = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(
       _$UserImpl(
-        id:
-            null == id
-                ? _value.id
-                : id // ignore: cast_nullable_to_non_nullable
+        uid:
+            null == uid
+                ? _value.uid
+                : uid // ignore: cast_nullable_to_non_nullable
                     as String,
         lastName:
             null == lastName
@@ -256,10 +270,10 @@ class __$$UserImplCopyWithImpl<$Res>
                 ? _value.firstName
                 : firstName // ignore: cast_nullable_to_non_nullable
                     as String,
-        patronymic:
-            freezed == patronymic
-                ? _value.patronymic
-                : patronymic // ignore: cast_nullable_to_non_nullable
+        middleName:
+            freezed == middleName
+                ? _value.middleName
+                : middleName // ignore: cast_nullable_to_non_nullable
                     as String?,
         email:
             null == email
@@ -271,46 +285,56 @@ class __$$UserImplCopyWithImpl<$Res>
                 ? _value.role
                 : role // ignore: cast_nullable_to_non_nullable
                     as String,
-        profilePicture:
-            freezed == profilePicture
-                ? _value.profilePicture
-                : profilePicture // ignore: cast_nullable_to_non_nullable
+        photoURL:
+            freezed == photoURL
+                ? _value.photoURL
+                : photoURL // ignore: cast_nullable_to_non_nullable
                     as String?,
         groupId:
             freezed == groupId
                 ? _value.groupId
                 : groupId // ignore: cast_nullable_to_non_nullable
                     as String?,
-        course:
-            freezed == course
-                ? _value.course
-                : course // ignore: cast_nullable_to_non_nullable
-                    as int?,
-        groupName:
-            freezed == groupName
-                ? _value.groupName
-                : groupName // ignore: cast_nullable_to_non_nullable
+        iin:
+            freezed == iin
+                ? _value.iin
+                : iin // ignore: cast_nullable_to_non_nullable
                     as String?,
-        specialty:
-            freezed == specialty
-                ? _value.specialty
-                : specialty // ignore: cast_nullable_to_non_nullable
+        studentIdNumber:
+            freezed == studentIdNumber
+                ? _value.studentIdNumber
+                : studentIdNumber // ignore: cast_nullable_to_non_nullable
                     as String?,
         phone:
             freezed == phone
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
                     as String?,
-        attendance:
-            freezed == attendance
-                ? _value._attendance
-                : attendance // ignore: cast_nullable_to_non_nullable
-                    as Map<String, String>?,
         status:
             null == status
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                     as String,
+        dateOfBirth:
+            freezed == dateOfBirth
+                ? _value.dateOfBirth
+                : dateOfBirth // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        enrollmentDate:
+            freezed == enrollmentDate
+                ? _value.enrollmentDate
+                : enrollmentDate // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        createdAt:
+            freezed == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
+        updatedAt:
+            freezed == updatedAt
+                ? _value.updatedAt
+                : updatedAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
       ),
     );
   }
@@ -320,77 +344,68 @@ class __$$UserImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserImpl implements _User {
   const _$UserImpl({
-    required this.id,
+    required this.uid,
     required this.lastName,
     required this.firstName,
-    this.patronymic,
+    this.middleName,
     required this.email,
     required this.role,
-    this.profilePicture,
+    this.photoURL,
     this.groupId,
-    this.course,
-    this.groupName,
-    this.specialty,
+    this.iin,
+    this.studentIdNumber,
     this.phone,
-    final Map<String, String>? attendance,
     this.status = 'pending_approval',
-  }) : _attendance = attendance;
+    @TimestampConverter() this.dateOfBirth,
+    @TimestampConverter() this.enrollmentDate,
+    @TimestampConverter() this.createdAt,
+    @TimestampConverter() this.updatedAt,
+  });
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserImplFromJson(json);
 
   @override
-  final String id;
-  // Соответствует uid в BaseUser
+  final String uid;
   @override
   final String lastName;
   @override
   final String firstName;
   @override
-  final String? patronymic;
-  // Соответствует middleName в BaseUser
+  final String? middleName;
   @override
   final String email;
   @override
   final String role;
-  // Строка, должна соответствовать значениям UserRole
   @override
-  final String? profilePicture;
-  // Соответствует photoURL в BaseUser
+  final String? photoURL;
   @override
   final String? groupId;
-  // Специфично для студента
   @override
-  final int? course;
-  // Было в Group, теперь здесь для User?
+  final String? iin;
   @override
-  final String? groupName;
-  // Денормализованное поле для отображения
-  @override
-  final String? specialty;
-  // Может быть специализацией преподавателя или студента (денорм.)
+  final String? studentIdNumber;
   @override
   final String? phone;
-  // Соответствует phone в BaseUser
-  final Map<String, String>? _attendance;
-  // Соответствует phone в BaseUser
-  @override
-  Map<String, String>? get attendance {
-    final value = _attendance;
-    if (value == null) return null;
-    if (_attendance is EqualUnmodifiableMapView) return _attendance;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableMapView(value);
-  }
-
-  // Новое поле, не обсуждалось ранее
   @override
   @JsonKey()
   final String status;
+  @override
+  @TimestampConverter()
+  final DateTime? dateOfBirth;
+  @override
+  @TimestampConverter()
+  final DateTime? enrollmentDate;
+  @override
+  @TimestampConverter()
+  final DateTime? createdAt;
+  @override
+  @TimestampConverter()
+  final DateTime? updatedAt;
 
   @override
   String toString() {
-    return 'User(id: $id, lastName: $lastName, firstName: $firstName, patronymic: $patronymic, email: $email, role: $role, profilePicture: $profilePicture, groupId: $groupId, course: $course, groupName: $groupName, specialty: $specialty, phone: $phone, attendance: $attendance, status: $status)';
+    return 'User(uid: $uid, lastName: $lastName, firstName: $firstName, middleName: $middleName, email: $email, role: $role, photoURL: $photoURL, groupId: $groupId, iin: $iin, studentIdNumber: $studentIdNumber, phone: $phone, status: $status, dateOfBirth: $dateOfBirth, enrollmentDate: $enrollmentDate, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -398,49 +413,53 @@ class _$UserImpl implements _User {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$UserImpl &&
-            (identical(other.id, id) || other.id == id) &&
+            (identical(other.uid, uid) || other.uid == uid) &&
             (identical(other.lastName, lastName) ||
                 other.lastName == lastName) &&
             (identical(other.firstName, firstName) ||
                 other.firstName == firstName) &&
-            (identical(other.patronymic, patronymic) ||
-                other.patronymic == patronymic) &&
+            (identical(other.middleName, middleName) ||
+                other.middleName == middleName) &&
             (identical(other.email, email) || other.email == email) &&
             (identical(other.role, role) || other.role == role) &&
-            (identical(other.profilePicture, profilePicture) ||
-                other.profilePicture == profilePicture) &&
+            (identical(other.photoURL, photoURL) ||
+                other.photoURL == photoURL) &&
             (identical(other.groupId, groupId) || other.groupId == groupId) &&
-            (identical(other.course, course) || other.course == course) &&
-            (identical(other.groupName, groupName) ||
-                other.groupName == groupName) &&
-            (identical(other.specialty, specialty) ||
-                other.specialty == specialty) &&
+            (identical(other.iin, iin) || other.iin == iin) &&
+            (identical(other.studentIdNumber, studentIdNumber) ||
+                other.studentIdNumber == studentIdNumber) &&
             (identical(other.phone, phone) || other.phone == phone) &&
-            const DeepCollectionEquality().equals(
-              other._attendance,
-              _attendance,
-            ) &&
-            (identical(other.status, status) || other.status == status));
+            (identical(other.status, status) || other.status == status) &&
+            (identical(other.dateOfBirth, dateOfBirth) ||
+                other.dateOfBirth == dateOfBirth) &&
+            (identical(other.enrollmentDate, enrollmentDate) ||
+                other.enrollmentDate == enrollmentDate) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    id,
+    uid,
     lastName,
     firstName,
-    patronymic,
+    middleName,
     email,
     role,
-    profilePicture,
+    photoURL,
     groupId,
-    course,
-    groupName,
-    specialty,
+    iin,
+    studentIdNumber,
     phone,
-    const DeepCollectionEquality().hash(_attendance),
     status,
+    dateOfBirth,
+    enrollmentDate,
+    createdAt,
+    updatedAt,
   );
 
   /// Create a copy of User
@@ -459,52 +478,62 @@ class _$UserImpl implements _User {
 
 abstract class _User implements User {
   const factory _User({
-    required final String id,
+    required final String uid,
     required final String lastName,
     required final String firstName,
-    final String? patronymic,
+    final String? middleName,
     required final String email,
     required final String role,
-    final String? profilePicture,
+    final String? photoURL,
     final String? groupId,
-    final int? course,
-    final String? groupName,
-    final String? specialty,
+    final String? iin,
+    final String? studentIdNumber,
     final String? phone,
-    final Map<String, String>? attendance,
     final String status,
+    @TimestampConverter() final DateTime? dateOfBirth,
+    @TimestampConverter() final DateTime? enrollmentDate,
+    @TimestampConverter() final DateTime? createdAt,
+    @TimestampConverter() final DateTime? updatedAt,
   }) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
 
   @override
-  String get id; // Соответствует uid в BaseUser
+  String get uid;
   @override
   String get lastName;
   @override
   String get firstName;
   @override
-  String? get patronymic; // Соответствует middleName в BaseUser
+  String? get middleName;
   @override
   String get email;
   @override
-  String get role; // Строка, должна соответствовать значениям UserRole
+  String get role;
   @override
-  String? get profilePicture; // Соответствует photoURL в BaseUser
+  String? get photoURL;
   @override
-  String? get groupId; // Специфично для студента
+  String? get groupId;
   @override
-  int? get course; // Было в Group, теперь здесь для User?
+  String? get iin;
   @override
-  String? get groupName; // Денормализованное поле для отображения
+  String? get studentIdNumber;
   @override
-  String? get specialty; // Может быть специализацией преподавателя или студента (денорм.)
-  @override
-  String? get phone; // Соответствует phone в BaseUser
-  @override
-  Map<String, String>? get attendance; // Новое поле, не обсуждалось ранее
+  String? get phone;
   @override
   String get status;
+  @override
+  @TimestampConverter()
+  DateTime? get dateOfBirth;
+  @override
+  @TimestampConverter()
+  DateTime? get enrollmentDate;
+  @override
+  @TimestampConverter()
+  DateTime? get createdAt;
+  @override
+  @TimestampConverter()
+  DateTime? get updatedAt;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.

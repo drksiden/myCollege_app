@@ -1,14 +1,12 @@
-// lib/features/student/profile_page.dart (Исправленный)
+// lib/features/student/profile_page.dart (Расширенная версия)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../models/user.dart';
 import '../../core/auth_service.dart';
-import '../../routes/app_router.dart'; // Раскомментируй, когда роуты будут готовы
-
-// import 'edit_profile_page.dart';
-// import '../settings/settings_screen.dart';
+import '../../routes/app_router.dart';
+import '../../providers/group_provider.dart'; // Добавляем импорт группового провайдера
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -37,10 +35,7 @@ class ProfilePage extends ConsumerWidget {
     );
     if (confirmed == true) {
       try {
-        // Используем ref для доступа к сервису и выхода
         await ref.read(authServiceProvider).signOut();
-        // Навигация не нужна, GoRouter сделает редирект автоматически
-        // при изменении authStateProvider
       } catch (e) {
         debugPrint("Sign out error: $e");
         if (context.mounted) {
@@ -71,18 +66,45 @@ class ProfilePage extends ConsumerWidget {
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Text('Ошибка загрузки профиля: $error'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Ошибка загрузки профиля',
+                      style: textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(authStateProvider),
+                      child: const Text('Повторить'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
       data: (user) {
-        // Если данные есть, но user == null (маловероятно из-за редиректа, но проверим)
         if (user == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Профиль')),
             body: const Center(child: Text('Пользователь не найден.')),
           );
         }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Профиль'),
@@ -91,13 +113,9 @@ class ProfilePage extends ConsumerWidget {
                 icon: const Icon(Icons.edit_outlined),
                 tooltip: 'Редактировать профиль',
                 onPressed: () {
-                  // Передаем текущий объект user в extra
-                  // Используем AppRouter или GoRouter.of(context)
                   AppRouter.push(context, '/home/profile/edit', extra: user);
-                  // или GoRouter.of(context).push('/home/profile/edit', extra: user);
                 },
               ),
-              // Можно добавить иконку настроек прямо в AppBar
               IconButton(
                 icon: const Icon(Icons.settings_outlined),
                 tooltip: 'Настройки',
@@ -107,189 +125,507 @@ class ProfilePage extends ConsumerWidget {
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 16.0,
-            ),
-            children: [
-              // --- Секция Аватара и Имени ---
-              Column(
+          body: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(authStateProvider);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 55,
-                    backgroundColor: colorScheme.secondaryContainer,
-                    backgroundImage:
-                        (user.profilePicture != null &&
-                                user.profilePicture!.isNotEmpty)
-                            ? NetworkImage(
-                              user.profilePicture!,
-                            ) // Используем user.profilePicture
-                            : const AssetImage(
-                                  'assets/images/default_avatar.png',
-                                )
-                                as ImageProvider,
+                  // Секция профиля пользователя
+                  _buildProfileHeader(context, user, colorScheme, textTheme),
+                  const SizedBox(height: 24),
+
+                  // Основная информация
+                  _buildPersonalInfoSection(
+                    context,
+                    user,
+                    colorScheme,
+                    textTheme,
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    // Используем getter fullName из модели User
-                    user.fullName,
-                    style: textTheme.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      user.email, // Используем поле 'email'
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+
+                  // Информация об обучении (для студентов)
+                  if (user.role == 'student') ...[
+                    _buildStudyInfoSection(
+                      context,
+                      user,
+                      colorScheme,
+                      textTheme,
                     ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Контактная информация
+                  _buildContactInfoSection(
+                    context,
+                    user,
+                    colorScheme,
+                    textTheme,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      'Роль: ${user.role}', // Используем поле 'role'
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.secondary,
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+
+                  // Системная информация
+                  _buildSystemInfoSection(
+                    context,
+                    user,
+                    colorScheme,
+                    textTheme,
                   ),
+                  const SizedBox(height: 16),
+
+                  // Кнопка выхода
+                  _buildLogoutSection(context, ref, colorScheme, textTheme),
                 ],
-              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.2),
-              const SizedBox(height: 24),
-
-              // --- Секция Информации о Студенте ---
-              if (user.role == 'student')
-                Card(
-                  child: Column(
-                    children:
-                        [
-                              // Используем поля из нашей модели User
-                              if (user.course != null)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.school_outlined,
-                                  title: 'Курс',
-                                  value: '${user.course} курс',
-                                ),
-                              if (user.groupName != null &&
-                                  user.groupName!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.group_outlined,
-                                  title: 'Группа',
-                                  value: user.groupName!,
-                                ),
-                              if (user.specialty != null &&
-                                  user.specialty!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.computer_outlined,
-                                  title: 'Специальность',
-                                  value: user.specialty!,
-                                ),
-                              if (user.phone != null && user.phone!.isNotEmpty)
-                                _buildInfoTile(
-                                  context,
-                                  icon: Icons.phone_outlined,
-                                  title: 'Телефон',
-                                  value: user.phone!,
-                                  isLast: true,
-                                ), // Отмечаем последнее поле
-                              // Добавь другие нужные поля из модели User...
-                              // Например, если у тебя был studentId в старой модели:
-                              // _buildInfoTile(context, icon: Icons.badge_outlined, title: 'Студ. ID', value: user.studentSpecificId ?? 'Не указан'), // Пример
-                            ]
-                            .toList()
-                            .cast<
-                              Widget
-                            >(), // Убираем null элементы, если поля опциональны
-                  ),
-                ).animate(delay: 200.ms).fadeIn(duration: 400.ms).slideX(begin: -0.1),
-              const SizedBox(height: 16),
-
-              // --- Кнопка Выхода ---
-              Card(
-                color: colorScheme.errorContainer.withAlpha(
-                  77,
-                ), // Примерно 30% прозрачности
-                child: _buildInfoTile(
-                  context,
-                  icon: Icons.logout,
-                  title: 'Выйти',
-                  value: '',
-                  iconColor: colorScheme.error,
-                  titleColor: colorScheme.error,
-                  isLast: true,
-                  onTap: () => _signOut(context, ref),
-                ),
-              ).animate(delay: 400.ms).fadeIn(duration: 400.ms),
-            ],
+              ),
+            ),
           ),
         );
       },
     );
   }
 
-  // _buildInfoTile остается без изменений
-  Widget _buildInfoTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    Color? iconColor,
-    Color? titleColor,
-    bool isLast = false,
-    VoidCallback? onTap,
-  }) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    // Убрали dividerTheme, используем стандартный Divider
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          leading: Icon(
-            icon,
-            color: iconColor ?? colorScheme.primary, // Используем цвет из темы
-            size: 24,
+  Widget _buildProfileHeader(
+    BuildContext context,
+    User user,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Center(
+      child: Column(
+        children: [
+          // Аватар
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: colorScheme.secondaryContainer,
+                backgroundImage:
+                    (user.photoURL != null && user.photoURL!.isNotEmpty)
+                        ? NetworkImage(user.photoURL!)
+                        : null,
+                child:
+                    (user.photoURL == null || user.photoURL!.isEmpty)
+                        ? Icon(
+                          Icons.person,
+                          size: 60,
+                          color: colorScheme.onSecondaryContainer,
+                        )
+                        : null,
+              ),
+              // Индикатор статуса
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(user.status),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colorScheme.surface, width: 2),
+                  ),
+                  child: const SizedBox(width: 12, height: 12),
+                ),
+              ),
+            ],
           ),
-          title: Text(
-            title,
+          const SizedBox(height: 16),
+          // Имя пользователя
+          Text(
+            user.fullName,
+            style: textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Роль пользователя
+          Text(
+            user.role == 'student' ? 'Студент' : 'Преподаватель',
             style: textTheme.titleMedium?.copyWith(
-              color: titleColor,
-            ), // Стиль M3
+              color: colorScheme.onSurfaceVariant,
+            ),
           ),
-          trailing:
-              value.isNotEmpty
-                  ? Text(
-                    value,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color:
-                          colorScheme
-                              .onSurfaceVariant, // Цвет для второстепенного текста
-                    ),
-                  )
-                  : (onTap != null
-                      ? const Icon(Icons.chevron_right)
-                      : null), // Иконка ">" если есть onTap и нет value
-          onTap: onTap,
-          dense: false, // Используем стандартные отступы
-          minVerticalPadding: 12, // Немного увеличим вертикальный отступ
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalInfoSection(
+    BuildContext context,
+    User user,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return _buildSection(
+      context,
+      'Личная информация',
+      Icons.person_outline,
+      colorScheme,
+      textTheme,
+      [
+        _buildInfoRow(
+          context,
+          'Фамилия',
+          user.lastName,
+          Icons.badge_outlined,
+          colorScheme,
+          textTheme,
         ),
-        // Добавляем стандартный разделитель
-        if (!isLast)
-          const Divider(
-            height: 1, // Стандартная высота
-            thickness: 1, // Стандартная толщина
-            indent:
-                56, // Отступ слева (примерно ширина иконки + отступ ListTile)
-            endIndent: 16, // Отступ справа
-            // Цвет берется из DividerTheme темы Material 3
+        _buildInfoRow(
+          context,
+          'Имя',
+          user.firstName,
+          Icons.badge_outlined,
+          colorScheme,
+          textTheme,
+        ),
+        if (user.middleName != null && user.middleName!.isNotEmpty)
+          _buildInfoRow(
+            context,
+            'Отчество',
+            user.middleName!,
+            Icons.badge_outlined,
+            colorScheme,
+            textTheme,
+          ),
+        if (user.dateOfBirth != null)
+          _buildInfoRow(
+            context,
+            'Дата рождения',
+            '${user.dateOfBirth!.day}.${user.dateOfBirth!.month}.${user.dateOfBirth!.year}',
+            Icons.cake_outlined,
+            colorScheme,
+            textTheme,
+          ),
+        if (user.iin != null)
+          _buildInfoRow(
+            context,
+            'ИИН',
+            user.iin!,
+            Icons.credit_card_outlined,
+            colorScheme,
+            textTheme,
+          ),
+        if (user.studentIdNumber != null)
+          _buildInfoRow(
+            context,
+            'Номер студенческого',
+            user.studentIdNumber!,
+            Icons.badge_outlined,
+            colorScheme,
+            textTheme,
           ),
       ],
     );
+  }
+
+  Widget _buildStudyInfoSection(
+    BuildContext context,
+    User user,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.school_outlined, color: colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Информация об обучении',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Группа
+            Consumer(
+              builder: (context, ref, child) {
+                final groupNameAsync = ref.watch(
+                  groupNameProvider(user.groupId ?? ''),
+                );
+                return groupNameAsync.when(
+                  loading:
+                      () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                  error:
+                      (error, stack) => Text(
+                        'Ошибка загрузки группы',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.error,
+                        ),
+                      ),
+                  data:
+                      (groupName) => _buildInfoRow(
+                        context,
+                        'Группа',
+                        groupName,
+                        Icons.group_outlined,
+                        colorScheme,
+                        textTheme,
+                      ),
+                );
+              },
+            ),
+            if (user.enrollmentDate != null) ...[
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                context,
+                'Дата зачисления',
+                '${user.enrollmentDate!.day}.${user.enrollmentDate!.month}.${user.enrollmentDate!.year}',
+                Icons.calendar_today_outlined,
+                colorScheme,
+                textTheme,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactInfoSection(
+    BuildContext context,
+    User user,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final hasContactInfo = (user.phone != null && user.phone!.isNotEmpty);
+
+    if (!hasContactInfo) return const SizedBox.shrink();
+
+    return _buildSection(
+      context,
+      'Контактная информация',
+      Icons.contact_phone_outlined,
+      colorScheme,
+      textTheme,
+      [
+        if (user.phone != null && user.phone!.isNotEmpty)
+          _buildInfoRow(
+            context,
+            'Телефон',
+            user.phone!,
+            Icons.phone_outlined,
+            colorScheme,
+            textTheme,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSystemInfoSection(
+    BuildContext context,
+    User user,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return _buildSection(
+      context,
+      'Системная информация',
+      Icons.info_outline,
+      colorScheme,
+      textTheme,
+      [
+        _buildInfoRow(
+          context,
+          'Статус аккаунта',
+          _getStatusDisplayName(user.status),
+          Icons.verified_user_outlined,
+          colorScheme,
+          textTheme,
+        ),
+        _buildInfoRow(
+          context,
+          'ID пользователя',
+          user.uid,
+          Icons.fingerprint,
+          colorScheme,
+          textTheme,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLogoutSection(
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Card(
+      color: colorScheme.errorContainer.withOpacity(0.3),
+      child: InkWell(
+        onTap: () => _signOut(context, ref),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Icon(Icons.logout, color: colorScheme.error),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Выйти из аккаунта',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: colorScheme.error),
+            ],
+          ),
+        ),
+      ),
+    ).animate(delay: 400.ms).fadeIn(duration: 400.ms);
+  }
+
+  Widget _buildSection(
+    BuildContext context,
+    String title,
+    IconData icon,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    List<Widget> children,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(value, style: textTheme.bodyLarge),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'active':
+        return Colors.green;
+      case 'pending_approval':
+        return Colors.orange;
+      case 'rejected':
+      case 'suspended':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'active':
+        return Icons.check_circle;
+      case 'pending_approval':
+        return Icons.hourglass_empty;
+      case 'rejected':
+        return Icons.cancel;
+      case 'suspended':
+        return Icons.block;
+      default:
+        return Icons.help;
+    }
+  }
+
+  String _getStatusDisplayName(String status) {
+    switch (status) {
+      case 'active':
+        return 'Активный';
+      case 'pending_approval':
+        return 'Ожидает подтверждения';
+      case 'rejected':
+        return 'Отклонен';
+      case 'suspended':
+        return 'Заблокирован';
+      default:
+        return status;
+    }
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role) {
+      case 'student':
+        return Colors.blue;
+      case 'teacher':
+        return Colors.green;
+      case 'admin':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getRoleDisplayName(String role) {
+    switch (role) {
+      case 'student':
+        return 'Студент';
+      case 'teacher':
+        return 'Преподаватель';
+      case 'admin':
+        return 'Администратор';
+      default:
+        return role;
+    }
   }
 }

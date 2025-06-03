@@ -1,9 +1,10 @@
+// lib/features/student/schedule_page.dart (исправленная версия)
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/student/providers/schedule_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/subject_provider.dart';
-import '../../providers/user_profile_provider.dart';
+import '../../providers/teacher_provider.dart'; // Используем исправленный провайдер
 import '../../models/schedule_entry.dart';
 import '../../models/subject.dart';
 
@@ -60,9 +61,33 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
                 (error, stack) => Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Ошибка загрузки расписания.\n$error',
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Ошибка загрузки расписания',
+                          style: textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => ref.refresh(scheduleProvider),
+                          child: const Text('Повторить'),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -88,11 +113,20 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
                   for (final entry in schedule) {
                     grouped.putIfAbsent(entry.dayOfWeek, () => []).add(entry);
                   }
+
+                  // Сортируем уроки в каждом дне по времени
+                  for (final dayLessons in grouped.values) {
+                    dayLessons.sort(
+                      (a, b) => a.startTime.compareTo(b.startTime),
+                    );
+                  }
+
                   return TabBarView(
                     controller: _tabController,
                     children: List.generate(_daysOfWeek.length, (tabIndex) {
                       final dayOfWeek = _daysOfWeek[tabIndex];
                       final lessonsForDay = grouped[dayOfWeek] ?? [];
+
                       return RefreshIndicator(
                         color: colorScheme.primary,
                         onRefresh: () async {
@@ -173,10 +207,13 @@ class _LessonCard extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final bool isCurrent = _isCurrentLesson(lesson);
 
+    // ИСПРАВЛЕНО: Используем правильный провайдер
     print(
       'DEBUG: _LessonCard building for lesson with teacherId: ${lesson.teacherId}',
     );
-    final teacherNameAsync = ref.watch(teacherNameProvider(lesson.teacherId));
+    final teacherNameAsync = ref.watch(
+      teacherNameByIdProvider(lesson.teacherId),
+    );
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
@@ -184,7 +221,7 @@ class _LessonCard extends ConsumerWidget {
           isCurrent
               ? RoundedRectangleBorder(
                 side: BorderSide(color: colorScheme.primary, width: 2.0),
-                borderRadius: BorderRadius.circular(_borderRadiusValue),
+                borderRadius: BorderRadius.circular(12.0),
               )
               : null,
       child: Padding(
@@ -262,35 +299,41 @@ class _LessonCard extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline,
                         size: 14,
-                        color: Colors.grey,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: teacherNameAsync.when(
-                          data:
-                              (name) => Text(
-                                name,
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                          data: (name) {
+                            print('DEBUG: Teacher name loaded: $name');
+                            return Text(
+                              name,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
-                          loading:
-                              () => Text(
-                                'Загрузка... (ID: ${lesson.teacherId})',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                            );
+                          },
+                          loading: () {
+                            print('DEBUG: Teacher name loading...');
+                            return Text(
+                              'Загрузка...',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
-                          error:
-                              (e, s) => Text(
-                                'Ошибка: $e',
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                            );
+                          },
+                          error: (e, s) {
+                            print('DEBUG: Teacher name error: $e');
+                            return Text(
+                              'Ошибка: $e',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.error,
                               ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -299,15 +342,17 @@ class _LessonCard extends ConsumerWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_outlined,
                         size: 14,
-                        color: Colors.grey,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          lesson.room,
+                          lesson.room.isEmpty
+                              ? 'Аудитория не указана'
+                              : lesson.room,
                           style: textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -346,5 +391,3 @@ class _LessonCard extends ConsumerWidget {
     }
   }
 }
-
-const double _borderRadiusValue = 12.0;

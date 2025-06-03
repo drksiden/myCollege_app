@@ -44,7 +44,7 @@ final teacherSubjectsProvider = StreamProvider.autoDispose<List<Subject>>((
 ) {
   final subjectService = ref.watch(subjectServiceProvider);
   return subjectService.getSubjectsByTeacher(
-    ref.watch(userProfileProvider).valueOrNull?.id ?? '',
+    ref.watch(userProfileProvider).valueOrNull?.uid ?? '',
   );
 });
 

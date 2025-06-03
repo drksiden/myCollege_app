@@ -1,17 +1,14 @@
-// lib/features/student/edit_profile_page.dart
+// lib/features/student/edit_profile_page.dart (Улучшенная версия)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'
-    hide User; // Скрываем User из auth
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart'; // Для context.pop()
+import 'package:go_router/go_router.dart';
 
-import '../../models/user.dart'; // Наша модель User
+import '../../models/user.dart';
 
-// Используем ConsumerStatefulWidget для контроллеров и состояния загрузки
 class EditProfilePage extends ConsumerStatefulWidget {
-  // Получаем начальные данные пользователя через конструктор
   final User initialUser;
 
   const EditProfilePage({super.key, required this.initialUser});
@@ -22,12 +19,12 @@ class EditProfilePage extends ConsumerStatefulWidget {
 
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
+
   // Контроллеры для редактируемых полей
   late TextEditingController _lastNameController;
   late TextEditingController _firstNameController;
   late TextEditingController _patronymicController;
   late TextEditingController _phoneController;
-  // Добавь другие контроллеры, если нужно
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -35,7 +32,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Инициализируем контроллеры начальными данными из widget.initialUser
+    // Инициализируем контроллеры начальными данными
     _lastNameController = TextEditingController(
       text: widget.initialUser.lastName,
     );
@@ -43,7 +40,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       text: widget.initialUser.firstName,
     );
     _patronymicController = TextEditingController(
-      text: widget.initialUser.patronymic ?? '',
+      text: widget.initialUser.middleName ?? '',
     );
     _phoneController = TextEditingController(
       text: widget.initialUser.phone ?? '',
@@ -59,7 +56,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     super.dispose();
   }
 
-  // --- Функция сохранения изменений ---
   Future<void> _saveProfile() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -68,7 +64,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _errorMessage = null;
     });
 
-    // Получаем UID текущего пользователя (лучше из FirebaseAuth)
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) {
       setState(() {
@@ -86,31 +81,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final updatedLastName = _lastNameController.text.trim();
     final updatedFirstName = _firstNameController.text.trim();
     final updatedPatronymic = _patronymicController.text.trim();
+    final updatedPhone = _phoneController.text.trim();
 
     // Собираем только обновляемые поля
     final Map<String, dynamic> updatedData = {
       'lastName': updatedLastName,
       'firstName': updatedFirstName,
-      'patronymic':
-          updatedPatronymic.isEmpty
-              ? null
-              : updatedPatronymic, // Сохраняем null, если поле пустое
-      'phone':
-          _phoneController.text.trim().isEmpty
-              ? null
-              : _phoneController.text.trim(),
-      'updatedAt': FieldValue.serverTimestamp(), // Обновляем время изменения
-      // ВАЖНО: НЕ обновляем email, role, groupId, course и т.д. здесь,
-      // если это не предусмотрено логикой редактирования профиля пользователя!
-      // Обновляем `name` (если оно используется где-то еще, хотя лучше использовать getter `fullName`)
-      'name':
-          '$updatedLastName $updatedFirstName ${updatedPatronymic.isEmpty ? '' : updatedPatronymic}'
-              .trim()
-              .replaceAll('  ', ' '),
+      'patronymic': updatedPatronymic.isEmpty ? null : updatedPatronymic,
+      'phone': updatedPhone.isEmpty ? null : updatedPhone,
+      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     try {
-      // Обновляем документ в Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -123,7 +105,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             backgroundColor: Colors.green,
           ),
         );
-        // Используем GoRouter для возврата назад
         context.pop(); // Закрываем текущий экран
       }
     } catch (e) {
@@ -144,17 +125,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       if (mounted && _isLoading) setState(() => _isLoading = false);
     }
   }
-  // -----------------------------
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Редактировать профиль'),
         actions: [
-          // Кнопка сохранения или индикатор
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.only(right: 16.0),
@@ -174,108 +154,245 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Form(
-          key: _formKey,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- Редактируемые поля ---
-              Text(
-                "Личные данные",
-                style: textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(labelText: "Фамилия"),
-                validator:
-                    (value) =>
-                        (value == null || value.trim().isEmpty)
-                            ? 'Введите фамилию'
-                            : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: "Имя"),
-                validator:
-                    (value) =>
-                        (value == null || value.trim().isEmpty)
-                            ? 'Введите имя'
-                            : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _patronymicController,
-                decoration: const InputDecoration(
-                  labelText: "Отчество (если есть)",
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: "Телефон",
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 24),
+                  // Заголовок профиля
+                  _buildProfileHeader(colorScheme, textTheme),
+                  const SizedBox(height: 24),
 
-              // --- Не редактируемые поля (для информации) ---
-              Text(
-                "Информация об обучении",
-                style: textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: const Icon(Icons.email_outlined, size: 20),
-                title: Text(
-                  "Email: ${widget.initialUser.email}",
-                ), // Не редактируется
-                dense: true,
-              ),
-              ListTile(
-                leading: const Icon(Icons.badge_outlined, size: 20),
-                title: Text(
-                  "Роль: ${widget.initialUser.role}",
-                ), // Не редактируется
-                dense: true,
-              ),
-              if (widget.initialUser.role == 'student') ...[
-                ListTile(
-                  leading: const Icon(Icons.group_outlined, size: 20),
-                  title: Text(
-                    "Группа: ${widget.initialUser.groupName ?? 'Не указана'}",
-                  ),
-                  dense: true,
-                ),
-                ListTile(
-                  leading: const Icon(Icons.school_outlined, size: 20),
-                  title: Text(
-                    "Курс: ${widget.initialUser.course ?? 'Не указан'}",
-                  ),
-                  dense: true,
-                ),
-                ListTile(
-                  leading: const Icon(Icons.computer_outlined, size: 20),
-                  title: Text(
-                    "Специальность: ${widget.initialUser.specialty ?? 'Не указана'}",
-                  ),
-                  dense: true,
-                ),
-              ],
-              // Кнопку сохранения можно разместить в AppBar (как сделано) или внизу формы
-            ].animate(interval: 80.ms).fadeIn(duration: 250.ms).slideX(begin: 0.1),
+                  // Редактируемые поля
+                  _buildEditableSection(colorScheme, textTheme),
+                  const SizedBox(height: 24),
+
+                  // Не редактируемые поля (для справки)
+                  _buildReadOnlySection(colorScheme, textTheme),
+                  const SizedBox(height: 24),
+
+                  // Кнопка сохранения (дублируем внизу для удобства)
+                  _buildSaveButton(colorScheme),
+                ]
+                .animate(interval: 80.ms)
+                .fadeIn(duration: 250.ms)
+                .slideX(begin: 0.1),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileHeader(ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Аватар (пока только отображение)
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: colorScheme.secondaryContainer,
+              backgroundImage:
+                  (widget.initialUser.photoURL != null &&
+                          widget.initialUser.photoURL!.isNotEmpty)
+                      ? NetworkImage(widget.initialUser.photoURL!)
+                      : null,
+              child:
+                  (widget.initialUser.photoURL == null ||
+                          widget.initialUser.photoURL!.isEmpty)
+                      ? Icon(
+                        Icons.person,
+                        size: 40,
+                        color: colorScheme.onSecondaryContainer,
+                      )
+                      : null,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Редактирование профиля',
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.initialUser.email,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditableSection(ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.edit_outlined, color: colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  "Редактируемые данные",
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _lastNameController,
+              decoration: const InputDecoration(
+                labelText: 'Фамилия',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Пожалуйста, введите фамилию';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _firstNameController,
+              decoration: const InputDecoration(
+                labelText: 'Имя',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Пожалуйста, введите имя';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _patronymicController,
+              decoration: const InputDecoration(
+                labelText: 'Отчество',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Телефон',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlySection(ColorScheme colorScheme, TextTheme textTheme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: colorScheme.secondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Информация для справки",
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.secondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildReadOnlyField(
+              icon: Icons.group_outlined,
+              label: 'Группа',
+              value: widget.initialUser.groupId ?? 'Не указана',
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(height: 12),
+            _buildReadOnlyField(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: widget.initialUser.email,
+              colorScheme: colorScheme,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyField({
+    required IconData icon,
+    required String label,
+    required String value,
+    required ColorScheme colorScheme,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+              Text(value, style: const TextStyle(fontSize: 16)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton(ColorScheme colorScheme) {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _saveProfile,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+      ),
+      child:
+          _isLoading
+              ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+              : const Text('Сохранить изменения'),
     );
   }
 }

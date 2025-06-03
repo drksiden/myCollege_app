@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'core/providers/theme_provider.dart'; // Наш провайдер темы
+import 'package:intl/date_symbol_data_local.dart';
 
 // --- Константы для удобства ---
 const _seedColor = Colors.indigo; // Основной цвет для генерации схемы
@@ -15,6 +16,8 @@ const _inputBorderRadiusValue = 8.0; // Радиус для полей ввод�
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Инициализируем форматирование дат для русского языка
+  await initializeDateFormatting('ru_RU', null);
 
   runApp(const ProviderScope(child: MyApp()));
 }

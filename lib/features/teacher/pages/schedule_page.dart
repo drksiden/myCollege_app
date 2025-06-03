@@ -14,7 +14,7 @@ class SchedulePage extends ConsumerWidget {
       return const Center(child: Text('Пользователь не найден'));
     }
 
-    final scheduleAsync = ref.watch(teacherScheduleProvider(user.id));
+    final scheduleAsync = ref.watch(teacherScheduleProvider(user.uid));
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +22,7 @@ class SchedulePage extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => ref.refresh(teacherScheduleProvider(user.id)),
+            onPressed: () => ref.refresh(teacherScheduleProvider(user.uid)),
           ),
         ],
       ),
