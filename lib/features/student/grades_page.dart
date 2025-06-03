@@ -315,23 +315,22 @@ class _GradeListTileState extends State<_GradeListTile> {
                       ),
                       const SizedBox(height: 8),
                     ],
-                    if (widget.grade.semester != null)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.school_outlined,
-                            size: 16,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Семестр: ${widget.grade.semester}',
+                          style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Семестр: ${widget.grade.semester}',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

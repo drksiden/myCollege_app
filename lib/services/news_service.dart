@@ -46,8 +46,9 @@ class NewsService {
 
     if (title != null) updates['title'] = title;
     if (content != null) updates['content'] = content;
-    if (images != null)
+    if (images != null) {
       updates['images'] = images.map((img) => img.toJson()).toList();
+    }
     if (tags != null) updates['tags'] = tags;
 
     await newsRef.update(updates);

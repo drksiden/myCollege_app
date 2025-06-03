@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/schedule_entry.dart';
-import '../models/user.dart' as app;
 import '../services/schedule_service.dart';
 import 'user_profile_provider.dart';
 

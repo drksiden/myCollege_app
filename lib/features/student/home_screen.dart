@@ -14,7 +14,6 @@ import '../auth/lock_screen.dart'; // Экран блокировки
 import 'profile_page.dart';
 import 'schedule_page.dart';
 import 'grades_page.dart';
-import 'performance_page.dart';
 import '../chat/chats_page.dart';
 import '../news/news_feed_page.dart';
 import 'attendance_page.dart';

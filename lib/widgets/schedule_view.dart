@@ -56,7 +56,7 @@ class ScheduleView extends ConsumerWidget {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      color: colorScheme.surfaceVariant.withOpacity(0.3),
+                      color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       child: Row(
                         children: [
                           Text(

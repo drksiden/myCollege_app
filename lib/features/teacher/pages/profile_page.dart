@@ -5,7 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../models/user.dart';
 import '../../../core/auth_service.dart';
-import '../../../routes/app_router.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});

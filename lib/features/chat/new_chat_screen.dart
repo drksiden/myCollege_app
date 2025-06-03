@@ -168,8 +168,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                     // --- Фильтрация пользователей ---
                     List filteredUsers =
                         users.where((user) {
-                          if (user.uid == widget.currentUserId)
+                          if (user.uid == widget.currentUserId) {
                             return false; // ИСПРАВЛЕНО: user.uid вместо user.id
+                          }
                           if (user.role == 'admin') return false;
                           final fullName =
                               '${user.lastName} ${user.firstName} ${user.middleName ?? ''}'
@@ -286,13 +287,12 @@ class _UserListTile extends ConsumerWidget {
   final Function(bool) onSelectionChanged;
   final VoidCallback? onTap;
 
-  const _UserListTile({
+  const _UserListTile(this.onTap, {
     required this.user,
     required this.currentUserId,
     required this.isGroupChat,
     required this.isSelected,
     required this.onSelectionChanged,
-    this.onTap,
   });
 
   String _roleToRu(String role) {

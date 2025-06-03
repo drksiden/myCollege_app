@@ -1,12 +1,13 @@
-// lib/features/student/schedule_page.dart (исправленная версия)
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/student/providers/schedule_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/subject_provider.dart';
-import '../../providers/teacher_provider.dart'; // Используем исправленный провайдер
+import '../../providers/teacher_provider.dart';
+import '../../providers/assignment_provider.dart';
 import '../../models/schedule_entry.dart';
 import '../../models/subject.dart';
+import '../../models/assignment.dart';
 
 class SchedulePage extends ConsumerStatefulWidget {
   const SchedulePage({super.key});
@@ -53,68 +54,20 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
           ),
         ),
       ),
-      body: ref
-          .watch(scheduleProvider)
-          .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error:
-                (error, stack) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Ошибка загрузки расписания',
-                          style: textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          error.toString(),
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => ref.refresh(scheduleProvider),
-                          child: const Text('Повторить'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+      body: Consumer(
+        builder: (context, ref, child) {
+          final scheduleAsync = ref.watch(scheduleProvider);
+          return scheduleAsync.when(
             data: (schedule) {
-              // Получаем все предметы
               final allSubjectsAsync = ref.watch(subjectsProvider);
 
               return allSubjectsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, stack) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Ошибка загрузки предметов.\n$error',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
                 data: (allSubjects) {
-                  // Группируем расписание по дням недели
                   final grouped = <int, List<ScheduleEntry>>{};
                   for (final entry in schedule) {
                     grouped.putIfAbsent(entry.dayOfWeek, () => []).add(entry);
                   }
 
-                  // Сортируем уроки в каждом дне по времени
                   for (final dayLessons in grouped.values) {
                     dayLessons.sort(
                       (a, b) => a.startTime.compareTo(b.startTime),
@@ -132,66 +85,105 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
                         onRefresh: () async {
                           ref.invalidate(scheduleProvider);
                           ref.invalidate(subjectsProvider);
+                          ref.invalidate(assignmentsProvider);
                           return;
                         },
-                        child:
-                            lessonsForDay.isEmpty
-                                ? LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return SingleChildScrollView(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minHeight: constraints.maxHeight,
-                                        ),
-                                        child: Center(
-                                          child:
-                                              Text(
-                                                'Нет занятий в этот день',
-                                                style: textTheme.titleMedium
-                                                    ?.copyWith(
-                                                      color:
-                                                          colorScheme
-                                                              .onSurfaceVariant,
-                                                    ),
-                                              ).animate().fadeIn(),
-                                        ),
+                        child: lessonsForDay.isEmpty
+                            ? LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return SingleChildScrollView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minHeight: constraints.maxHeight,
                                       ),
-                                    );
-                                  },
-                                )
-                                : ListView.builder(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(16.0),
-                                  itemCount: lessonsForDay.length,
-                                  itemBuilder: (context, lessonIndex) {
-                                    final lesson = lessonsForDay[lessonIndex];
-                                    return _LessonCard(
-                                          lesson: lesson,
-                                          subject:
-                                              allSubjects[lesson.subjectId],
-                                        )
-                                        .animate()
-                                        .fadeIn(
-                                          delay: (lessonIndex * 80).ms,
-                                          duration: 300.ms,
-                                        )
-                                        .moveX(
-                                          begin: -10,
-                                          end: 0,
-                                          duration: 300.ms,
-                                        );
-                                  },
-                                ),
+                                      child: Center(
+                                        child: Text(
+                                          'Нет занятий в этот день',
+                                          style: textTheme.titleMedium?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ).animate().fadeIn(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                padding: const EdgeInsets.all(16.0),
+                                itemCount: lessonsForDay.length,
+                                itemBuilder: (context, lessonIndex) {
+                                  final lesson = lessonsForDay[lessonIndex];
+                                  return _LessonCard(
+                                    lesson: lesson,
+                                    subject: allSubjects[lesson.subjectId],
+                                  )
+                                      .animate()
+                                      .fadeIn(
+                                        delay: (lessonIndex * 80).ms,
+                                        duration: 300.ms,
+                                      )
+                                      .moveX(
+                                        begin: -10,
+                                        end: 0,
+                                        duration: 300.ms,
+                                      );
+                                },
+                              ),
                       );
                     }),
                   );
                 },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Ошибка загрузки предметов.\n$error',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
               );
             },
-          ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Ошибка загрузки расписания',
+                      style: textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(scheduleProvider),
+                      child: const Text('Повторить'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -207,51 +199,47 @@ class _LessonCard extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final bool isCurrent = _isCurrentLesson(lesson);
 
-    // ИСПРАВЛЕНО: Используем правильный провайдер
-    print(
-      'DEBUG: _LessonCard building for lesson with teacherId: ${lesson.teacherId}',
-    );
-    final teacherNameAsync = ref.watch(
-      teacherNameByIdProvider(lesson.teacherId),
-    );
+    print('DEBUG: _LessonCard building for lesson with teacherId: ${lesson.teacherId}');
+    final teacherNameAsync = ref.watch(teacherNameByIdProvider(lesson.teacherId));
+    final assignmentsAsync = ref.watch(assignmentsProvider);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
-      shape:
-          isCurrent
-              ? RoundedRectangleBorder(
-                side: BorderSide(color: colorScheme.primary, width: 2.0),
-                borderRadius: BorderRadius.circular(12.0),
-              )
-              : null,
+      shape: isCurrent
+          ? RoundedRectangleBorder(
+              side: BorderSide(color: colorScheme.primary, width: 2.0),
+              borderRadius: BorderRadius.circular(12.0),
+            )
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Время
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
               children: [
-                Text(
-                  lesson.startTime,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color:
-                        isCurrent ? colorScheme.primary : colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  lesson.endTime,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                if (isCurrent)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: Chip(
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lesson.startTime,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isCurrent ? colorScheme.primary : colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      lesson.endTime,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (isCurrent)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6.0),
+                        child: Chip(
                           label: const Text('ИДЕТ'),
                           backgroundColor: colorScheme.primaryContainer,
                           labelStyle: TextStyle(
@@ -260,107 +248,169 @@ class _LessonCard extends ConsumerWidget {
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 6),
                         )
-                        .animate(onPlay: (c) => c.repeat(reverse: true))
-                        .shimmer(
-                          duration: 1200.ms,
-                          color: colorScheme.primary.withAlpha(80),
-                        ),
-                  ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Container(
-                width: 1.5,
-                height: 50,
-                color: colorScheme.outlineVariant.withAlpha(128),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    subject?.name ?? 'Неизвестный предмет',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3.0),
-                    child: Text(
-                      _getLessonType(lesson.type),
-                      style: textTheme.bodySmall?.copyWith(
-                        color: colorScheme.secondary,
+                            .animate(onPlay: (c) => c.repeat(reverse: true))
+                            .shimmer(
+                              duration: 1200.ms,
+                              color: colorScheme.primary.withAlpha(80),
+                            ),
                       ),
-                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  child: Container(
+                    width: 1.5,
+                    height: 50,
+                    color: colorScheme.outlineVariant.withAlpha(128),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
+                ),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: teacherNameAsync.when(
-                          data: (name) {
-                            print('DEBUG: Teacher name loaded: $name');
-                            return Text(
-                              name,
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            );
-                          },
-                          loading: () {
-                            print('DEBUG: Teacher name loading...');
-                            return Text(
-                              'Загрузка...',
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            );
-                          },
-                          error: (e, s) {
-                            print('DEBUG: Teacher name error: $e');
-                            return Text(
-                              'Ошибка: $e',
-                              style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.error,
-                              ),
-                            );
-                          },
+                      Text(
+                        subject?.name ?? 'Неизвестный предмет',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3.0),
                         child: Text(
-                          lesson.room.isEmpty
-                              ? 'Аудитория не указана'
-                              : lesson.room,
+                          _getLessonType(lesson.type),
                           style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                            color: colorScheme.secondary,
                           ),
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: teacherNameAsync.when(
+                              data: (name) {
+                                print('DEBUG: Teacher name loaded: $name');
+                                return Text(
+                                  name,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                );
+                              },
+                              loading: () {
+                                print('DEBUG: Teacher name loading...');
+                                return Text(
+                                  'Загрузка...',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                );
+                              },
+                              error: (e, s) {
+                                print('DEBUG: Teacher name error: $e');
+                                return Text(
+                                  'Ошибка: $e',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.error,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              lesson.room.isEmpty ? 'Аудитория не указана' : lesson.room,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            assignmentsAsync.when(
+              data: (assignments) {
+                final lessonAssignments = assignments
+                    .where((assignment) => assignment.scheduleEntryId == lesson.id)
+                    .toList();
+                if (lessonAssignments.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Задания:',
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...lessonAssignments.map((assignment) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: colorScheme.outline),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  assignment.title,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  assignment.description,
+                                  style: textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Срок сдачи: ${assignment.dueDate.day}.${assignment.dueDate.month}.${assignment.dueDate.year}',
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Text(
+                'Ошибка загрузки заданий: $error',
+                style: textTheme.bodySmall?.copyWith(color: colorScheme.error),
               ),
             ),
           ],

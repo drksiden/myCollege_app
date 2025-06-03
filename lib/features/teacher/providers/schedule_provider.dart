@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/schedule_entry.dart';
 import '../services/schedule_service.dart';
-import '../../../core/auth_service.dart';
 
 final scheduleServiceProvider = Provider((ref) => ScheduleService());
 

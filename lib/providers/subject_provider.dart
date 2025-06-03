@@ -1,13 +1,11 @@
-import 'package:flutter_application_1/providers/user_profile_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/subject.dart';
 import '../services/subject_service.dart';
 import '../core/auth_service.dart' as auth;
-import '../providers/schedule_provider.dart'; // Исправленный импорт
+// Исправленный импорт
 import '../services/user_service.dart';
 import '../models/user.dart';
 import '../services/teacher_service.dart';
-import '../models/teacher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logging/logging.dart';
 import '../providers/user_profile_provider.dart' as profile;

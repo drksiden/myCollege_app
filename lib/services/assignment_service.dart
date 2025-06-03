@@ -2,46 +2,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/assignment.dart';
 
 class AssignmentService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance;
 
-  // Получить все задания
   Stream<List<Assignment>> getAssignments() {
-    return _db
+    return _firestore
         .collection('assignments')
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map(
-                    (doc) => Assignment.fromJson({...doc.data(), 'id': doc.id}),
-                  )
-                  .toList(),
-        );
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Assignment.fromJson(doc.data()))
+            .toList());
   }
 
-  // Получить задание по ID
-  Future<Assignment?> getAssignment(String id) async {
-    final doc = await _db.collection('assignments').doc(id).get();
-    if (!doc.exists) return null;
-    return Assignment.fromJson({...doc.data()!, 'id': doc.id});
+  Stream<List<Assignment>> getAssignmentsByGroup(String groupId) {
+    return _firestore
+        .collection('assignments')
+        .where('groupId', isEqualTo: groupId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Assignment.fromJson(doc.data()))
+            .toList());
   }
 
-  // Добавить задание
   Future<void> addAssignment(Assignment assignment) async {
-    await _db.collection('assignments').add(assignment.toJson());
+    final docRef = _firestore.collection('assignments').doc();
+    final newAssignment = assignment.copyWith(id: docRef.id);
+    await docRef.set(newAssignment.toJson());
   }
 
-  // Обновить задание
   Future<void> updateAssignment(Assignment assignment) async {
-    await _db
+    await _firestore
         .collection('assignments')
         .doc(assignment.id)
         .update(assignment.toJson());
   }
 
-  // Удалить задание
   Future<void> deleteAssignment(String id) async {
-    await _db.collection('assignments').doc(id).delete();
+    await _firestore.collection('assignments').doc(id).delete();
   }
 }

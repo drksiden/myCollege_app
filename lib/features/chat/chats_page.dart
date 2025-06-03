@@ -214,8 +214,8 @@ class _ChatsPageState extends ConsumerState<ChatsPage> {
                     ),
                   );
                 },
-                child: const Icon(Icons.add),
                 tooltip: 'Новый чат',
+                child: const Icon(Icons.add),
               ),
             ),
         ],

@@ -42,7 +42,7 @@ extension AttendanceStatusColor on Attendance {
 
   String getDisplayName() {
     if (isPresent) return 'Присутствовал';
-    if (reason != null) return 'Отсутствовал (${reason})';
+    if (reason != null) return 'Отсутствовал ($reason)';
     return 'Отсутствовал';
   }
 
