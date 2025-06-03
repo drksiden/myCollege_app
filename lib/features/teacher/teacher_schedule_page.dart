@@ -39,126 +39,131 @@ class _TeacherSchedulePageState extends ConsumerState<TeacherSchedulePage>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: false,
-          indicatorColor: colorScheme.primary,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          tabs: List.generate(
-            _daysOfWeek.length,
-            (index) => Tab(text: _dayNames[index]),
+    return Column(
+      children: [
+        // TabBar без AppBar
+        Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: TabBar(
+            controller: _tabController,
+            isScrollable: false,
+            indicatorColor: colorScheme.primary,
+            labelColor: colorScheme.primary,
+            unselectedLabelColor: colorScheme.onSurfaceVariant,
+            tabs: List.generate(
+              _daysOfWeek.length,
+              (index) => Tab(text: _dayNames[index]),
+            ),
           ),
         ),
-      ),
-      body: scheduleAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Ошибка: $error')),
-        data: (lessons) {
-          if (lessons.isEmpty) {
-            return Center(
-              child: Text(
-                'Нет данных о расписании',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            );
-          }
-
-          // УЛУЧШЕННАЯ ДЕДУПЛИКАЦИЯ: Группируем похожие занятия
-          final groupedLessons = <String, List<ScheduleEntry>>{};
-          for (final lesson in lessons) {
-            // Создаем ключ для группировки по времени, дню и предмету (без группы)
-            final key =
-                '${lesson.dayOfWeek}_${lesson.startTime}_${lesson.endTime}_${lesson.subjectId}';
-            groupedLessons.putIfAbsent(key, () => []).add(lesson);
-          }
-
-          // Создаем объединенные занятия
-          final mergedLessons = <ScheduleEntry>[];
-          for (final entry in groupedLessons.entries) {
-            final lessonGroup = entry.value;
-            if (lessonGroup.isNotEmpty) {
-              final firstLesson = lessonGroup.first;
-
-              // Если это занятия в одно время с одним предметом, но разными группами
-              if (lessonGroup.length > 1) {
-                final groupIds =
-                    lessonGroup.map((l) => l.groupId).toSet().toList();
-                // Создаем объединенное занятие с несколькими группами
-                final mergedLesson = ScheduleEntry(
-                  id: firstLesson.id,
-                  groupId: groupIds.join(', '), // Объединяем ID групп
-                  semesterId: firstLesson.semesterId,
-                  subjectId: firstLesson.subjectId,
-                  teacherId: firstLesson.teacherId,
-                  startTime: firstLesson.startTime,
-                  endTime: firstLesson.endTime,
-                  dayOfWeek: firstLesson.dayOfWeek,
-                  type: firstLesson.type,
-                  weekType: firstLesson.weekType,
-                  room: firstLesson.room,
-                  duration: firstLesson.duration,
-                  isFloating: firstLesson.isFloating,
-                  createdAt: firstLesson.createdAt,
-                  updatedAt: firstLesson.updatedAt,
+        // Содержимое TabBarView
+        Expanded(
+          child: scheduleAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(child: Text('Ошибка: $error')),
+            data: (lessons) {
+              if (lessons.isEmpty) {
+                return Center(
+                  child: Text(
+                    'Нет данных о расписании',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 );
-                mergedLessons.add(mergedLesson);
-              } else {
-                // Обычное занятие
-                mergedLessons.add(firstLesson);
               }
-            }
-          }
 
-          print('DEBUG: Original lessons count: ${lessons.length}');
-          print('DEBUG: Merged lessons count: ${mergedLessons.length}');
+              // УЛУЧШЕННАЯ ДЕДУПЛИКАЦИЯ: Группируем похожие занятия
+              final groupedLessons = <String, List<ScheduleEntry>>{};
+              for (final lesson in lessons) {
+                final key =
+                    '${lesson.dayOfWeek}_${lesson.startTime}_${lesson.endTime}_${lesson.subjectId}';
+                groupedLessons.putIfAbsent(key, () => []).add(lesson);
+              }
 
-          return TabBarView(
-            controller: _tabController,
-            children:
-                _daysOfWeek.map((day) {
-                  // Фильтруем уроки по выбранному дню
-                  final dayLessons =
-                      mergedLessons
-                          .where((lesson) => lesson.dayOfWeek == day)
-                          .toList();
+              // Создаем объединенные занятия
+              final mergedLessons = <ScheduleEntry>[];
+              for (final entry in groupedLessons.entries) {
+                final lessonGroup = entry.value;
+                if (lessonGroup.isNotEmpty) {
+                  final firstLesson = lessonGroup.first;
 
-                  // Сортируем уроки по времени начала
-                  dayLessons.sort((a, b) => a.startTime.compareTo(b.startTime));
-
-                  if (dayLessons.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Нет уроков на ${_getDayName(day).toLowerCase()}',
-                        style: textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                  // Если это занятия в одно время с одним предметом, но разными группами
+                  if (lessonGroup.length > 1) {
+                    final groupIds =
+                        lessonGroup.map((l) => l.groupId).toSet().toList();
+                    // Создаем объединенное занятие с несколькими группами
+                    final mergedLesson = ScheduleEntry(
+                      id: firstLesson.id,
+                      groupId: groupIds.join(', '), // Объединяем ID групп
+                      semesterId: firstLesson.semesterId,
+                      subjectId: firstLesson.subjectId,
+                      teacherId: firstLesson.teacherId,
+                      startTime: firstLesson.startTime,
+                      endTime: firstLesson.endTime,
+                      dayOfWeek: firstLesson.dayOfWeek,
+                      type: firstLesson.type,
+                      weekType: firstLesson.weekType,
+                      room: firstLesson.room,
+                      duration: firstLesson.duration,
+                      isFloating: firstLesson.isFloating,
+                      createdAt: firstLesson.createdAt,
+                      updatedAt: firstLesson.updatedAt,
                     );
+                    mergedLessons.add(mergedLesson);
+                  } else {
+                    // Обычное занятие
+                    mergedLessons.add(firstLesson);
                   }
+                }
+              }
 
-                  return ListView.builder(
-                    padding: EdgeInsets.zero, // Убираем отступы
-                    itemCount: dayLessons.length,
-                    itemBuilder: (context, index) {
-                      final lesson = dayLessons[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ), // Контролируем отступы вручную
-                        child: _LessonListTile(lesson: lesson),
+              return TabBarView(
+                controller: _tabController,
+                children:
+                    _daysOfWeek.map((day) {
+                      // Фильтруем уроки по выбранному дню
+                      final dayLessons =
+                          mergedLessons
+                              .where((lesson) => lesson.dayOfWeek == day)
+                              .toList();
+
+                      // Сортируем уроки по времени начала
+                      dayLessons.sort(
+                        (a, b) => a.startTime.compareTo(b.startTime),
                       );
-                    },
-                  );
-                }).toList(),
-          );
-        },
-      ),
+
+                      if (dayLessons.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'Нет уроков на ${_getDayName(day).toLowerCase()}',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        padding: EdgeInsets.zero,
+                        itemCount: dayLessons.length,
+                        itemBuilder: (context, index) {
+                          final lesson = dayLessons[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: _LessonListTile(lesson: lesson),
+                          );
+                        },
+                      );
+                    }).toList(),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -188,11 +193,9 @@ class _LessonListTile extends ConsumerWidget {
 
     // Получаем название предмета
     final subjectAsync = ref.watch(subjectProvider(lesson.subjectId));
-    // ИСПРАВЛЕНО: Используем groupNameProvider вместо groupProvider
-    final groupNameAsync = ref.watch(groupNameProvider(lesson.groupId));
 
     return Card(
-      margin: EdgeInsets.zero, // Убираем отступы у карточки
+      margin: EdgeInsets.zero,
       child: InkWell(
         onTap: () {
           // TODO: Показать детали урока
