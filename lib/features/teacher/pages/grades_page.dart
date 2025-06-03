@@ -1,10 +1,13 @@
+// lib/features/teacher/pages/grades_page.dart (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/providers/teacher_goups_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../models/group.dart'; // ИСПРАВЛЕНО: используем основную модель Group
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../models/group.dart';
+import '../../../models/user.dart'
+    as app_user; // Используем основную модель User
 import '../models/grade.dart';
-import '../models/student.dart';
 import '../providers/teacher_providers.dart';
 
 class GradesPage extends ConsumerStatefulWidget {
@@ -16,7 +19,7 @@ class GradesPage extends ConsumerStatefulWidget {
 
 class _GradesPageState extends ConsumerState<GradesPage> {
   Group? selectedGroup;
-  Student? selectedStudent;
+  app_user.User? selectedStudent; // Используем app_user.User вместо Student
   String? selectedSubject;
   int score = 0;
   bool isLoading = false;
@@ -35,40 +38,87 @@ class _GradesPageState extends ConsumerState<GradesPage> {
     'Программное обеспечение',
   ];
 
+  // ИСПРАВЛЕННЫЙ метод для получения студентов группы
+  Future<List<app_user.User>> _getStudentsByGroup(String groupId) async {
+    try {
+      print('DEBUG: Getting students for group: $groupId');
+
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('users') // Правильная коллекция
+              .where('groupId', isEqualTo: groupId)
+              .where('role', isEqualTo: 'student')
+              .where('status', isEqualTo: 'active') // Только активные студенты
+              .get();
+
+      print('DEBUG: Found ${snapshot.docs.length} students');
+
+      final students =
+          snapshot.docs.map((doc) {
+            final data = doc.data();
+            return app_user.User.fromJson({...data, 'uid': doc.id});
+          }).toList();
+
+      // Сортируем по фамилии и имени
+      students.sort((a, b) {
+        final comparison = a.lastName.compareTo(b.lastName);
+        if (comparison != 0) return comparison;
+        return a.firstName.compareTo(b.firstName);
+      });
+
+      return students;
+    } catch (e) {
+      print('DEBUG: Error getting students: $e');
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final firebaseService = ref.read(firebaseServiceProvider);
     final teacherId = FirebaseAuth.instance.currentUser?.uid ?? '';
     final teacherName = ref.read(teacherNameProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    // Используем новый провайдер для групп преподавателя
+    // ОТЛАДКА: проверяем данные (можно удалить после исправления)
+    print('DEBUG: Current teacher ID: $teacherId');
+    // Раскомментируйте эти строки для отладки:
+    // DebugHelper.checkUserData();
+    // DebugHelper.checkGroupData();
+    // DebugHelper.checkScheduleData(teacherId);
+
+    // Используем провайдер для групп преподавателя
     final teacherGroupsAsync = ref.watch(teacherGroupsProvider(teacherId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Выставить оценку')),
+      appBar: AppBar(
+        title: const Text('Выставить оценку'),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Выбор группы - теперь только группы преподавателя
+            // Выбор группы
             teacherGroupsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error:
                   (error, stack) => Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red[100],
+                      color: colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red),
+                        Icon(Icons.error_outline, color: colorScheme.error),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Ошибка загрузки групп: $error',
-                            style: const TextStyle(color: Colors.red),
+                            style: TextStyle(color: colorScheme.error),
                           ),
                         ),
                       ],
@@ -79,17 +129,19 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange[100],
+                      color: colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.info_outline, color: Colors.orange),
-                        SizedBox(width: 8),
+                        Icon(Icons.info_outline, color: colorScheme.primary),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'У вас нет назначенных групп. Обратитесь к администратору.',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ],
@@ -102,17 +154,38 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                   children: [
                     Text(
                       'Выберите группу (${groups.length} ${_getGroupCountText(groups.length)}):',
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<Group>(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Группа',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.group),
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: colorScheme.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.group,
+                          color: colorScheme.primary,
+                        ),
+                        filled: true,
+                        fillColor: colorScheme.surface,
                       ),
                       isExpanded: true,
                       value: selectedGroup,
+                      dropdownColor: colorScheme.surface,
+                      style: TextStyle(color: colorScheme.onSurface),
                       onChanged: (g) {
                         setState(() {
                           selectedGroup = g;
@@ -128,6 +201,9 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                   child: Text(
                                     '${g.name} - ${g.specialization} ${g.year} курс',
                                     overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: colorScheme.onSurface,
+                                    ),
                                   ),
                                 ),
                               )
@@ -141,8 +217,8 @@ class _GradesPageState extends ConsumerState<GradesPage> {
 
             // Выбор студента
             if (selectedGroup != null)
-              FutureBuilder<List<Student>>(
-                future: firebaseService.getStudentsByGroup(selectedGroup!.id),
+              FutureBuilder<List<app_user.User>>(
+                future: _getStudentsByGroup(selectedGroup!.id),
                 builder: (_, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -151,24 +227,40 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red[100],
+                        color: colorScheme.errorContainer,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         'Ошибка загрузки студентов: ${snapshot.error}',
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: colorScheme.error),
                       ),
                     );
                   }
+
                   final students = snapshot.data ?? [];
+                  print('DEBUG: UI received ${students.length} students');
+
                   if (students.isEmpty) {
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('В этой группе нет студентов'),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'В группе "${selectedGroup!.name}" нет активных студентов',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
@@ -177,17 +269,38 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                     children: [
                       Text(
                         'Выберите студента (${students.length} ${_getStudentCountText(students.length)}):',
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: textTheme.titleSmall?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<Student>(
-                        decoration: const InputDecoration(
+                      DropdownButtonFormField<app_user.User>(
+                        decoration: InputDecoration(
                           labelText: 'Студент',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(color: colorScheme.outline),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: colorScheme.outline),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.person,
+                            color: colorScheme.primary,
+                          ),
+                          filled: true,
+                          fillColor: colorScheme.surface,
                         ),
                         isExpanded: true,
                         value: selectedStudent,
+                        dropdownColor: colorScheme.surface,
+                        style: TextStyle(color: colorScheme.onSurface),
                         onChanged: (s) {
                           setState(() {
                             selectedStudent = s;
@@ -200,8 +313,11 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                   (s) => DropdownMenuItem(
                                     value: s,
                                     child: Text(
-                                      s.name,
+                                      s.fullName,
                                       overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colorScheme.onSurface,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -220,24 +336,47 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                 children: [
                   Text(
                     'Выберите предмет:',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Предмет',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.book),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: colorScheme.outline),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: colorScheme.outline),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      prefixIcon: Icon(Icons.book, color: colorScheme.primary),
+                      filled: true,
+                      fillColor: colorScheme.surface,
                     ),
                     isExpanded: true,
                     value: selectedSubject,
+                    dropdownColor: colorScheme.surface,
+                    style: TextStyle(color: colorScheme.onSurface),
                     onChanged: (val) => setState(() => selectedSubject = val),
                     items:
                         subjects
                             .map(
                               (subj) => DropdownMenuItem(
                                 value: subj,
-                                child: Text(subj),
+                                child: Text(
+                                  subj,
+                                  style: TextStyle(
+                                    color: colorScheme.onSurface,
+                                  ),
+                                ),
                               ),
                             )
                             .toList(),
@@ -254,16 +393,34 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                   children: [
                     Text(
                       'Оценка: $score',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Slider(
-                      value: score.toDouble(),
-                      min: 0,
-                      max: 100,
-                      divisions: 100,
-                      label: '$score',
-                      onChanged: (val) => setState(() => score = val.toInt()),
+                    SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        activeTrackColor: colorScheme.primary,
+                        inactiveTrackColor: colorScheme.outline.withOpacity(
+                          0.3,
+                        ),
+                        thumbColor: colorScheme.primary,
+                        overlayColor: colorScheme.primary.withOpacity(0.2),
+                        valueIndicatorColor: colorScheme.primary,
+                        valueIndicatorTextStyle: TextStyle(
+                          color: colorScheme.onPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      child: Slider(
+                        value: score.toDouble(),
+                        min: 0,
+                        max: 100,
+                        divisions: 100,
+                        label: '$score',
+                        onChanged: (val) => setState(() => score = val.toInt()),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -277,37 +434,42 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                       selectedStudent == null ||
                                       selectedSubject == null) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
+                                      SnackBar(
+                                        content: const Text(
                                           'Выберите группу, студента и предмет',
                                         ),
-                                        backgroundColor: Colors.orange,
+                                        backgroundColor: colorScheme.error,
                                       ),
                                     );
                                     return;
                                   }
+
                                   setState(() => isLoading = true);
+
                                   try {
-                                    final grade = Grade(
-                                      id: '',
-                                      studentId: selectedStudent!.id,
-                                      teacherId: teacherId,
-                                      teacherName: teacherName,
-                                      groupId: selectedGroup!.id,
-                                      subject: selectedSubject!,
-                                      score: score,
-                                      timestamp: DateTime.now(),
-                                    );
-                                    await firebaseService.addGrade(grade);
+                                    // ИСПРАВЛЕННОЕ создание оценки
+                                    await FirebaseFirestore.instance
+                                        .collection('grades')
+                                        .add({
+                                          'studentId': selectedStudent!.uid,
+                                          'teacherId': teacherId,
+                                          'teacherName': teacherName,
+                                          'groupId': selectedGroup!.id,
+                                          'subject': selectedSubject!,
+                                          'score': score,
+                                          'timestamp':
+                                              FieldValue.serverTimestamp(),
+                                        });
+
                                     if (mounted) {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
+                                        SnackBar(
+                                          content: const Text(
                                             'Оценка успешно поставлена',
                                           ),
-                                          backgroundColor: Colors.green,
+                                          backgroundColor: colorScheme.primary,
                                         ),
                                       );
                                       // Сбрасываем форму
@@ -324,7 +486,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text('Ошибка: $e'),
-                                          backgroundColor: Colors.red,
+                                          backgroundColor: colorScheme.error,
                                         ),
                                       );
                                     }
@@ -336,18 +498,32 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                 },
                         icon:
                             isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: colorScheme.onPrimary,
                                   ),
                                 )
-                                : const Icon(Icons.grade),
-                        label: const Text('Поставить оценку'),
+                                : Icon(
+                                  Icons.grade,
+                                  color: colorScheme.onPrimary,
+                                ),
+                        label: Text(
+                          'Поставить оценку',
+                          style: TextStyle(
+                            color: colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ),
