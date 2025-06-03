@@ -44,8 +44,8 @@ final teacherScheduleProvider = StreamProvider<List<ScheduleEntry>>((ref) {
         return Stream.value([]);
       }
 
-      print('DEBUG: Fetching schedule for teacherId: ${user.id}');
-      return scheduleService.getTeacherSchedule(user.id);
+      print('DEBUG: Fetching schedule for teacherId: ${user.uid}');
+      return scheduleService.getTeacherSchedule(user.uid);
     },
     loading: () {
       print('DEBUG: User profile is loading');
