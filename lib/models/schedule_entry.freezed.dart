@@ -21,19 +21,23 @@ ScheduleEntry _$ScheduleEntryFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$ScheduleEntry {
+  // Обязательные поля, которые ДОЛЖНЫ быть в базе
   String get id => throw _privateConstructorUsedError;
-  int get dayOfWeek => throw _privateConstructorUsedError;
-  String get endTime => throw _privateConstructorUsedError;
   String get groupId => throw _privateConstructorUsedError;
-  String get room => throw _privateConstructorUsedError;
   String get semesterId => throw _privateConstructorUsedError;
-  String get startTime => throw _privateConstructorUsedError;
   String get subjectId => throw _privateConstructorUsedError;
   String get teacherId => throw _privateConstructorUsedError;
+  String get startTime => throw _privateConstructorUsedError;
+  String get endTime =>
+      throw _privateConstructorUsedError; // Необязательные поля со значениями ПО УМОЛЧАНИЮ
+  // Если этих полей не будет в базе, подставятся эти значения
+  int get dayOfWeek => throw _privateConstructorUsedError;
   String get type => throw _privateConstructorUsedError;
   String get weekType => throw _privateConstructorUsedError;
+  String get room => throw _privateConstructorUsedError;
   int get duration => throw _privateConstructorUsedError;
-  bool get isFloating => throw _privateConstructorUsedError;
+  bool get isFloating =>
+      throw _privateConstructorUsedError; // Поля с датой, которые могут быть null
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -58,16 +62,16 @@ abstract class $ScheduleEntryCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    int dayOfWeek,
-    String endTime,
     String groupId,
-    String room,
     String semesterId,
-    String startTime,
     String subjectId,
     String teacherId,
+    String startTime,
+    String endTime,
+    int dayOfWeek,
     String type,
     String weekType,
+    String room,
     int duration,
     bool isFloating,
     @TimestampConverter() DateTime? createdAt,
@@ -91,16 +95,16 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
   @override
   $Res call({
     Object? id = null,
-    Object? dayOfWeek = null,
-    Object? endTime = null,
     Object? groupId = null,
-    Object? room = null,
     Object? semesterId = null,
-    Object? startTime = null,
     Object? subjectId = null,
     Object? teacherId = null,
+    Object? startTime = null,
+    Object? endTime = null,
+    Object? dayOfWeek = null,
     Object? type = null,
     Object? weekType = null,
+    Object? room = null,
     Object? duration = null,
     Object? isFloating = null,
     Object? createdAt = freezed,
@@ -113,35 +117,15 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
                     ? _value.id
                     : id // ignore: cast_nullable_to_non_nullable
                         as String,
-            dayOfWeek:
-                null == dayOfWeek
-                    ? _value.dayOfWeek
-                    : dayOfWeek // ignore: cast_nullable_to_non_nullable
-                        as int,
-            endTime:
-                null == endTime
-                    ? _value.endTime
-                    : endTime // ignore: cast_nullable_to_non_nullable
-                        as String,
             groupId:
                 null == groupId
                     ? _value.groupId
                     : groupId // ignore: cast_nullable_to_non_nullable
                         as String,
-            room:
-                null == room
-                    ? _value.room
-                    : room // ignore: cast_nullable_to_non_nullable
-                        as String,
             semesterId:
                 null == semesterId
                     ? _value.semesterId
                     : semesterId // ignore: cast_nullable_to_non_nullable
-                        as String,
-            startTime:
-                null == startTime
-                    ? _value.startTime
-                    : startTime // ignore: cast_nullable_to_non_nullable
                         as String,
             subjectId:
                 null == subjectId
@@ -153,6 +137,21 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
                     ? _value.teacherId
                     : teacherId // ignore: cast_nullable_to_non_nullable
                         as String,
+            startTime:
+                null == startTime
+                    ? _value.startTime
+                    : startTime // ignore: cast_nullable_to_non_nullable
+                        as String,
+            endTime:
+                null == endTime
+                    ? _value.endTime
+                    : endTime // ignore: cast_nullable_to_non_nullable
+                        as String,
+            dayOfWeek:
+                null == dayOfWeek
+                    ? _value.dayOfWeek
+                    : dayOfWeek // ignore: cast_nullable_to_non_nullable
+                        as int,
             type:
                 null == type
                     ? _value.type
@@ -162,6 +161,11 @@ class _$ScheduleEntryCopyWithImpl<$Res, $Val extends ScheduleEntry>
                 null == weekType
                     ? _value.weekType
                     : weekType // ignore: cast_nullable_to_non_nullable
+                        as String,
+            room:
+                null == room
+                    ? _value.room
+                    : room // ignore: cast_nullable_to_non_nullable
                         as String,
             duration:
                 null == duration
@@ -200,16 +204,16 @@ abstract class _$$ScheduleEntryImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    int dayOfWeek,
-    String endTime,
     String groupId,
-    String room,
     String semesterId,
-    String startTime,
     String subjectId,
     String teacherId,
+    String startTime,
+    String endTime,
+    int dayOfWeek,
     String type,
     String weekType,
+    String room,
     int duration,
     bool isFloating,
     @TimestampConverter() DateTime? createdAt,
@@ -232,16 +236,16 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? dayOfWeek = null,
-    Object? endTime = null,
     Object? groupId = null,
-    Object? room = null,
     Object? semesterId = null,
-    Object? startTime = null,
     Object? subjectId = null,
     Object? teacherId = null,
+    Object? startTime = null,
+    Object? endTime = null,
+    Object? dayOfWeek = null,
     Object? type = null,
     Object? weekType = null,
+    Object? room = null,
     Object? duration = null,
     Object? isFloating = null,
     Object? createdAt = freezed,
@@ -254,35 +258,15 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                     as String,
-        dayOfWeek:
-            null == dayOfWeek
-                ? _value.dayOfWeek
-                : dayOfWeek // ignore: cast_nullable_to_non_nullable
-                    as int,
-        endTime:
-            null == endTime
-                ? _value.endTime
-                : endTime // ignore: cast_nullable_to_non_nullable
-                    as String,
         groupId:
             null == groupId
                 ? _value.groupId
                 : groupId // ignore: cast_nullable_to_non_nullable
                     as String,
-        room:
-            null == room
-                ? _value.room
-                : room // ignore: cast_nullable_to_non_nullable
-                    as String,
         semesterId:
             null == semesterId
                 ? _value.semesterId
                 : semesterId // ignore: cast_nullable_to_non_nullable
-                    as String,
-        startTime:
-            null == startTime
-                ? _value.startTime
-                : startTime // ignore: cast_nullable_to_non_nullable
                     as String,
         subjectId:
             null == subjectId
@@ -294,6 +278,21 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
                 ? _value.teacherId
                 : teacherId // ignore: cast_nullable_to_non_nullable
                     as String,
+        startTime:
+            null == startTime
+                ? _value.startTime
+                : startTime // ignore: cast_nullable_to_non_nullable
+                    as String,
+        endTime:
+            null == endTime
+                ? _value.endTime
+                : endTime // ignore: cast_nullable_to_non_nullable
+                    as String,
+        dayOfWeek:
+            null == dayOfWeek
+                ? _value.dayOfWeek
+                : dayOfWeek // ignore: cast_nullable_to_non_nullable
+                    as int,
         type:
             null == type
                 ? _value.type
@@ -303,6 +302,11 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
             null == weekType
                 ? _value.weekType
                 : weekType // ignore: cast_nullable_to_non_nullable
+                    as String,
+        room:
+            null == room
+                ? _value.room
+                : room // ignore: cast_nullable_to_non_nullable
                     as String,
         duration:
             null == duration
@@ -334,16 +338,16 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
 class _$ScheduleEntryImpl implements _ScheduleEntry {
   const _$ScheduleEntryImpl({
     required this.id,
-    this.dayOfWeek = 1,
-    required this.endTime,
     required this.groupId,
-    required this.room,
     required this.semesterId,
-    required this.startTime,
     required this.subjectId,
     required this.teacherId,
+    required this.startTime,
+    required this.endTime,
+    this.dayOfWeek = 1,
     this.type = 'lecture',
     this.weekType = 'all',
+    this.room = '',
     this.duration = 90,
     this.isFloating = false,
     @TimestampConverter() this.createdAt,
@@ -353,25 +357,26 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   factory _$ScheduleEntryImpl.fromJson(Map<String, dynamic> json) =>
       _$$ScheduleEntryImplFromJson(json);
 
+  // Обязательные поля, которые ДОЛЖНЫ быть в базе
   @override
   final String id;
   @override
-  @JsonKey()
-  final int dayOfWeek;
-  @override
-  final String endTime;
-  @override
   final String groupId;
   @override
-  final String room;
-  @override
   final String semesterId;
-  @override
-  final String startTime;
   @override
   final String subjectId;
   @override
   final String teacherId;
+  @override
+  final String startTime;
+  @override
+  final String endTime;
+  // Необязательные поля со значениями ПО УМОЛЧАНИЮ
+  // Если этих полей не будет в базе, подставятся эти значения
+  @override
+  @JsonKey()
+  final int dayOfWeek;
   @override
   @JsonKey()
   final String type;
@@ -380,10 +385,14 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   final String weekType;
   @override
   @JsonKey()
+  final String room;
+  @override
+  @JsonKey()
   final int duration;
   @override
   @JsonKey()
   final bool isFloating;
+  // Поля с датой, которые могут быть null
   @override
   @TimestampConverter()
   final DateTime? createdAt;
@@ -393,7 +402,7 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
 
   @override
   String toString() {
-    return 'ScheduleEntry(id: $id, dayOfWeek: $dayOfWeek, endTime: $endTime, groupId: $groupId, room: $room, semesterId: $semesterId, startTime: $startTime, subjectId: $subjectId, teacherId: $teacherId, type: $type, weekType: $weekType, duration: $duration, isFloating: $isFloating, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ScheduleEntry(id: $id, groupId: $groupId, semesterId: $semesterId, subjectId: $subjectId, teacherId: $teacherId, startTime: $startTime, endTime: $endTime, dayOfWeek: $dayOfWeek, type: $type, weekType: $weekType, room: $room, duration: $duration, isFloating: $isFloating, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -402,22 +411,22 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
         (other.runtimeType == runtimeType &&
             other is _$ScheduleEntryImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.dayOfWeek, dayOfWeek) ||
-                other.dayOfWeek == dayOfWeek) &&
-            (identical(other.endTime, endTime) || other.endTime == endTime) &&
             (identical(other.groupId, groupId) || other.groupId == groupId) &&
-            (identical(other.room, room) || other.room == room) &&
             (identical(other.semesterId, semesterId) ||
                 other.semesterId == semesterId) &&
-            (identical(other.startTime, startTime) ||
-                other.startTime == startTime) &&
             (identical(other.subjectId, subjectId) ||
                 other.subjectId == subjectId) &&
             (identical(other.teacherId, teacherId) ||
                 other.teacherId == teacherId) &&
+            (identical(other.startTime, startTime) ||
+                other.startTime == startTime) &&
+            (identical(other.endTime, endTime) || other.endTime == endTime) &&
+            (identical(other.dayOfWeek, dayOfWeek) ||
+                other.dayOfWeek == dayOfWeek) &&
             (identical(other.type, type) || other.type == type) &&
             (identical(other.weekType, weekType) ||
                 other.weekType == weekType) &&
+            (identical(other.room, room) || other.room == room) &&
             (identical(other.duration, duration) ||
                 other.duration == duration) &&
             (identical(other.isFloating, isFloating) ||
@@ -433,16 +442,16 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   int get hashCode => Object.hash(
     runtimeType,
     id,
-    dayOfWeek,
-    endTime,
     groupId,
-    room,
     semesterId,
-    startTime,
     subjectId,
     teacherId,
+    startTime,
+    endTime,
+    dayOfWeek,
     type,
     weekType,
+    room,
     duration,
     isFloating,
     createdAt,
@@ -466,16 +475,16 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
 abstract class _ScheduleEntry implements ScheduleEntry {
   const factory _ScheduleEntry({
     required final String id,
-    final int dayOfWeek,
-    required final String endTime,
     required final String groupId,
-    required final String room,
     required final String semesterId,
-    required final String startTime,
     required final String subjectId,
     required final String teacherId,
+    required final String startTime,
+    required final String endTime,
+    final int dayOfWeek,
     final String type,
     final String weekType,
+    final String room,
     final int duration,
     final bool isFloating,
     @TimestampConverter() final DateTime? createdAt,
@@ -485,32 +494,34 @@ abstract class _ScheduleEntry implements ScheduleEntry {
   factory _ScheduleEntry.fromJson(Map<String, dynamic> json) =
       _$ScheduleEntryImpl.fromJson;
 
+  // Обязательные поля, которые ДОЛЖНЫ быть в базе
   @override
   String get id;
   @override
-  int get dayOfWeek;
-  @override
-  String get endTime;
-  @override
   String get groupId;
   @override
-  String get room;
-  @override
   String get semesterId;
-  @override
-  String get startTime;
   @override
   String get subjectId;
   @override
   String get teacherId;
   @override
+  String get startTime;
+  @override
+  String get endTime; // Необязательные поля со значениями ПО УМОЛЧАНИЮ
+  // Если этих полей не будет в базе, подставятся эти значения
+  @override
+  int get dayOfWeek;
+  @override
   String get type;
   @override
   String get weekType;
   @override
+  String get room;
+  @override
   int get duration;
   @override
-  bool get isFloating;
+  bool get isFloating; // Поля с датой, которые могут быть null
   @override
   @TimestampConverter()
   DateTime? get createdAt;

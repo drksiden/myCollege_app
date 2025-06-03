@@ -9,16 +9,16 @@ part of 'schedule_entry.dart';
 _$ScheduleEntryImpl _$$ScheduleEntryImplFromJson(Map<String, dynamic> json) =>
     _$ScheduleEntryImpl(
       id: json['id'] as String,
-      dayOfWeek: (json['dayOfWeek'] as num?)?.toInt() ?? 1,
-      endTime: json['endTime'] as String,
       groupId: json['groupId'] as String,
-      room: json['room'] as String,
       semesterId: json['semesterId'] as String,
-      startTime: json['startTime'] as String,
       subjectId: json['subjectId'] as String,
       teacherId: json['teacherId'] as String,
+      startTime: json['startTime'] as String,
+      endTime: json['endTime'] as String,
+      dayOfWeek: (json['dayOfWeek'] as num?)?.toInt() ?? 1,
       type: json['type'] as String? ?? 'lecture',
       weekType: json['weekType'] as String? ?? 'all',
+      room: json['room'] as String? ?? '',
       duration: (json['duration'] as num?)?.toInt() ?? 90,
       isFloating: json['isFloating'] as bool? ?? false,
       createdAt: _$JsonConverterFromJson<Timestamp, DateTime>(
@@ -34,16 +34,16 @@ _$ScheduleEntryImpl _$$ScheduleEntryImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$ScheduleEntryImplToJson(_$ScheduleEntryImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'dayOfWeek': instance.dayOfWeek,
-      'endTime': instance.endTime,
       'groupId': instance.groupId,
-      'room': instance.room,
       'semesterId': instance.semesterId,
-      'startTime': instance.startTime,
       'subjectId': instance.subjectId,
       'teacherId': instance.teacherId,
+      'startTime': instance.startTime,
+      'endTime': instance.endTime,
+      'dayOfWeek': instance.dayOfWeek,
       'type': instance.type,
       'weekType': instance.weekType,
+      'room': instance.room,
       'duration': instance.duration,
       'isFloating': instance.isFloating,
       'createdAt': _$JsonConverterToJson<Timestamp, DateTime>(

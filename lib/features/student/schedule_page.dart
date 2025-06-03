@@ -1,21 +1,163 @@
-// lib/features/student/schedule_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/features/student/providers/schedule_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../providers/schedule_provider.dart';
 import '../../providers/subject_provider.dart';
+import '../../providers/user_profile_provider.dart';
 import '../../models/schedule_entry.dart';
 import '../../models/subject.dart';
-import '../../widgets/schedule_view.dart';
 
-class SchedulePage extends ConsumerWidget {
+class SchedulePage extends ConsumerStatefulWidget {
   const SchedulePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SchedulePage> createState() => _SchedulePageState();
+}
+
+class _SchedulePageState extends ConsumerState<SchedulePage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final List<int> _daysOfWeek = List.generate(6, (index) => index + 1);
+  final List<String> _dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _daysOfWeek.length, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Расписание')),
-      body: const ScheduleView(),
+      appBar: AppBar(
+        title: const Text('Расписание'),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: false,
+          indicatorColor: colorScheme.primary,
+          labelColor: colorScheme.primary,
+          unselectedLabelColor: colorScheme.onSurfaceVariant,
+          tabs: List.generate(
+            _daysOfWeek.length,
+            (index) => Tab(text: _dayNames[index]),
+          ),
+        ),
+      ),
+      body: ref
+          .watch(scheduleProvider)
+          .when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (error, stack) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Ошибка загрузки расписания.\n$error',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            data: (schedule) {
+              // Получаем все предметы
+              final allSubjectsAsync = ref.watch(subjectsProvider);
+
+              return allSubjectsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, stack) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          'Ошибка загрузки предметов.\n$error',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                data: (allSubjects) {
+                  // Группируем расписание по дням недели
+                  final grouped = <int, List<ScheduleEntry>>{};
+                  for (final entry in schedule) {
+                    grouped.putIfAbsent(entry.dayOfWeek, () => []).add(entry);
+                  }
+                  return TabBarView(
+                    controller: _tabController,
+                    children: List.generate(_daysOfWeek.length, (tabIndex) {
+                      final dayOfWeek = _daysOfWeek[tabIndex];
+                      final lessonsForDay = grouped[dayOfWeek] ?? [];
+                      return RefreshIndicator(
+                        color: colorScheme.primary,
+                        onRefresh: () async {
+                          ref.invalidate(scheduleProvider);
+                          ref.invalidate(subjectsProvider);
+                          return;
+                        },
+                        child:
+                            lessonsForDay.isEmpty
+                                ? LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight: constraints.maxHeight,
+                                        ),
+                                        child: Center(
+                                          child:
+                                              Text(
+                                                'Нет занятий в этот день',
+                                                style: textTheme.titleMedium
+                                                    ?.copyWith(
+                                                      color:
+                                                          colorScheme
+                                                              .onSurfaceVariant,
+                                                    ),
+                                              ).animate().fadeIn(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                                : ListView.builder(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(16.0),
+                                  itemCount: lessonsForDay.length,
+                                  itemBuilder: (context, lessonIndex) {
+                                    final lesson = lessonsForDay[lessonIndex];
+                                    return _LessonCard(
+                                          lesson: lesson,
+                                          subject:
+                                              allSubjects[lesson.subjectId],
+                                        )
+                                        .animate()
+                                        .fadeIn(
+                                          delay: (lessonIndex * 80).ms,
+                                          duration: 300.ms,
+                                        )
+                                        .moveX(
+                                          begin: -10,
+                                          end: 0,
+                                          duration: 300.ms,
+                                        );
+                                  },
+                                ),
+                      );
+                    }),
+                  );
+                },
+              );
+            },
+          ),
     );
   }
 }
@@ -30,6 +172,10 @@ class _LessonCard extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final bool isCurrent = _isCurrentLesson(lesson);
+
+    print(
+      'DEBUG: _LessonCard building for lesson with teacherId: ${lesson.teacherId}',
+    );
     final teacherNameAsync = ref.watch(teacherNameProvider(lesson.teacherId));
 
     return Card(
@@ -131,8 +277,20 @@ class _LessonCard extends ConsumerWidget {
                                   color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                          loading: () => const Text('Загрузка...'),
-                          error: (e, s) => const Text('Не указан'),
+                          loading:
+                              () => Text(
+                                'Загрузка... (ID: ${lesson.teacherId})',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          error:
+                              (e, s) => Text(
+                                'Ошибка: $e',
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                         ),
                       ),
                     ],

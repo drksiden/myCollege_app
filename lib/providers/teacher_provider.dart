@@ -13,5 +13,16 @@ final teacherNameByIdProvider = FutureProvider.family<String, String>((
   if (!doc.exists) return 'Преподаватель не найден';
 
   final data = doc.data() as Map<String, dynamic>;
-  return '${data['lastName']} ${data['firstName']} ${data['middleName']}';
+  final lastName = data['lastName'] ?? '';
+  final firstName = data['firstName'] ?? '';
+  final middleName = data['middleName'];
+  // Формируем ФИО без null и лишних пробелов
+  final fio =
+      [
+        lastName,
+        firstName,
+        if (middleName != null && middleName.toString().trim().isNotEmpty)
+          middleName,
+      ].join(' ').replaceAll(RegExp(r' +'), ' ').trim();
+  return fio.isEmpty ? 'Не указан' : fio;
 });

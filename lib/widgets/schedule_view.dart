@@ -33,37 +33,21 @@ class ScheduleView extends ConsumerWidget {
 
         return scheduleStream.when(
           data: (lessons) {
-            if (lessons.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.event_busy,
-                      size: 64,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Нет занятий для отображения',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+            // Группируем занятия по дням недели
+            final lessonsByDay = <int, List<ScheduleEntry>>{};
+            for (var lesson in lessons) {
+              lessonsByDay.putIfAbsent(lesson.dayOfWeek, () => []).add(lesson);
             }
-
-            final lessonsByDay = _groupLessonsByDay(lessons);
-
+            // Сортируем уроки по времени начала
+            for (var dayLessons in lessonsByDay.values) {
+              dayLessons.sort((a, b) => a.startTime.compareTo(b.startTime));
+            }
+            // ВСЕГДА отображаем все дни недели
             return ListView.builder(
-              itemCount: 7, // Дни недели
-              itemBuilder: (context, dayIndex) {
+              itemCount: 7,
+              itemBuilder: (context, index) {
+                final dayIndex = index + 1; // 1 - Пн, 7 - Вс
                 final dayLessons = lessonsByDay[dayIndex] ?? [];
-
-                if (dayLessons.isEmpty) return const SizedBox.shrink();
-
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -76,7 +60,7 @@ class ScheduleView extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            _getDayName(dayIndex),
+                            _getDayName(index),
                             style: Theme.of(
                               context,
                             ).textTheme.titleMedium?.copyWith(
@@ -106,23 +90,6 @@ class ScheduleView extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Ошибка: $error')),
     );
-  }
-
-  Map<int, List<ScheduleEntry>> _groupLessonsByDay(
-    List<ScheduleEntry> lessons,
-  ) {
-    final result = <int, List<ScheduleEntry>>{};
-
-    for (var lesson in lessons) {
-      result.putIfAbsent(lesson.dayOfWeek, () => []).add(lesson);
-    }
-
-    // Сортируем уроки по времени начала
-    for (var dayLessons in result.values) {
-      dayLessons.sort((a, b) => a.startTime.compareTo(b.startTime));
-    }
-
-    return result;
   }
 
   String _getDayName(int dayIndex) {
@@ -212,7 +179,7 @@ class LessonCard extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              subject?.name ?? 'Загрузка...',
+              subject?.name ?? 'Неизвестный предмет',
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -230,7 +197,7 @@ class LessonCard extends ConsumerWidget {
                   child: teacherName.when(
                     data:
                         (name) => Text(
-                          name,
+                          name.isEmpty ? 'Не указан' : name,
                           style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),

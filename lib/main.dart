@@ -15,6 +15,7 @@ const _inputBorderRadiusValue = 8.0; // Радиус для полей ввод�
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const ProviderScope(child: MyApp()));
 }
 

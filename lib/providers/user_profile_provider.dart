@@ -14,12 +14,22 @@ final userProfileProvider = StreamProvider<app.User?>((ref) {
 
   if (authState.asData?.value != null) {
     final uid = authState.asData!.value!.uid;
-    return FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .snapshots()
-        .map((doc) => app.User.fromJson(doc.data()!));
+    print('DEBUG: userProfileProvider: Getting user data for uid: $uid');
+    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots().map((
+      doc,
+    ) {
+      print(
+        'DEBUG: userProfileProvider: Received document: ${doc.exists ? 'exists' : 'does not exist'}',
+      );
+      if (!doc.exists) return null;
+      final data = doc.data()!;
+      print('DEBUG: userProfileProvider: Document data: $data');
+      final user = app.User.fromJson({...data, 'id': doc.id});
+      print('DEBUG: userProfileProvider: Created user object: $user');
+      return user;
+    });
   }
+  print('DEBUG: userProfileProvider: No auth state data');
   return Stream.value(null);
 });
 

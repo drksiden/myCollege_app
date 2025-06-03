@@ -31,15 +31,54 @@ class ScheduleService {
           return lessons.map((lessonData) {
             print('DEBUG: ScheduleService: Processing lesson: $lessonData');
             try {
-              final entry = ScheduleEntry.fromJson({
-                ...lessonData,
-                'id': lessonData['id'],
-              });
+              // Проверяем наличие всех обязательных полей
+              final requiredFields = [
+                'id',
+                'groupId',
+                'semesterId',
+                'subjectId',
+                'teacherId',
+                'startTime',
+                'endTime',
+              ];
+              for (final field in requiredFields) {
+                if (lessonData[field] == null) {
+                  print(
+                    'DEBUG: ScheduleService: Missing required field: $field',
+                  );
+                  print('DEBUG: ScheduleService: Lesson data: $lessonData');
+                }
+              }
+
+              // Создаем копию данных с дефолтными значениями
+              final Map<String, dynamic> processedData = {
+                'id': lessonData['id']?.toString() ?? '',
+                'groupId': lessonData['groupId']?.toString() ?? groupId,
+                'semesterId': lessonData['semesterId']?.toString() ?? '',
+                'subjectId': lessonData['subjectId']?.toString() ?? '',
+                'teacherId': lessonData['teacherId']?.toString() ?? '',
+                'startTime': lessonData['startTime']?.toString() ?? '',
+                'endTime': lessonData['endTime']?.toString() ?? '',
+                'dayOfWeek': lessonData['dayOfWeek'] ?? 1,
+                'type': lessonData['type']?.toString() ?? 'lecture',
+                'weekType': lessonData['weekType']?.toString() ?? 'all',
+                'room': lessonData['room']?.toString() ?? '',
+                'duration': lessonData['duration'] ?? 90,
+                'isFloating': lessonData['isFloating'] ?? false,
+                'createdAt': lessonData['createdAt'],
+                'updatedAt': lessonData['updatedAt'],
+              };
+              print('DEBUG: ScheduleService: Processed data: $processedData');
+
+              final entry = ScheduleEntry.fromJson(processedData);
               print('DEBUG: ScheduleService: Created ScheduleEntry: $entry');
               return entry;
             } catch (e, stackTrace) {
               print('DEBUG: ScheduleService: Error creating ScheduleEntry: $e');
               print('DEBUG: ScheduleService: Stack trace: $stackTrace');
+              print(
+                'DEBUG: ScheduleService: Lesson data that caused error: $lessonData',
+              );
               rethrow;
             }
           }).toList();
@@ -62,15 +101,65 @@ class ScheduleService {
 
       for (final scheduleDoc in snapshot.docs) {
         final scheduleData = scheduleDoc.data();
+        print(
+          'DEBUG: ScheduleService: Processing schedule document: $scheduleData',
+        );
         final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+        print('DEBUG: ScheduleService: Lessons array: $lessons');
 
         for (final lessonData in lessons) {
           if (lessonData['teacherId'] == teacherId) {
-            final entry = ScheduleEntry.fromJson({
-              ...lessonData,
-              'id': lessonData['id'],
-            });
-            allLessons.add(entry);
+            try {
+              // Проверяем наличие всех обязательных полей
+              final requiredFields = [
+                'id',
+                'groupId',
+                'semesterId',
+                'subjectId',
+                'teacherId',
+                'startTime',
+                'endTime',
+              ];
+              for (final field in requiredFields) {
+                if (lessonData[field] == null) {
+                  print(
+                    'DEBUG: ScheduleService: Missing required field: $field',
+                  );
+                  print('DEBUG: ScheduleService: Lesson data: $lessonData');
+                }
+              }
+
+              // Создаем копию данных с дефолтными значениями
+              final Map<String, dynamic> processedData = {
+                'id': lessonData['id']?.toString() ?? '',
+                'groupId': lessonData['groupId']?.toString() ?? '',
+                'semesterId': lessonData['semesterId']?.toString() ?? '',
+                'subjectId': lessonData['subjectId']?.toString() ?? '',
+                'teacherId': lessonData['teacherId']?.toString() ?? '',
+                'startTime': lessonData['startTime']?.toString() ?? '',
+                'endTime': lessonData['endTime']?.toString() ?? '',
+                'dayOfWeek': lessonData['dayOfWeek'] ?? 1,
+                'type': lessonData['type']?.toString() ?? 'lecture',
+                'weekType': lessonData['weekType']?.toString() ?? 'all',
+                'room': lessonData['room']?.toString() ?? '',
+                'duration': lessonData['duration'] ?? 90,
+                'isFloating': lessonData['isFloating'] ?? false,
+                'createdAt': lessonData['createdAt'],
+                'updatedAt': lessonData['updatedAt'],
+              };
+              print('DEBUG: ScheduleService: Processed data: $processedData');
+
+              final entry = ScheduleEntry.fromJson(processedData);
+              print('DEBUG: ScheduleService: Created ScheduleEntry: $entry');
+              allLessons.add(entry);
+            } catch (e, stackTrace) {
+              print('DEBUG: ScheduleService: Error creating ScheduleEntry: $e');
+              print('DEBUG: ScheduleService: Stack trace: $stackTrace');
+              print(
+                'DEBUG: ScheduleService: Lesson data that caused error: $lessonData',
+              );
+              rethrow;
+            }
           }
         }
       }

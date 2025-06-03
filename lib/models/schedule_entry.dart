@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'schedule_entry.freezed.dart';
 part 'schedule_entry.g.dart';
 
-// Конвертер для преобразования Firestore Timestamp в DateTime и обратно
+// Этот конвертер нужен для правильной работы с датой из Firestore.
 class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
   const TimestampConverter();
 
@@ -22,36 +22,35 @@ class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
 @freezed
 class ScheduleEntry with _$ScheduleEntry {
   const factory ScheduleEntry({
+    // Обязательные поля, которые ДОЛЖНЫ быть в базе
     required String id,
-    @Default(1) int dayOfWeek,
-    required String endTime,
     required String groupId,
-    required String room,
     required String semesterId,
-    required String startTime,
     required String subjectId,
     required String teacherId,
+    required String startTime,
+    required String endTime,
+
+    // Необязательные поля со значениями ПО УМОЛЧАНИЮ
+    // Если этих полей не будет в базе, подставятся эти значения
+    @Default(1) int dayOfWeek,
     @Default('lecture') String type,
     @Default('all') String weekType,
+    @Default('') String room,
     @Default(90) int duration,
     @Default(false) bool isFloating,
+
+    // Поля с датой, которые могут быть null
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
   }) = _ScheduleEntry;
 
-  // Эта фабрика будет использовать сгенерированный код
-  factory ScheduleEntry.fromJson(Map<String, dynamic> json) {
-    print('DEBUG: ScheduleEntry.fromJson: Input JSON: $json');
-    try {
-      final result = _$ScheduleEntryFromJson(json);
-      print('DEBUG: ScheduleEntry.fromJson: Created entry: $result');
-      return result;
-    } catch (e, stackTrace) {
-      print('DEBUG: ScheduleEntry.fromJson: Error: $e');
-      print('DEBUG: ScheduleEntry.fromJson: Stack trace: $stackTrace');
-      rethrow;
-    }
-  }
+  /// ВАЖНО!
+  /// Эта фабрика ДОЛЖНА быть такой.
+  /// НЕ добавляйте сюда никакую логику.
+  /// Генератор кода сделает всю работу за вас, основываясь на аннотациях @Default выше.
+  factory ScheduleEntry.fromJson(Map<String, dynamic> json) =>
+      _$ScheduleEntryFromJson(json);
 }
 
 // --- Вспомогательные методы ---
