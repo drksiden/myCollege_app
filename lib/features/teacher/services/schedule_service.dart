@@ -6,179 +6,97 @@ class ScheduleService {
 
   Stream<List<ScheduleEntry>> getScheduleByGroup(String groupId) {
     print('DEBUG: ScheduleService: Getting schedule for group $groupId');
-    return _firestore
-        .collection('schedules')
-        .where('groupId', isEqualTo: groupId)
-        .snapshots()
-        .map((snapshot) {
-          print(
-            'DEBUG: ScheduleService: Received ${snapshot.docs.length} schedule documents',
-          );
-          if (snapshot.docs.isEmpty) {
-            print('DEBUG: ScheduleService: No schedule documents found');
-            return [];
+    return _firestore.collection('schedules').where('groupId', isEqualTo: groupId).snapshots().map((
+      snapshot,
+    ) {
+      print(
+        'DEBUG: ScheduleService: Received ${snapshot.docs.length} schedule documents',
+      );
+      if (snapshot.docs.isEmpty) {
+        print('DEBUG: ScheduleService: No schedule documents found');
+        return [];
+      }
+
+      // Get the first schedule document (there should be only one per group)
+      final scheduleDoc = snapshot.docs.first;
+      final scheduleData = scheduleDoc.data();
+      print('DEBUG: ScheduleService: Schedule data: $scheduleData');
+
+      // Extract lessons array from the schedule document
+      final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+      print('DEBUG: ScheduleService: Lessons array: $lessons');
+
+      final parsedLessons = <ScheduleEntry>[];
+      final seenKeys = <String>{};
+
+      for (final lessonData in lessons) {
+        print('DEBUG: ScheduleService: Processing lesson: $lessonData');
+        try {
+          // Проверяем наличие всех обязательных полей
+          final requiredFields = [
+            'id',
+            'groupId',
+            'semesterId',
+            'subjectId',
+            'teacherId',
+            'startTime',
+            'endTime',
+          ];
+          for (final field in requiredFields) {
+            if (lessonData[field] == null) {
+              print('DEBUG: ScheduleService: Missing required field: $field');
+              print('DEBUG: ScheduleService: Lesson data: $lessonData');
+            }
           }
 
-          // Get the first schedule document (there should be only one per group)
-          final scheduleDoc = snapshot.docs.first;
-          final scheduleData = scheduleDoc.data();
+          // Создаем копию данных с дефолтными значениями
+          final Map<String, dynamic> processedData = {
+            'id': lessonData['id']?.toString() ?? '',
+            'groupId': lessonData['groupId']?.toString() ?? groupId,
+            'semesterId': lessonData['semesterId']?.toString() ?? '',
+            'subjectId': lessonData['subjectId']?.toString() ?? '',
+            'teacherId': lessonData['teacherId']?.toString() ?? '',
+            'startTime': lessonData['startTime']?.toString() ?? '',
+            'endTime': lessonData['endTime']?.toString() ?? '',
+            'dayOfWeek': lessonData['dayOfWeek'] ?? 1,
+            'type': lessonData['type']?.toString() ?? 'lecture',
+            'weekType': lessonData['weekType']?.toString() ?? 'all',
+            'room': lessonData['room']?.toString() ?? '',
+            'duration': lessonData['duration'] ?? 90,
+            'isFloating': lessonData['isFloating'] ?? false,
+            'createdAt': lessonData['createdAt'],
+            'updatedAt': lessonData['updatedAt'],
+          };
 
-          // Extract lessons array from the schedule document
-          final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+          // Создаем уникальный ключ для дедупликации
+          final uniqueKey =
+              '${processedData['dayOfWeek']}_${processedData['startTime']}_${processedData['endTime']}_${processedData['subjectId']}_${processedData['groupId']}_${processedData['teacherId']}';
 
-          return lessons.map((lessonData) {
-            print('DEBUG: ScheduleService: Processing lesson: $lessonData');
-            final entry = ScheduleEntry.fromJson({
-              ...lessonData,
-              'id': lessonData['id'],
-            });
+          if (!seenKeys.contains(uniqueKey)) {
+            seenKeys.add(uniqueKey);
+            print('DEBUG: ScheduleService: Processed data: $processedData');
+
+            final entry = ScheduleEntry.fromJson(processedData);
             print('DEBUG: ScheduleService: Created ScheduleEntry: $entry');
-            return entry;
-          }).toList();
-        });
-  }
+            parsedLessons.add(entry);
+          } else {
+            print(
+              'DEBUG: ScheduleService: Skipping duplicate lesson with key: $uniqueKey',
+            );
+          }
+        } catch (e, stackTrace) {
+          print('DEBUG: ScheduleService: Error creating ScheduleEntry: $e');
+          print('DEBUG: ScheduleService: Stack trace: $stackTrace');
+          print(
+            'DEBUG: ScheduleService: Lesson data that caused error: $lessonData',
+          );
+        }
+      }
 
-  // Добавить новое занятие
-  Future<void> addScheduleEntry(ScheduleEntry entry) async {
-    // First, get the schedule document for the group
-    final scheduleQuery =
-        await _firestore
-            .collection('schedules')
-            .where('groupId', isEqualTo: entry.groupId)
-            .get();
-
-    if (scheduleQuery.docs.isEmpty) {
-      // Create new schedule document if it doesn't exist
-      await _firestore.collection('schedules').add({
-        'groupId': entry.groupId,
-        'groupName': '',
-        'lessons': [
-          {
-            'id': entry.id,
-            'dayOfWeek': entry.dayOfWeek,
-            'startTime': entry.startTime,
-            'endTime': entry.endTime,
-            'duration': entry.duration ?? 90,
-            'subjectId': entry.subjectId,
-            'teacherId': entry.teacherId,
-            'room': entry.room,
-            'type': entry.type,
-            'weekType': entry.weekType,
-            'isFloating': entry.isFloating ?? false,
-            'semesterId': entry.semesterId,
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          },
-        ],
-        'semester': 1,
-        'semesterId': entry.semesterId,
-        'year': DateTime.now().year,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } else {
-      // Update existing schedule document
-      final scheduleDoc = scheduleQuery.docs.first;
-      final scheduleData = scheduleDoc.data();
-      final lessons = List<Map<String, dynamic>>.from(
-        scheduleData['lessons'] ?? [],
+      print(
+        'DEBUG: ScheduleService: Final lessons count: ${parsedLessons.length}',
       );
-
-      lessons.add({
-        'id': entry.id,
-        'dayOfWeek': entry.dayOfWeek,
-        'startTime': entry.startTime,
-        'endTime': entry.endTime,
-        'duration': entry.duration ?? 90,
-        'subjectId': entry.subjectId,
-        'teacherId': entry.teacherId,
-        'room': entry.room,
-        'type': entry.type,
-        'weekType': entry.weekType,
-        'isFloating': entry.isFloating ?? false,
-        'semesterId': entry.semesterId,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      await scheduleDoc.reference.update({
-        'lessons': lessons,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
-  }
-
-  // Обновить занятие
-  Future<void> updateScheduleEntry(ScheduleEntry entry) async {
-    final scheduleQuery =
-        await _firestore
-            .collection('schedules')
-            .where('groupId', isEqualTo: entry.groupId)
-            .get();
-
-    if (scheduleQuery.docs.isEmpty) {
-      throw Exception('Schedule not found for group ${entry.groupId}');
-    }
-
-    final scheduleDoc = scheduleQuery.docs.first;
-    final scheduleData = scheduleDoc.data();
-    final lessons = List<Map<String, dynamic>>.from(
-      scheduleData['lessons'] ?? [],
-    );
-
-    final lessonIndex = lessons.indexWhere(
-      (lesson) => lesson['id'] == entry.id,
-    );
-    if (lessonIndex == -1) {
-      throw Exception('Lesson not found with id ${entry.id}');
-    }
-
-    lessons[lessonIndex] = {
-      'id': entry.id,
-      'dayOfWeek': entry.dayOfWeek,
-      'startTime': entry.startTime,
-      'endTime': entry.endTime,
-      'duration': entry.duration ?? 90,
-      'subjectId': entry.subjectId,
-      'teacherId': entry.teacherId,
-      'room': entry.room,
-      'type': entry.type,
-      'weekType': entry.weekType,
-      'isFloating': entry.isFloating ?? false,
-      'semesterId': entry.semesterId,
-      'createdAt': lessons[lessonIndex]['createdAt'],
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    await scheduleDoc.reference.update({
-      'lessons': lessons,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
-  // Удалить занятие
-  Future<void> deleteScheduleEntry(String entryId, String groupId) async {
-    final scheduleQuery =
-        await _firestore
-            .collection('schedules')
-            .where('groupId', isEqualTo: groupId)
-            .get();
-
-    if (scheduleQuery.docs.isEmpty) {
-      throw Exception('Schedule not found for group $groupId');
-    }
-
-    final scheduleDoc = scheduleQuery.docs.first;
-    final scheduleData = scheduleDoc.data();
-    final lessons = List<Map<String, dynamic>>.from(
-      scheduleData['lessons'] ?? [],
-    );
-
-    lessons.removeWhere((lesson) => lesson['id'] == entryId);
-
-    await scheduleDoc.reference.update({
-      'lessons': lessons,
-      'updatedAt': FieldValue.serverTimestamp(),
+      return parsedLessons;
     });
   }
 
@@ -188,6 +106,7 @@ class ScheduleService {
       print(
         'DEBUG: ScheduleService: Received ${snapshot.docs.length} schedule documents',
       );
+
       if (snapshot.docs.isEmpty) {
         print('DEBUG: ScheduleService: No schedule documents found');
         return [];
@@ -195,22 +114,51 @@ class ScheduleService {
 
       // Collect all lessons from all schedules where teacherId matches
       final allLessons = <ScheduleEntry>[];
+      final seenKeys = <String>{}; // Для дедупликации
 
       for (final scheduleDoc in snapshot.docs) {
         final scheduleData = scheduleDoc.data();
+        print(
+          'DEBUG: ScheduleService: Processing schedule document: ${scheduleDoc.id}',
+        );
+
         final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
+        print(
+          'DEBUG: ScheduleService: Found ${lessons.length} lessons in document',
+        );
 
         for (final lessonData in lessons) {
           if (lessonData['teacherId'] == teacherId) {
-            final entry = ScheduleEntry.fromJson({
-              ...lessonData,
-              'id': lessonData['id'],
-            });
-            allLessons.add(entry);
+            try {
+              // Создаем уникальный ключ для дедупликации
+              final uniqueKey =
+                  '${lessonData['dayOfWeek']}_${lessonData['startTime']}_${lessonData['endTime']}_${lessonData['subjectId']}_${lessonData['groupId']}_${lessonData['teacherId']}';
+
+              if (!seenKeys.contains(uniqueKey)) {
+                seenKeys.add(uniqueKey);
+
+                final entry = ScheduleEntry.fromJson({
+                  ...lessonData,
+                  'id': lessonData['id'],
+                });
+                allLessons.add(entry);
+                print('DEBUG: ScheduleService: Added lesson: ${entry.id}');
+              } else {
+                print(
+                  'DEBUG: ScheduleService: Skipping duplicate lesson with key: $uniqueKey',
+                );
+              }
+            } catch (e) {
+              print('DEBUG: ScheduleService: Error parsing lesson: $e');
+              print('DEBUG: ScheduleService: Lesson data: $lessonData');
+            }
           }
         }
       }
 
+      print(
+        'DEBUG: ScheduleService: Total unique lessons found: ${allLessons.length}',
+      );
       return allLessons;
     });
   }

@@ -68,13 +68,62 @@ class _TeacherSchedulePageState extends ConsumerState<TeacherSchedulePage>
             );
           }
 
+          // УЛУЧШЕННАЯ ДЕДУПЛИКАЦИЯ: Группируем похожие занятия
+          final groupedLessons = <String, List<ScheduleEntry>>{};
+          for (final lesson in lessons) {
+            // Создаем ключ для группировки по времени, дню и предмету (без группы)
+            final key =
+                '${lesson.dayOfWeek}_${lesson.startTime}_${lesson.endTime}_${lesson.subjectId}';
+            groupedLessons.putIfAbsent(key, () => []).add(lesson);
+          }
+
+          // Создаем объединенные занятия
+          final mergedLessons = <ScheduleEntry>[];
+          for (final entry in groupedLessons.entries) {
+            final lessonGroup = entry.value;
+            if (lessonGroup.isNotEmpty) {
+              final firstLesson = lessonGroup.first;
+
+              // Если это занятия в одно время с одним предметом, но разными группами
+              if (lessonGroup.length > 1) {
+                final groupIds =
+                    lessonGroup.map((l) => l.groupId).toSet().toList();
+                // Создаем объединенное занятие с несколькими группами
+                final mergedLesson = ScheduleEntry(
+                  id: firstLesson.id,
+                  groupId: groupIds.join(', '), // Объединяем ID групп
+                  semesterId: firstLesson.semesterId,
+                  subjectId: firstLesson.subjectId,
+                  teacherId: firstLesson.teacherId,
+                  startTime: firstLesson.startTime,
+                  endTime: firstLesson.endTime,
+                  dayOfWeek: firstLesson.dayOfWeek,
+                  type: firstLesson.type,
+                  weekType: firstLesson.weekType,
+                  room: firstLesson.room,
+                  duration: firstLesson.duration,
+                  isFloating: firstLesson.isFloating,
+                  createdAt: firstLesson.createdAt,
+                  updatedAt: firstLesson.updatedAt,
+                );
+                mergedLessons.add(mergedLesson);
+              } else {
+                // Обычное занятие
+                mergedLessons.add(firstLesson);
+              }
+            }
+          }
+
+          print('DEBUG: Original lessons count: ${lessons.length}');
+          print('DEBUG: Merged lessons count: ${mergedLessons.length}');
+
           return TabBarView(
             controller: _tabController,
             children:
                 _daysOfWeek.map((day) {
                   // Фильтруем уроки по выбранному дню
                   final dayLessons =
-                      lessons
+                      mergedLessons
                           .where((lesson) => lesson.dayOfWeek == day)
                           .toList();
 
@@ -93,11 +142,17 @@ class _TeacherSchedulePageState extends ConsumerState<TeacherSchedulePage>
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.zero, // Убираем отступы
                     itemCount: dayLessons.length,
                     itemBuilder: (context, index) {
                       final lesson = dayLessons[index];
-                      return _LessonListTile(lesson: lesson);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ), // Контролируем отступы вручную
+                        child: _LessonListTile(lesson: lesson),
+                      );
                     },
                   );
                 }).toList(),
@@ -137,7 +192,7 @@ class _LessonListTile extends ConsumerWidget {
     final groupNameAsync = ref.watch(groupNameProvider(lesson.groupId));
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.zero, // Убираем отступы у карточки
       child: InkWell(
         onTap: () {
           // TODO: Показать детали урока
@@ -215,30 +270,11 @@ class _LessonListTile extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: groupNameAsync.when(
-                      data: (groupName) {
-                        print(
-                          'DEBUG: _LessonListTile: Group name received: $groupName',
-                        );
-                        return Text(
-                          'Группа: $groupName',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        );
-                      },
-                      loading: () => const Text('Загрузка группы...'),
-                      error: (error, stack) {
-                        print(
-                          'DEBUG: _LessonListTile: Error loading group name: $error',
-                        );
-                        return Text(
-                          'Группа: ${lesson.groupId}',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        );
-                      },
+                    child: _buildGroupDisplay(
+                      lesson.groupId,
+                      ref,
+                      textTheme,
+                      colorScheme,
                     ),
                   ),
                 ],
@@ -267,6 +303,81 @@ class _LessonListTile extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildGroupDisplay(
+    String groupIds,
+    WidgetRef ref,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    // Проверяем, есть ли несколько групп (разделены запятой)
+    final groupIdList = groupIds.split(', ');
+
+    if (groupIdList.length == 1) {
+      // Одна группа - используем обычный провайдер
+      final groupNameAsync = ref.watch(groupNameProvider(groupIds));
+      return groupNameAsync.when(
+        data: (groupName) {
+          return Text(
+            'Группа: $groupName',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
+        loading: () => const Text('Загрузка группы...'),
+        error: (error, stack) {
+          return Text(
+            'Группа: $groupIds',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
+      );
+    } else {
+      // Несколько групп - загружаем названия для каждой
+      return FutureBuilder<List<String>>(
+        future: Future.wait(
+          groupIdList
+              .map(
+                (groupId) => ref.read(groupNameProvider(groupId.trim()).future),
+              )
+              .toList(),
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Text('Загрузка групп...');
+          }
+
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Text(
+              'Группы: $groupIds',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            );
+          }
+
+          final groupNames = snapshot.data!;
+          // Извлекаем только названия групп (например "П4А", "П4Б")
+          final shortNames =
+              groupNames.map((name) {
+                // Ищем "группа X" в конце строки
+                final match = RegExp(r'группа ([^,]+)').firstMatch(name);
+                return match?.group(1) ?? name;
+              }).toList();
+
+          return Text(
+            'Группы: ${shortNames.join(', ')}',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          );
+        },
+      );
+    }
   }
 
   IconData _getLessonTypeIcon(String type) {
