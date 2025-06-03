@@ -5,135 +5,102 @@ import '../../../models/attendance.dart';
 final _mockAttendance = [
   // Программирование
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '1',
     subject: 'Программирование',
+    teacher: 'Петров П.П.',
     date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '2',
     subject: 'Программирование',
+    teacher: 'Петров П.П.',
     date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.late,
+    isPresent: false,
     comment: 'Опоздал на 10 минут',
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
+    reason: 'Опоздание',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '3',
     subject: 'Программирование',
+    teacher: 'Петров П.П.',
     date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.absent,
+    isPresent: false,
     comment: 'Не предупредил об отсутствии',
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
   ),
 
   // Базы данных
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '4',
     subject: 'Базы данных',
+    teacher: 'Сидорова С.С.',
     date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '5',
     subject: 'Базы данных',
+    teacher: 'Сидорова С.С.',
     date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.excused,
+    isPresent: false,
     comment: 'Справка от врача',
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
+    reason: 'Болезнь',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '6',
     subject: 'Базы данных',
+    teacher: 'Сидорова С.С.',
     date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
+    isPresent: true,
   ),
 
   // Веб-разработка
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '7',
     subject: 'Веб-разработка',
+    teacher: 'Козлов К.К.',
     date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '8',
     subject: 'Веб-разработка',
+    teacher: 'Козлов К.К.',
     date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '9',
     subject: 'Веб-разработка',
+    teacher: 'Козлов К.К.',
     date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.late,
+    isPresent: false,
     comment: 'Опоздал на 5 минут',
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
+    reason: 'Опоздание',
   ),
 
   // Английский язык
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '10',
     subject: 'Английский язык',
+    teacher: 'Иванова И.И.',
     date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '11',
     subject: 'Английский язык',
+    teacher: 'Иванова И.И.',
     date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.absent,
+    isPresent: false,
     comment: 'Не предупредил об отсутствии',
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '12',
     subject: 'Английский язык',
+    teacher: 'Иванова И.И.',
     date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
+    isPresent: true,
   ),
 ];
 
@@ -154,23 +121,26 @@ final uniqueSubjectsProvider = Provider<List<String>>((ref) {
 });
 
 // Провайдер для получения статистики посещаемости
-final attendanceStatsProvider =
-    Provider<Map<String, Map<AttendanceStatus, int>>>((ref) {
-      final attendance = ref.watch(attendanceProvider).value ?? [];
-      final stats = <String, Map<AttendanceStatus, int>>{};
+final attendanceStatsProvider = Provider<Map<String, Map<String, int>>>((ref) {
+  final attendance = ref.watch(attendanceProvider).value ?? [];
+  final stats = <String, Map<String, int>>{};
 
-      for (final record in attendance) {
-        if (!stats.containsKey(record.subject)) {
-          stats[record.subject] = {
-            AttendanceStatus.present: 0,
-            AttendanceStatus.absent: 0,
-            AttendanceStatus.late: 0,
-            AttendanceStatus.excused: 0,
-          };
-        }
-        stats[record.subject]![record.status] =
-            (stats[record.subject]![record.status] ?? 0) + 1;
-      }
+  for (final record in attendance) {
+    if (!stats.containsKey(record.subject)) {
+      stats[record.subject] = {'present': 0, 'absent': 0, 'excused': 0};
+    }
 
-      return stats;
-    });
+    if (record.isPresent) {
+      stats[record.subject]!['present'] =
+          (stats[record.subject]!['present'] ?? 0) + 1;
+    } else if (record.reason != null) {
+      stats[record.subject]!['excused'] =
+          (stats[record.subject]!['excused'] ?? 0) + 1;
+    } else {
+      stats[record.subject]!['absent'] =
+          (stats[record.subject]!['absent'] ?? 0) + 1;
+    }
+  }
+
+  return stats;
+});

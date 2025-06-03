@@ -15,6 +15,197 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
+NewsImage _$NewsImageFromJson(Map<String, dynamic> json) {
+  return _NewsImage.fromJson(json);
+}
+
+/// @nodoc
+mixin _$NewsImage {
+  String get url => throw _privateConstructorUsedError;
+  String get alt => throw _privateConstructorUsedError;
+  int get order => throw _privateConstructorUsedError;
+
+  /// Serializes this NewsImage to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of NewsImage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $NewsImageCopyWith<NewsImage> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $NewsImageCopyWith<$Res> {
+  factory $NewsImageCopyWith(NewsImage value, $Res Function(NewsImage) then) =
+      _$NewsImageCopyWithImpl<$Res, NewsImage>;
+  @useResult
+  $Res call({String url, String alt, int order});
+}
+
+/// @nodoc
+class _$NewsImageCopyWithImpl<$Res, $Val extends NewsImage>
+    implements $NewsImageCopyWith<$Res> {
+  _$NewsImageCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of NewsImage
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? url = null, Object? alt = null, Object? order = null}) {
+    return _then(
+      _value.copyWith(
+            url:
+                null == url
+                    ? _value.url
+                    : url // ignore: cast_nullable_to_non_nullable
+                        as String,
+            alt:
+                null == alt
+                    ? _value.alt
+                    : alt // ignore: cast_nullable_to_non_nullable
+                        as String,
+            order:
+                null == order
+                    ? _value.order
+                    : order // ignore: cast_nullable_to_non_nullable
+                        as int,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$NewsImageImplCopyWith<$Res>
+    implements $NewsImageCopyWith<$Res> {
+  factory _$$NewsImageImplCopyWith(
+    _$NewsImageImpl value,
+    $Res Function(_$NewsImageImpl) then,
+  ) = __$$NewsImageImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({String url, String alt, int order});
+}
+
+/// @nodoc
+class __$$NewsImageImplCopyWithImpl<$Res>
+    extends _$NewsImageCopyWithImpl<$Res, _$NewsImageImpl>
+    implements _$$NewsImageImplCopyWith<$Res> {
+  __$$NewsImageImplCopyWithImpl(
+    _$NewsImageImpl _value,
+    $Res Function(_$NewsImageImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of NewsImage
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? url = null, Object? alt = null, Object? order = null}) {
+    return _then(
+      _$NewsImageImpl(
+        url:
+            null == url
+                ? _value.url
+                : url // ignore: cast_nullable_to_non_nullable
+                    as String,
+        alt:
+            null == alt
+                ? _value.alt
+                : alt // ignore: cast_nullable_to_non_nullable
+                    as String,
+        order:
+            null == order
+                ? _value.order
+                : order // ignore: cast_nullable_to_non_nullable
+                    as int,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$NewsImageImpl implements _NewsImage {
+  const _$NewsImageImpl({
+    required this.url,
+    required this.alt,
+    required this.order,
+  });
+
+  factory _$NewsImageImpl.fromJson(Map<String, dynamic> json) =>
+      _$$NewsImageImplFromJson(json);
+
+  @override
+  final String url;
+  @override
+  final String alt;
+  @override
+  final int order;
+
+  @override
+  String toString() {
+    return 'NewsImage(url: $url, alt: $alt, order: $order)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$NewsImageImpl &&
+            (identical(other.url, url) || other.url == url) &&
+            (identical(other.alt, alt) || other.alt == alt) &&
+            (identical(other.order, order) || other.order == order));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, url, alt, order);
+
+  /// Create a copy of NewsImage
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$NewsImageImplCopyWith<_$NewsImageImpl> get copyWith =>
+      __$$NewsImageImplCopyWithImpl<_$NewsImageImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$NewsImageImplToJson(this);
+  }
+}
+
+abstract class _NewsImage implements NewsImage {
+  const factory _NewsImage({
+    required final String url,
+    required final String alt,
+    required final int order,
+  }) = _$NewsImageImpl;
+
+  factory _NewsImage.fromJson(Map<String, dynamic> json) =
+      _$NewsImageImpl.fromJson;
+
+  @override
+  String get url;
+  @override
+  String get alt;
+  @override
+  int get order;
+
+  /// Create a copy of NewsImage
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$NewsImageImplCopyWith<_$NewsImageImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 News _$NewsFromJson(Map<String, dynamic> json) {
   return _News.fromJson(json);
 }
@@ -22,26 +213,18 @@ News _$NewsFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$News {
   String get id => throw _privateConstructorUsedError;
-  String get authorId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
-  String get content =>
-      throw _privateConstructorUsedError; // Используем конвертеры для обязательного поля
-  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-  DateTime get createdAt => throw _privateConstructorUsedError; // Используем конвертеры для НЕобязательных (nullable) полей
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
-  DateTime? get updatedAt => throw _privateConstructorUsedError;
-  bool? get isPublished =>
-      throw _privateConstructorUsedError; // Используем конвертеры для НЕобязательных (nullable) полей
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
+  String get content => throw _privateConstructorUsedError;
+  String get authorId => throw _privateConstructorUsedError;
+  List<NewsImage> get images => throw _privateConstructorUsedError;
+  List<String> get tags => throw _privateConstructorUsedError;
+  bool get isPublished => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime get createdAt => throw _privateConstructorUsedError;
+  @TimestampConverter()
+  DateTime get updatedAt => throw _privateConstructorUsedError;
+  @TimestampConverter()
   DateTime? get publishedAt => throw _privateConstructorUsedError;
-  List<String>? get images => throw _privateConstructorUsedError;
-  List<String>? get tags => throw _privateConstructorUsedError;
 
   /// Serializes this News to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -59,24 +242,15 @@ abstract class $NewsCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String authorId,
     String title,
     String content,
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-    DateTime createdAt,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    DateTime? updatedAt,
-    bool? isPublished,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    DateTime? publishedAt,
-    List<String>? images,
-    List<String>? tags,
+    String authorId,
+    List<NewsImage> images,
+    List<String> tags,
+    bool isPublished,
+    @TimestampConverter() DateTime createdAt,
+    @TimestampConverter() DateTime updatedAt,
+    @TimestampConverter() DateTime? publishedAt,
   });
 }
 
@@ -96,15 +270,15 @@ class _$NewsCopyWithImpl<$Res, $Val extends News>
   @override
   $Res call({
     Object? id = null,
-    Object? authorId = null,
     Object? title = null,
     Object? content = null,
+    Object? authorId = null,
+    Object? images = null,
+    Object? tags = null,
+    Object? isPublished = null,
     Object? createdAt = null,
-    Object? updatedAt = freezed,
-    Object? isPublished = freezed,
+    Object? updatedAt = null,
     Object? publishedAt = freezed,
-    Object? images = freezed,
-    Object? tags = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -112,11 +286,6 @@ class _$NewsCopyWithImpl<$Res, $Val extends News>
                 null == id
                     ? _value.id
                     : id // ignore: cast_nullable_to_non_nullable
-                        as String,
-            authorId:
-                null == authorId
-                    ? _value.authorId
-                    : authorId // ignore: cast_nullable_to_non_nullable
                         as String,
             title:
                 null == title
@@ -128,36 +297,41 @@ class _$NewsCopyWithImpl<$Res, $Val extends News>
                     ? _value.content
                     : content // ignore: cast_nullable_to_non_nullable
                         as String,
+            authorId:
+                null == authorId
+                    ? _value.authorId
+                    : authorId // ignore: cast_nullable_to_non_nullable
+                        as String,
+            images:
+                null == images
+                    ? _value.images
+                    : images // ignore: cast_nullable_to_non_nullable
+                        as List<NewsImage>,
+            tags:
+                null == tags
+                    ? _value.tags
+                    : tags // ignore: cast_nullable_to_non_nullable
+                        as List<String>,
+            isPublished:
+                null == isPublished
+                    ? _value.isPublished
+                    : isPublished // ignore: cast_nullable_to_non_nullable
+                        as bool,
             createdAt:
                 null == createdAt
                     ? _value.createdAt
                     : createdAt // ignore: cast_nullable_to_non_nullable
                         as DateTime,
             updatedAt:
-                freezed == updatedAt
+                null == updatedAt
                     ? _value.updatedAt
                     : updatedAt // ignore: cast_nullable_to_non_nullable
-                        as DateTime?,
-            isPublished:
-                freezed == isPublished
-                    ? _value.isPublished
-                    : isPublished // ignore: cast_nullable_to_non_nullable
-                        as bool?,
+                        as DateTime,
             publishedAt:
                 freezed == publishedAt
                     ? _value.publishedAt
                     : publishedAt // ignore: cast_nullable_to_non_nullable
                         as DateTime?,
-            images:
-                freezed == images
-                    ? _value.images
-                    : images // ignore: cast_nullable_to_non_nullable
-                        as List<String>?,
-            tags:
-                freezed == tags
-                    ? _value.tags
-                    : tags // ignore: cast_nullable_to_non_nullable
-                        as List<String>?,
           )
           as $Val,
     );
@@ -174,24 +348,15 @@ abstract class _$$NewsImplCopyWith<$Res> implements $NewsCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String authorId,
     String title,
     String content,
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-    DateTime createdAt,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    DateTime? updatedAt,
-    bool? isPublished,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    DateTime? publishedAt,
-    List<String>? images,
-    List<String>? tags,
+    String authorId,
+    List<NewsImage> images,
+    List<String> tags,
+    bool isPublished,
+    @TimestampConverter() DateTime createdAt,
+    @TimestampConverter() DateTime updatedAt,
+    @TimestampConverter() DateTime? publishedAt,
   });
 }
 
@@ -208,15 +373,15 @@ class __$$NewsImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? authorId = null,
     Object? title = null,
     Object? content = null,
+    Object? authorId = null,
+    Object? images = null,
+    Object? tags = null,
+    Object? isPublished = null,
     Object? createdAt = null,
-    Object? updatedAt = freezed,
-    Object? isPublished = freezed,
+    Object? updatedAt = null,
     Object? publishedAt = freezed,
-    Object? images = freezed,
-    Object? tags = freezed,
   }) {
     return _then(
       _$NewsImpl(
@@ -224,11 +389,6 @@ class __$$NewsImplCopyWithImpl<$Res>
             null == id
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
-                    as String,
-        authorId:
-            null == authorId
-                ? _value.authorId
-                : authorId // ignore: cast_nullable_to_non_nullable
                     as String,
         title:
             null == title
@@ -240,36 +400,41 @@ class __$$NewsImplCopyWithImpl<$Res>
                 ? _value.content
                 : content // ignore: cast_nullable_to_non_nullable
                     as String,
+        authorId:
+            null == authorId
+                ? _value.authorId
+                : authorId // ignore: cast_nullable_to_non_nullable
+                    as String,
+        images:
+            null == images
+                ? _value._images
+                : images // ignore: cast_nullable_to_non_nullable
+                    as List<NewsImage>,
+        tags:
+            null == tags
+                ? _value._tags
+                : tags // ignore: cast_nullable_to_non_nullable
+                    as List<String>,
+        isPublished:
+            null == isPublished
+                ? _value.isPublished
+                : isPublished // ignore: cast_nullable_to_non_nullable
+                    as bool,
         createdAt:
             null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
                     as DateTime,
         updatedAt:
-            freezed == updatedAt
+            null == updatedAt
                 ? _value.updatedAt
                 : updatedAt // ignore: cast_nullable_to_non_nullable
-                    as DateTime?,
-        isPublished:
-            freezed == isPublished
-                ? _value.isPublished
-                : isPublished // ignore: cast_nullable_to_non_nullable
-                    as bool?,
+                    as DateTime,
         publishedAt:
             freezed == publishedAt
                 ? _value.publishedAt
                 : publishedAt // ignore: cast_nullable_to_non_nullable
                     as DateTime?,
-        images:
-            freezed == images
-                ? _value._images
-                : images // ignore: cast_nullable_to_non_nullable
-                    as List<String>?,
-        tags:
-            freezed == tags
-                ? _value._tags
-                : tags // ignore: cast_nullable_to_non_nullable
-                    as List<String>?,
       ),
     );
   }
@@ -280,24 +445,15 @@ class __$$NewsImplCopyWithImpl<$Res>
 class _$NewsImpl implements _News {
   const _$NewsImpl({
     required this.id,
-    required this.authorId,
     required this.title,
     required this.content,
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-    required this.createdAt,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    this.updatedAt,
-    this.isPublished,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    this.publishedAt,
-    final List<String>? images,
-    final List<String>? tags,
+    required this.authorId,
+    required final List<NewsImage> images,
+    required final List<String> tags,
+    required this.isPublished,
+    @TimestampConverter() required this.createdAt,
+    @TimestampConverter() required this.updatedAt,
+    @TimestampConverter() this.publishedAt,
   }) : _images = images,
        _tags = tags;
 
@@ -307,54 +463,42 @@ class _$NewsImpl implements _News {
   @override
   final String id;
   @override
-  final String authorId;
-  @override
   final String title;
   @override
   final String content;
-  // Используем конвертеры для обязательного поля
   @override
-  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-  final DateTime createdAt;
-  // Используем конвертеры для НЕобязательных (nullable) полей
+  final String authorId;
+  final List<NewsImage> _images;
   @override
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
-  final DateTime? updatedAt;
-  @override
-  final bool? isPublished;
-  // Используем конвертеры для НЕобязательных (nullable) полей
-  @override
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
-  final DateTime? publishedAt;
-  final List<String>? _images;
-  @override
-  List<String>? get images {
-    final value = _images;
-    if (value == null) return null;
+  List<NewsImage> get images {
     if (_images is EqualUnmodifiableListView) return _images;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_images);
   }
 
-  final List<String>? _tags;
+  final List<String> _tags;
   @override
-  List<String>? get tags {
-    final value = _tags;
-    if (value == null) return null;
+  List<String> get tags {
     if (_tags is EqualUnmodifiableListView) return _tags;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_tags);
   }
+
+  @override
+  final bool isPublished;
+  @override
+  @TimestampConverter()
+  final DateTime createdAt;
+  @override
+  @TimestampConverter()
+  final DateTime updatedAt;
+  @override
+  @TimestampConverter()
+  final DateTime? publishedAt;
 
   @override
   String toString() {
-    return 'News(id: $id, authorId: $authorId, title: $title, content: $content, createdAt: $createdAt, updatedAt: $updatedAt, isPublished: $isPublished, publishedAt: $publishedAt, images: $images, tags: $tags)';
+    return 'News(id: $id, title: $title, content: $content, authorId: $authorId, images: $images, tags: $tags, isPublished: $isPublished, createdAt: $createdAt, updatedAt: $updatedAt, publishedAt: $publishedAt)';
   }
 
   @override
@@ -363,20 +507,20 @@ class _$NewsImpl implements _News {
         (other.runtimeType == runtimeType &&
             other is _$NewsImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.authorId, authorId) ||
-                other.authorId == authorId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.content, content) || other.content == content) &&
+            (identical(other.authorId, authorId) ||
+                other.authorId == authorId) &&
+            const DeepCollectionEquality().equals(other._images, _images) &&
+            const DeepCollectionEquality().equals(other._tags, _tags) &&
+            (identical(other.isPublished, isPublished) ||
+                other.isPublished == isPublished) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
-            (identical(other.isPublished, isPublished) ||
-                other.isPublished == isPublished) &&
             (identical(other.publishedAt, publishedAt) ||
-                other.publishedAt == publishedAt) &&
-            const DeepCollectionEquality().equals(other._images, _images) &&
-            const DeepCollectionEquality().equals(other._tags, _tags));
+                other.publishedAt == publishedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -384,15 +528,15 @@ class _$NewsImpl implements _News {
   int get hashCode => Object.hash(
     runtimeType,
     id,
-    authorId,
     title,
     content,
-    createdAt,
-    updatedAt,
-    isPublished,
-    publishedAt,
+    authorId,
     const DeepCollectionEquality().hash(_images),
     const DeepCollectionEquality().hash(_tags),
+    isPublished,
+    createdAt,
+    updatedAt,
+    publishedAt,
   );
 
   /// Create a copy of News
@@ -412,24 +556,15 @@ class _$NewsImpl implements _News {
 abstract class _News implements News {
   const factory _News({
     required final String id,
-    required final String authorId,
     required final String title,
     required final String content,
-    @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-    required final DateTime createdAt,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    final DateTime? updatedAt,
-    final bool? isPublished,
-    @JsonKey(
-      fromJson: _nullableDateTimeFromTimestamp,
-      toJson: _nullableDateTimeToTimestamp,
-    )
-    final DateTime? publishedAt,
-    final List<String>? images,
-    final List<String>? tags,
+    required final String authorId,
+    required final List<NewsImage> images,
+    required final List<String> tags,
+    required final bool isPublished,
+    @TimestampConverter() required final DateTime createdAt,
+    @TimestampConverter() required final DateTime updatedAt,
+    @TimestampConverter() final DateTime? publishedAt,
   }) = _$NewsImpl;
 
   factory _News.fromJson(Map<String, dynamic> json) = _$NewsImpl.fromJson;
@@ -437,32 +572,26 @@ abstract class _News implements News {
   @override
   String get id;
   @override
-  String get authorId;
-  @override
   String get title;
   @override
-  String get content; // Используем конвертеры для обязательного поля
+  String get content;
   @override
-  @JsonKey(fromJson: _dateTimeFromTimestamp, toJson: _dateTimeToTimestamp)
-  DateTime get createdAt; // Используем конвертеры для НЕобязательных (nullable) полей
+  String get authorId;
   @override
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
-  DateTime? get updatedAt;
+  List<NewsImage> get images;
   @override
-  bool? get isPublished; // Используем конвертеры для НЕобязательных (nullable) полей
+  List<String> get tags;
   @override
-  @JsonKey(
-    fromJson: _nullableDateTimeFromTimestamp,
-    toJson: _nullableDateTimeToTimestamp,
-  )
+  bool get isPublished;
+  @override
+  @TimestampConverter()
+  DateTime get createdAt;
+  @override
+  @TimestampConverter()
+  DateTime get updatedAt;
+  @override
+  @TimestampConverter()
   DateTime? get publishedAt;
-  @override
-  List<String>? get images;
-  @override
-  List<String>? get tags;
 
   /// Create a copy of News
   /// with the given fields replaced by the non-null parameter values.

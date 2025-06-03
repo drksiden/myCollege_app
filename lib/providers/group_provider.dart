@@ -3,68 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/group.dart';
-
-// Модель группы
-class Group {
-  final String id;
-  final String name;
-  final String specialization;
-  final int year;
-  final String? curatorId;
-  final String? description;
-  final List<String>? studentIds;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-  final String? curatorName;
-
-  const Group({
-    required this.id,
-    required this.name,
-    required this.specialization,
-    required this.year,
-    this.curatorId,
-    this.description,
-    this.studentIds,
-    this.createdAt,
-    this.updatedAt,
-    this.curatorName,
-  });
-
-  factory Group.fromJson(Map<String, dynamic> json) {
-    return Group(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      specialization: json['specialization'] ?? '',
-      year: json['year'] ?? 1,
-      curatorId: json['curatorId'],
-      description: json['description'],
-      studentIds: (json['studentIds'] as List<dynamic>?)?.cast<String>(),
-      createdAt:
-          json['createdAt'] != null
-              ? (json['createdAt'] as Timestamp).toDate()
-              : null,
-      updatedAt:
-          json['updatedAt'] != null
-              ? (json['updatedAt'] as Timestamp).toDate()
-              : null,
-      curatorName: json['curatorName'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'specialization': specialization,
-      'year': year,
-      'curatorId': curatorId,
-      'description': description,
-      'studentIds': studentIds,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'curatorName': curatorName,
-    };
-  }
-}
+import '../services/group_service.dart';
 
 // Тестовые данные для групп
 final _mockGroups = [
@@ -208,4 +147,14 @@ final groupNameProvider = FutureProvider.family<String, String>((
     debugPrint('Error getting group name for $groupId: $e');
     return 'Ошибка загрузки группы';
   }
+});
+
+final groupServiceProvider = Provider((ref) => GroupService());
+
+final groupProvider = FutureProvider.family<Group?, String>((
+  ref,
+  groupId,
+) async {
+  final groupService = ref.watch(groupServiceProvider);
+  return groupService.getGroup(groupId);
 });

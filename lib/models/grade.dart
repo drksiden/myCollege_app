@@ -6,39 +6,44 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'grade.freezed.dart';
 part 'grade.g.dart';
 
+@freezed
+class Grade with _$Grade {
+  const factory Grade({
+    required String id,
+    required String subject,
+    required String teacher,
+    required DateTime date,
+    required double value,
+    required int semester,
+    required bool isNumeric,
+    @Default(false) bool isPassFail,
+    String? comment,
+  }) = _Grade;
+
+  factory Grade.fromJson(Map<String, dynamic> json) => _$GradeFromJson(json);
+}
+
 // Конвертер для Firestore Timestamp <-> DateTime
 class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
   const TimestampConverter();
 
   @override
-  DateTime fromJson(Timestamp timestamp) {
-    return timestamp.toDate();
-  }
+  DateTime fromJson(Timestamp timestamp) => timestamp.toDate();
 
   @override
   Timestamp toJson(DateTime date) => Timestamp.fromDate(date);
 }
 
-@freezed
-class Grade with _$Grade {
-  const factory Grade({
-    // ID можно не хранить, т.к. это ID документа Firestore
-    // String? gradeId,
-    required String studentId,
-    String? studentName, // Имя студента (денормализовано)
-    String? groupId, // ID группы (денормализовано)
-    required String subject, // Предмет
-    required String
-    grade, // Оценка (как строка, чтобы поддерживать '5', 'A', 'Зачет')
-    String? gradeType, // Тип оценки: "Экзамен", "Контрольная", и т.д.
-    String? comment, // Комментарий преподавателя
-    // Используем DateTime и конвертер для поля даты
-    @TimestampConverter() required DateTime date,
-    String? teacherId, // ID преподавателя
-    String? teacherName, // Имя преподавателя (денормализовано)
-  }) = _Grade;
-
-  factory Grade.fromJson(Map<String, dynamic> json) => _$GradeFromJson(json);
+extension GradeDisplay on Grade {
+  String get displayValue {
+    if (isPassFail) {
+      return value >= 60 ? 'Зачет' : 'Незачет';
+    }
+    if (!isNumeric) {
+      return value == 1 ? 'Зачет' : 'Незачет';
+    }
+    return value.toStringAsFixed(0);
+  }
 }
 
 // Вспомогательный extension для получения числового значения оценки (если возможно)
@@ -48,18 +53,15 @@ extension GradeValue on Grade {
     // Поддерживаем оценки по 5-балльной или 100-балльной системе
     // Можно добавить логику для буквенных оценок (A=5, B=4 и т.д.)
     final numValue = double.tryParse(
-      grade.replaceAll(',', '.'),
+      value.toString(),
     ); // Заменяем запятую на точку, если нужно
 
     // Проверяем стандартные текстовые оценки
     if (numValue == null) {
-      if (grade.toLowerCase() == 'зачет' || grade.toLowerCase() == 'зач') {
+      if (value >= 60) {
         return 1.0; // Условно 1 для зачета (для расчета типа "сдал/не сдал")
       }
-      if (grade.toLowerCase() == 'незачет' || grade.toLowerCase() == 'незач') {
-        return 0.0; // Условно 0 для незачета
-      }
-      // Добавь другие преобразования (A, B, C...) если нужно
+      return 0.0; // Условно 0 для незачета
     }
     return numValue;
   }

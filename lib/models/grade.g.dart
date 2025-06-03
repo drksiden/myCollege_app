@@ -7,28 +7,26 @@ part of 'grade.dart';
 // **************************************************************************
 
 _$GradeImpl _$$GradeImplFromJson(Map<String, dynamic> json) => _$GradeImpl(
-  studentId: json['studentId'] as String,
-  studentName: json['studentName'] as String?,
-  groupId: json['groupId'] as String?,
+  id: json['id'] as String,
   subject: json['subject'] as String,
-  grade: json['grade'] as String,
-  gradeType: json['gradeType'] as String?,
+  teacher: json['teacher'] as String,
+  date: DateTime.parse(json['date'] as String),
+  value: (json['value'] as num).toDouble(),
+  semester: (json['semester'] as num).toInt(),
+  isNumeric: json['isNumeric'] as bool,
+  isPassFail: json['isPassFail'] as bool? ?? false,
   comment: json['comment'] as String?,
-  date: const TimestampConverter().fromJson(json['date'] as Timestamp),
-  teacherId: json['teacherId'] as String?,
-  teacherName: json['teacherName'] as String?,
 );
 
 Map<String, dynamic> _$$GradeImplToJson(_$GradeImpl instance) =>
     <String, dynamic>{
-      'studentId': instance.studentId,
-      'studentName': instance.studentName,
-      'groupId': instance.groupId,
+      'id': instance.id,
       'subject': instance.subject,
-      'grade': instance.grade,
-      'gradeType': instance.gradeType,
+      'teacher': instance.teacher,
+      'date': instance.date.toIso8601String(),
+      'value': instance.value,
+      'semester': instance.semester,
+      'isNumeric': instance.isNumeric,
+      'isPassFail': instance.isPassFail,
       'comment': instance.comment,
-      'date': const TimestampConverter().toJson(instance.date),
-      'teacherId': instance.teacherId,
-      'teacherName': instance.teacherName,
     };

@@ -2,23 +2,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/subject.dart';
 
 class SubjectService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance;
 
-  // Получить предмет по ID
-  Future<Subject?> getSubject(String id) async {
-    print('DEBUG: Getting subject with ID: $id');
-    final doc = await _db.collection('subjects').doc(id).get();
-    if (!doc.exists) {
-      print('DEBUG: Subject not found with ID: $id');
+  Future<Subject?> getSubject(String subjectId) async {
+    try {
+      final doc = await _firestore.collection('subjects').doc(subjectId).get();
+      if (!doc.exists) return null;
+      return Subject.fromJson(doc.data()!);
+    } catch (e) {
+      print('Error getting subject: $e');
       return null;
     }
-    print('DEBUG: Found subject: ${doc.data()}');
-    return Subject.fromJson({...doc.data()!, 'id': doc.id});
   }
 
   // Получить все предметы
   Stream<List<Subject>> getAllSubjects() {
-    return _db.collection('subjects').orderBy('name').snapshots().map((
+    return _firestore.collection('subjects').orderBy('name').snapshots().map((
       snapshot,
     ) {
       print('DEBUG: Got ${snapshot.docs.length} subjects');
@@ -35,7 +34,7 @@ class SubjectService {
 
     // Используем один запрос с whereIn вместо множества отдельных запросов
     final snapshot =
-        await _db
+        await _firestore
             .collection('subjects')
             .where(FieldPath.documentId, whereIn: ids)
             .get();
@@ -52,7 +51,7 @@ class SubjectService {
   // Получить предметы по ID преподавателя
   Stream<List<Subject>> getSubjectsByTeacher(String teacherId) {
     print('DEBUG: Getting subjects for teacher: $teacherId');
-    return _db
+    return _firestore
         .collection('subjects')
         .where('teacherId', isEqualTo: teacherId)
         .orderBy('name')
@@ -68,7 +67,7 @@ class SubjectService {
   // Получить предметы по ID группы
   Stream<List<Subject>> getSubjectsByGroup(String groupId) {
     print('DEBUG: Getting subjects for group: $groupId');
-    return _db
+    return _firestore
         .collection('subjects')
         .where('groups', arrayContains: groupId)
         .orderBy('name')
@@ -156,9 +155,9 @@ class SubjectService {
       },
     ];
 
-    final batch = _db.batch();
+    final batch = _firestore.batch();
     for (final subject in subjects) {
-      final docRef = _db.collection('subjects').doc();
+      final docRef = _firestore.collection('subjects').doc();
       batch.set(docRef, subject);
     }
     await batch.commit();

@@ -4,7 +4,7 @@ import '../../core/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Импорт нужных страниц
-import 'pages/schedule_page.dart';
+import 'teacher_schedule_page.dart';
 import 'pages/grades_page.dart';
 import 'pages/assignments_page.dart';
 import 'pages/profile_page.dart';
@@ -20,25 +20,6 @@ class TeacherHomeScreen extends ConsumerStatefulWidget {
 
 class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   int _selectedIndex = 0;
-
-  final List<Widget> _pages = [
-    const SchedulePage(),
-    const GradesPage(),
-    const AssignmentsPage(),
-    ChatsPage(currentUserId: ''),
-    const NewsFeedPage(),
-    const ProfilePage(),
-  ];
-
-  final List<String> _titles = [
-    'Расписание',
-    'Оценки',
-    'Задания',
-    'Чаты',
-    'Новости',
-    'Профиль',
-  ];
-
   String? _userId;
 
   @override
@@ -62,7 +43,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const SchedulePage(),
+      if (_userId != null) TeacherSchedulePage(teacherId: _userId!),
       const GradesPage(),
       const AssignmentsPage(showAppBar: false),
       if (_userId != null)
@@ -116,4 +97,13 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
       ),
     );
   }
+
+  final List<String> _titles = [
+    'Расписание',
+    'Оценки',
+    'Задания',
+    'Чаты',
+    'Новости',
+    'Профиль',
+  ];
 }

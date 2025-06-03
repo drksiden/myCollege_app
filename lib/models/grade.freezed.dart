@@ -21,26 +21,15 @@ Grade _$GradeFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Grade {
-  // ID можно не хранить, т.к. это ID документа Firestore
-  // String? gradeId,
-  String get studentId => throw _privateConstructorUsedError;
-  String? get studentName =>
-      throw _privateConstructorUsedError; // Имя студента (денормализовано)
-  String? get groupId =>
-      throw _privateConstructorUsedError; // ID группы (денормализовано)
-  String get subject => throw _privateConstructorUsedError; // Предмет
-  String get grade =>
-      throw _privateConstructorUsedError; // Оценка (как строка, чтобы поддерживать '5', 'A', 'Зачет')
-  String? get gradeType =>
-      throw _privateConstructorUsedError; // Тип оценки: "Экзамен", "Контрольная", и т.д.
-  String? get comment =>
-      throw _privateConstructorUsedError; // Комментарий преподавателя
-  // Используем DateTime и конвертер для поля даты
-  @TimestampConverter()
+  String get id => throw _privateConstructorUsedError;
+  String get subject => throw _privateConstructorUsedError;
+  String get teacher => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
-  String? get teacherId =>
-      throw _privateConstructorUsedError; // ID преподавателя
-  String? get teacherName => throw _privateConstructorUsedError;
+  double get value => throw _privateConstructorUsedError;
+  int get semester => throw _privateConstructorUsedError;
+  bool get isNumeric => throw _privateConstructorUsedError;
+  bool get isPassFail => throw _privateConstructorUsedError;
+  String? get comment => throw _privateConstructorUsedError;
 
   /// Serializes this Grade to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -57,16 +46,15 @@ abstract class $GradeCopyWith<$Res> {
       _$GradeCopyWithImpl<$Res, Grade>;
   @useResult
   $Res call({
-    String studentId,
-    String? studentName,
-    String? groupId,
+    String id,
     String subject,
-    String grade,
-    String? gradeType,
+    String teacher,
+    DateTime date,
+    double value,
+    int semester,
+    bool isNumeric,
+    bool isPassFail,
     String? comment,
-    @TimestampConverter() DateTime date,
-    String? teacherId,
-    String? teacherName,
   });
 }
 
@@ -85,68 +73,62 @@ class _$GradeCopyWithImpl<$Res, $Val extends Grade>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? studentId = null,
-    Object? studentName = freezed,
-    Object? groupId = freezed,
+    Object? id = null,
     Object? subject = null,
-    Object? grade = null,
-    Object? gradeType = freezed,
-    Object? comment = freezed,
+    Object? teacher = null,
     Object? date = null,
-    Object? teacherId = freezed,
-    Object? teacherName = freezed,
+    Object? value = null,
+    Object? semester = null,
+    Object? isNumeric = null,
+    Object? isPassFail = null,
+    Object? comment = freezed,
   }) {
     return _then(
       _value.copyWith(
-            studentId:
-                null == studentId
-                    ? _value.studentId
-                    : studentId // ignore: cast_nullable_to_non_nullable
+            id:
+                null == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
                         as String,
-            studentName:
-                freezed == studentName
-                    ? _value.studentName
-                    : studentName // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            groupId:
-                freezed == groupId
-                    ? _value.groupId
-                    : groupId // ignore: cast_nullable_to_non_nullable
-                        as String?,
             subject:
                 null == subject
                     ? _value.subject
                     : subject // ignore: cast_nullable_to_non_nullable
                         as String,
-            grade:
-                null == grade
-                    ? _value.grade
-                    : grade // ignore: cast_nullable_to_non_nullable
+            teacher:
+                null == teacher
+                    ? _value.teacher
+                    : teacher // ignore: cast_nullable_to_non_nullable
                         as String,
-            gradeType:
-                freezed == gradeType
-                    ? _value.gradeType
-                    : gradeType // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            comment:
-                freezed == comment
-                    ? _value.comment
-                    : comment // ignore: cast_nullable_to_non_nullable
-                        as String?,
             date:
                 null == date
                     ? _value.date
                     : date // ignore: cast_nullable_to_non_nullable
                         as DateTime,
-            teacherId:
-                freezed == teacherId
-                    ? _value.teacherId
-                    : teacherId // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            teacherName:
-                freezed == teacherName
-                    ? _value.teacherName
-                    : teacherName // ignore: cast_nullable_to_non_nullable
+            value:
+                null == value
+                    ? _value.value
+                    : value // ignore: cast_nullable_to_non_nullable
+                        as double,
+            semester:
+                null == semester
+                    ? _value.semester
+                    : semester // ignore: cast_nullable_to_non_nullable
+                        as int,
+            isNumeric:
+                null == isNumeric
+                    ? _value.isNumeric
+                    : isNumeric // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            isPassFail:
+                null == isPassFail
+                    ? _value.isPassFail
+                    : isPassFail // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            comment:
+                freezed == comment
+                    ? _value.comment
+                    : comment // ignore: cast_nullable_to_non_nullable
                         as String?,
           )
           as $Val,
@@ -163,16 +145,15 @@ abstract class _$$GradeImplCopyWith<$Res> implements $GradeCopyWith<$Res> {
   @override
   @useResult
   $Res call({
-    String studentId,
-    String? studentName,
-    String? groupId,
+    String id,
     String subject,
-    String grade,
-    String? gradeType,
+    String teacher,
+    DateTime date,
+    double value,
+    int semester,
+    bool isNumeric,
+    bool isPassFail,
     String? comment,
-    @TimestampConverter() DateTime date,
-    String? teacherId,
-    String? teacherName,
   });
 }
 
@@ -190,68 +171,62 @@ class __$$GradeImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? studentId = null,
-    Object? studentName = freezed,
-    Object? groupId = freezed,
+    Object? id = null,
     Object? subject = null,
-    Object? grade = null,
-    Object? gradeType = freezed,
-    Object? comment = freezed,
+    Object? teacher = null,
     Object? date = null,
-    Object? teacherId = freezed,
-    Object? teacherName = freezed,
+    Object? value = null,
+    Object? semester = null,
+    Object? isNumeric = null,
+    Object? isPassFail = null,
+    Object? comment = freezed,
   }) {
     return _then(
       _$GradeImpl(
-        studentId:
-            null == studentId
-                ? _value.studentId
-                : studentId // ignore: cast_nullable_to_non_nullable
+        id:
+            null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
                     as String,
-        studentName:
-            freezed == studentName
-                ? _value.studentName
-                : studentName // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        groupId:
-            freezed == groupId
-                ? _value.groupId
-                : groupId // ignore: cast_nullable_to_non_nullable
-                    as String?,
         subject:
             null == subject
                 ? _value.subject
                 : subject // ignore: cast_nullable_to_non_nullable
                     as String,
-        grade:
-            null == grade
-                ? _value.grade
-                : grade // ignore: cast_nullable_to_non_nullable
+        teacher:
+            null == teacher
+                ? _value.teacher
+                : teacher // ignore: cast_nullable_to_non_nullable
                     as String,
-        gradeType:
-            freezed == gradeType
-                ? _value.gradeType
-                : gradeType // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        comment:
-            freezed == comment
-                ? _value.comment
-                : comment // ignore: cast_nullable_to_non_nullable
-                    as String?,
         date:
             null == date
                 ? _value.date
                 : date // ignore: cast_nullable_to_non_nullable
                     as DateTime,
-        teacherId:
-            freezed == teacherId
-                ? _value.teacherId
-                : teacherId // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        teacherName:
-            freezed == teacherName
-                ? _value.teacherName
-                : teacherName // ignore: cast_nullable_to_non_nullable
+        value:
+            null == value
+                ? _value.value
+                : value // ignore: cast_nullable_to_non_nullable
+                    as double,
+        semester:
+            null == semester
+                ? _value.semester
+                : semester // ignore: cast_nullable_to_non_nullable
+                    as int,
+        isNumeric:
+            null == isNumeric
+                ? _value.isNumeric
+                : isNumeric // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        isPassFail:
+            null == isPassFail
+                ? _value.isPassFail
+                : isPassFail // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        comment:
+            freezed == comment
+                ? _value.comment
+                : comment // ignore: cast_nullable_to_non_nullable
                     as String?,
       ),
     );
@@ -262,56 +237,43 @@ class __$$GradeImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$GradeImpl implements _Grade {
   const _$GradeImpl({
-    required this.studentId,
-    this.studentName,
-    this.groupId,
+    required this.id,
     required this.subject,
-    required this.grade,
-    this.gradeType,
+    required this.teacher,
+    required this.date,
+    required this.value,
+    required this.semester,
+    required this.isNumeric,
+    this.isPassFail = false,
     this.comment,
-    @TimestampConverter() required this.date,
-    this.teacherId,
-    this.teacherName,
   });
 
   factory _$GradeImpl.fromJson(Map<String, dynamic> json) =>
       _$$GradeImplFromJson(json);
 
-  // ID можно не хранить, т.к. это ID документа Firestore
-  // String? gradeId,
   @override
-  final String studentId;
-  @override
-  final String? studentName;
-  // Имя студента (денормализовано)
-  @override
-  final String? groupId;
-  // ID группы (денормализовано)
+  final String id;
   @override
   final String subject;
-  // Предмет
   @override
-  final String grade;
-  // Оценка (как строка, чтобы поддерживать '5', 'A', 'Зачет')
+  final String teacher;
   @override
-  final String? gradeType;
-  // Тип оценки: "Экзамен", "Контрольная", и т.д.
-  @override
-  final String? comment;
-  // Комментарий преподавателя
-  // Используем DateTime и конвертер для поля даты
-  @override
-  @TimestampConverter()
   final DateTime date;
   @override
-  final String? teacherId;
-  // ID преподавателя
+  final double value;
   @override
-  final String? teacherName;
+  final int semester;
+  @override
+  final bool isNumeric;
+  @override
+  @JsonKey()
+  final bool isPassFail;
+  @override
+  final String? comment;
 
   @override
   String toString() {
-    return 'Grade(studentId: $studentId, studentName: $studentName, groupId: $groupId, subject: $subject, grade: $grade, gradeType: $gradeType, comment: $comment, date: $date, teacherId: $teacherId, teacherName: $teacherName)';
+    return 'Grade(id: $id, subject: $subject, teacher: $teacher, date: $date, value: $value, semester: $semester, isNumeric: $isNumeric, isPassFail: $isPassFail, comment: $comment)';
   }
 
   @override
@@ -319,37 +281,33 @@ class _$GradeImpl implements _Grade {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$GradeImpl &&
-            (identical(other.studentId, studentId) ||
-                other.studentId == studentId) &&
-            (identical(other.studentName, studentName) ||
-                other.studentName == studentName) &&
-            (identical(other.groupId, groupId) || other.groupId == groupId) &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.subject, subject) || other.subject == subject) &&
-            (identical(other.grade, grade) || other.grade == grade) &&
-            (identical(other.gradeType, gradeType) ||
-                other.gradeType == gradeType) &&
-            (identical(other.comment, comment) || other.comment == comment) &&
+            (identical(other.teacher, teacher) || other.teacher == teacher) &&
             (identical(other.date, date) || other.date == date) &&
-            (identical(other.teacherId, teacherId) ||
-                other.teacherId == teacherId) &&
-            (identical(other.teacherName, teacherName) ||
-                other.teacherName == teacherName));
+            (identical(other.value, value) || other.value == value) &&
+            (identical(other.semester, semester) ||
+                other.semester == semester) &&
+            (identical(other.isNumeric, isNumeric) ||
+                other.isNumeric == isNumeric) &&
+            (identical(other.isPassFail, isPassFail) ||
+                other.isPassFail == isPassFail) &&
+            (identical(other.comment, comment) || other.comment == comment));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    studentId,
-    studentName,
-    groupId,
+    id,
     subject,
-    grade,
-    gradeType,
-    comment,
+    teacher,
     date,
-    teacherId,
-    teacherName,
+    value,
+    semester,
+    isNumeric,
+    isPassFail,
+    comment,
   );
 
   /// Create a copy of Grade
@@ -368,44 +326,37 @@ class _$GradeImpl implements _Grade {
 
 abstract class _Grade implements Grade {
   const factory _Grade({
-    required final String studentId,
-    final String? studentName,
-    final String? groupId,
+    required final String id,
     required final String subject,
-    required final String grade,
-    final String? gradeType,
+    required final String teacher,
+    required final DateTime date,
+    required final double value,
+    required final int semester,
+    required final bool isNumeric,
+    final bool isPassFail,
     final String? comment,
-    @TimestampConverter() required final DateTime date,
-    final String? teacherId,
-    final String? teacherName,
   }) = _$GradeImpl;
 
   factory _Grade.fromJson(Map<String, dynamic> json) = _$GradeImpl.fromJson;
 
-  // ID можно не хранить, т.к. это ID документа Firestore
-  // String? gradeId,
   @override
-  String get studentId;
+  String get id;
   @override
-  String? get studentName; // Имя студента (денормализовано)
+  String get subject;
   @override
-  String? get groupId; // ID группы (денормализовано)
+  String get teacher;
   @override
-  String get subject; // Предмет
-  @override
-  String get grade; // Оценка (как строка, чтобы поддерживать '5', 'A', 'Зачет')
-  @override
-  String? get gradeType; // Тип оценки: "Экзамен", "Контрольная", и т.д.
-  @override
-  String? get comment; // Комментарий преподавателя
-  // Используем DateTime и конвертер для поля даты
-  @override
-  @TimestampConverter()
   DateTime get date;
   @override
-  String? get teacherId; // ID преподавателя
+  double get value;
   @override
-  String? get teacherName;
+  int get semester;
+  @override
+  bool get isNumeric;
+  @override
+  bool get isPassFail;
+  @override
+  String? get comment;
 
   /// Create a copy of Grade
   /// with the given fields replaced by the non-null parameter values.

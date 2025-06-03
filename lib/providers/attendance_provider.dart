@@ -3,137 +3,44 @@ import '../models/attendance.dart';
 
 // Тестовые данные для посещаемости
 final _mockAttendance = [
-  // Программирование
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '1',
     subject: 'Программирование',
-    date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
+    teacher: 'Петров П.П.',
+    date: DateTime(2024, 3, 15, 9, 0),
+    isPresent: true,
+    comment: 'Отличная работа на паре',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '2',
     subject: 'Программирование',
-    date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.late,
-    comment: 'Опоздал на 10 минут',
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
+    teacher: 'Петров П.П.',
+    date: DateTime(2024, 3, 15, 10, 30),
+    isPresent: false,
+    reason: 'Болезнь',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Программирование',
-    date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.absent,
-    comment: 'Не предупредил об отсутствии',
-    teacherId: 'teacher_1',
-    teacherName: 'Петров П.П.',
-  ),
-
-  // Базы данных
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '3',
     subject: 'Базы данных',
-    date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
+    teacher: 'Сидорова С.С.',
+    date: DateTime(2024, 3, 15, 13, 0),
+    isPresent: true,
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Базы данных',
-    date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.excused,
-    comment: 'Справка от врача',
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
-  ),
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Базы данных',
-    date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_2',
-    teacherName: 'Сидорова С.С.',
-  ),
-
-  // Веб-разработка
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '4',
     subject: 'Веб-разработка',
-    date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
+    teacher: 'Козлов К.К.',
+    date: DateTime(2024, 3, 16, 9, 0),
+    isPresent: true,
+    comment: 'Активное участие в обсуждении',
   ),
   Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Веб-разработка',
-    date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
-  ),
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Веб-разработка',
-    date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.late,
-    comment: 'Опоздал на 5 минут',
-    teacherId: 'teacher_3',
-    teacherName: 'Козлов К.К.',
-  ),
-
-  // Английский язык
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
+    id: '5',
     subject: 'Английский язык',
-    date: DateTime(2024, 3, 15),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
-  ),
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Английский язык',
-    date: DateTime(2024, 3, 14),
-    status: AttendanceStatus.absent,
-    comment: 'Не предупредил об отсутствии',
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
-  ),
-  Attendance(
-    studentId: 'test_student_1',
-    studentName: 'Иванов Иван',
-    groupId: 'П2Г',
-    subject: 'Английский язык',
-    date: DateTime(2024, 3, 13),
-    status: AttendanceStatus.present,
-    teacherId: 'teacher_4',
-    teacherName: 'Иванова И.И.',
+    teacher: 'Иванова И.И.',
+    date: DateTime(2024, 3, 16, 10, 30),
+    isPresent: false,
+    reason: 'Семейные обстоятельства',
   ),
 ];
 
@@ -154,23 +61,26 @@ final uniqueSubjectsProvider = Provider<List<String>>((ref) {
 });
 
 // Провайдер для получения статистики посещаемости
-final attendanceStatsProvider =
-    Provider<Map<String, Map<AttendanceStatus, int>>>((ref) {
-      final attendance = ref.watch(attendanceProvider).value ?? [];
-      final stats = <String, Map<AttendanceStatus, int>>{};
+final attendanceStatsProvider = Provider<Map<String, Map<String, int>>>((ref) {
+  final attendance = ref.watch(attendanceProvider).value ?? [];
+  final stats = <String, Map<String, int>>{};
 
-      for (final record in attendance) {
-        if (!stats.containsKey(record.subject)) {
-          stats[record.subject] = {
-            AttendanceStatus.present: 0,
-            AttendanceStatus.absent: 0,
-            AttendanceStatus.late: 0,
-            AttendanceStatus.excused: 0,
-          };
-        }
-        stats[record.subject]![record.status] =
-            (stats[record.subject]![record.status] ?? 0) + 1;
-      }
+  for (final record in attendance) {
+    if (!stats.containsKey(record.subject)) {
+      stats[record.subject] = {'present': 0, 'absent': 0, 'excused': 0};
+    }
 
-      return stats;
-    });
+    if (record.isPresent) {
+      stats[record.subject]!['present'] =
+          (stats[record.subject]!['present'] ?? 0) + 1;
+    } else if (record.reason != null) {
+      stats[record.subject]!['excused'] =
+          (stats[record.subject]!['excused'] ?? 0) + 1;
+    } else {
+      stats[record.subject]!['absent'] =
+          (stats[record.subject]!['absent'] ?? 0) + 1;
+    }
+  }
+
+  return stats;
+});

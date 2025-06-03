@@ -36,9 +36,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
     final teacherName = ref.read(teacherNameProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Выставить оценку'),
-      ),
+      appBar: AppBar(title: const Text('Выставить оценку')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -65,12 +63,13 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                       selectedSubject = null;
                     });
                   },
-                  items: groups
-                      .map((g) => DropdownMenuItem(
-                            value: g,
-                            child: Text(g.name),
-                          ))
-                      .toList(),
+                  items:
+                      groups
+                          .map(
+                            (g) =>
+                                DropdownMenuItem(value: g, child: Text(g.name)),
+                          )
+                          .toList(),
                 );
               },
             ),
@@ -96,12 +95,15 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                         selectedSubject = null;
                       });
                     },
-                    items: students
-                        .map((s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s.name),
-                            ))
-                        .toList(),
+                    items:
+                        students
+                            .map(
+                              (s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(s.name),
+                              ),
+                            )
+                            .toList(),
                   );
                 },
               ),
@@ -114,12 +116,13 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                 hint: const Text('Выбери предмет'),
                 value: selectedSubject,
                 onChanged: (val) => setState(() => selectedSubject = val),
-                items: subjects
-                    .map((subj) => DropdownMenuItem(
-                          value: subj,
-                          child: Text(subj),
-                        ))
-                    .toList(),
+                items:
+                    subjects
+                        .map(
+                          (subj) =>
+                              DropdownMenuItem(value: subj, child: Text(subj)),
+                        )
+                        .toList(),
               ),
             const SizedBox(height: 16),
 
@@ -127,7 +130,10 @@ class _GradesPageState extends ConsumerState<GradesPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Оценка: $score', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Оценка: $score',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   Slider(
                     value: score.toDouble(),
                     min: 0,
@@ -140,52 +146,66 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                              if (selectedGroup == null ||
-                                  selectedStudent == null ||
-                                  selectedSubject == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Выберите группу, ученика и предмет')),
-                                );
-                                return;
-                              }
-                              setState(() {
-                                isLoading = true;
-                              });
-                              try {
-                                final grade = Grade(
-                                  id: '',
-                                  studentId: selectedStudent!.id,
-                                  teacherId: teacherId,
-                                  teacherName: teacherName,
-                                  groupId: selectedGroup!.id,
-                                  subject: selectedSubject!, // теперь из выбора
-                                  score: score,
-                                  timestamp: DateTime.now(),
-                                );
-                                await firebaseService.addGrade(grade);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Оценка успешно поставлена')),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Ошибка: $e')),
-                                );
-                              } finally {
+                      onPressed:
+                          isLoading
+                              ? null
+                              : () async {
+                                if (selectedGroup == null ||
+                                    selectedStudent == null ||
+                                    selectedSubject == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Выберите группу, ученика и предмет',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
                                 setState(() {
-                                  isLoading = false;
+                                  isLoading = true;
                                 });
-                              }
-                            },
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Поставить оценку'),
+                                try {
+                                  final grade = Grade(
+                                    id: '',
+                                    studentId: selectedStudent!.id,
+                                    teacherId: teacherId,
+                                    teacherName: teacherName,
+                                    groupId: selectedGroup!.id,
+                                    subject:
+                                        selectedSubject!, // теперь из выбора
+                                    score: score,
+                                    timestamp: DateTime.now(),
+                                  );
+                                  await firebaseService.addGrade(grade);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Оценка успешно поставлена',
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Ошибка: $e')),
+                                  );
+                                } finally {
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                }
+                              },
+                      child:
+                          isLoading
+                              ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                              : const Text('Поставить оценку'),
                     ),
                   ),
                 ],

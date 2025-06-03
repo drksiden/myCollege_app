@@ -8,33 +8,22 @@ part of 'attendance.dart';
 
 _$AttendanceImpl _$$AttendanceImplFromJson(Map<String, dynamic> json) =>
     _$AttendanceImpl(
-      studentId: json['studentId'] as String,
-      studentName: json['studentName'] as String?,
-      groupId: json['groupId'] as String?,
+      id: json['id'] as String,
       subject: json['subject'] as String,
-      date: const TimestampConverter().fromJson(json['date'] as Timestamp),
-      status: $enumDecode(_$AttendanceStatusEnumMap, json['status']),
+      teacher: json['teacher'] as String,
+      date: DateTime.parse(json['date'] as String),
+      isPresent: json['isPresent'] as bool,
       comment: json['comment'] as String?,
-      teacherId: json['teacherId'] as String?,
-      teacherName: json['teacherName'] as String?,
+      reason: json['reason'] as String?,
     );
 
 Map<String, dynamic> _$$AttendanceImplToJson(_$AttendanceImpl instance) =>
     <String, dynamic>{
-      'studentId': instance.studentId,
-      'studentName': instance.studentName,
-      'groupId': instance.groupId,
+      'id': instance.id,
       'subject': instance.subject,
-      'date': const TimestampConverter().toJson(instance.date),
-      'status': _$AttendanceStatusEnumMap[instance.status]!,
+      'teacher': instance.teacher,
+      'date': instance.date.toIso8601String(),
+      'isPresent': instance.isPresent,
       'comment': instance.comment,
-      'teacherId': instance.teacherId,
-      'teacherName': instance.teacherName,
+      'reason': instance.reason,
     };
-
-const _$AttendanceStatusEnumMap = {
-  AttendanceStatus.present: 'present',
-  AttendanceStatus.absent: 'absent',
-  AttendanceStatus.late: 'late',
-  AttendanceStatus.excused: 'excused',
-};

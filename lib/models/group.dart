@@ -22,14 +22,14 @@ class Group with _$Group {
   const factory Group({
     required String id,
     required String name,
-    required String specialization, // Специализация
-    required int year, // Курс
+    required String specialization,
+    required int year,
+    String? curatorId,
     String? description,
-    String? curatorId, // ID куратора
-    String? curatorName, // Имя куратора
-    List<String>? studentIds, // Список ID студентов
+    List<String>? studentIds,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    String? curatorName,
   }) = _Group;
 
   factory Group.fromJson(Map<String, dynamic> json) => _$GroupFromJson(json);

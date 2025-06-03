@@ -21,16 +21,13 @@ Attendance _$AttendanceFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Attendance {
-  String get studentId => throw _privateConstructorUsedError;
-  String? get studentName => throw _privateConstructorUsedError;
-  String? get groupId => throw _privateConstructorUsedError;
+  String get id => throw _privateConstructorUsedError;
   String get subject => throw _privateConstructorUsedError;
-  @TimestampConverter()
+  String get teacher => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
-  AttendanceStatus get status => throw _privateConstructorUsedError;
+  bool get isPresent => throw _privateConstructorUsedError;
   String? get comment => throw _privateConstructorUsedError;
-  String? get teacherId => throw _privateConstructorUsedError;
-  String? get teacherName => throw _privateConstructorUsedError;
+  String? get reason => throw _privateConstructorUsedError;
 
   /// Serializes this Attendance to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,15 +47,13 @@ abstract class $AttendanceCopyWith<$Res> {
   ) = _$AttendanceCopyWithImpl<$Res, Attendance>;
   @useResult
   $Res call({
-    String studentId,
-    String? studentName,
-    String? groupId,
+    String id,
     String subject,
-    @TimestampConverter() DateTime date,
-    AttendanceStatus status,
+    String teacher,
+    DateTime date,
+    bool isPresent,
     String? comment,
-    String? teacherId,
-    String? teacherName,
+    String? reason,
   });
 }
 
@@ -77,62 +72,50 @@ class _$AttendanceCopyWithImpl<$Res, $Val extends Attendance>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? studentId = null,
-    Object? studentName = freezed,
-    Object? groupId = freezed,
+    Object? id = null,
     Object? subject = null,
+    Object? teacher = null,
     Object? date = null,
-    Object? status = null,
+    Object? isPresent = null,
     Object? comment = freezed,
-    Object? teacherId = freezed,
-    Object? teacherName = freezed,
+    Object? reason = freezed,
   }) {
     return _then(
       _value.copyWith(
-            studentId:
-                null == studentId
-                    ? _value.studentId
-                    : studentId // ignore: cast_nullable_to_non_nullable
+            id:
+                null == id
+                    ? _value.id
+                    : id // ignore: cast_nullable_to_non_nullable
                         as String,
-            studentName:
-                freezed == studentName
-                    ? _value.studentName
-                    : studentName // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            groupId:
-                freezed == groupId
-                    ? _value.groupId
-                    : groupId // ignore: cast_nullable_to_non_nullable
-                        as String?,
             subject:
                 null == subject
                     ? _value.subject
                     : subject // ignore: cast_nullable_to_non_nullable
+                        as String,
+            teacher:
+                null == teacher
+                    ? _value.teacher
+                    : teacher // ignore: cast_nullable_to_non_nullable
                         as String,
             date:
                 null == date
                     ? _value.date
                     : date // ignore: cast_nullable_to_non_nullable
                         as DateTime,
-            status:
-                null == status
-                    ? _value.status
-                    : status // ignore: cast_nullable_to_non_nullable
-                        as AttendanceStatus,
+            isPresent:
+                null == isPresent
+                    ? _value.isPresent
+                    : isPresent // ignore: cast_nullable_to_non_nullable
+                        as bool,
             comment:
                 freezed == comment
                     ? _value.comment
                     : comment // ignore: cast_nullable_to_non_nullable
                         as String?,
-            teacherId:
-                freezed == teacherId
-                    ? _value.teacherId
-                    : teacherId // ignore: cast_nullable_to_non_nullable
-                        as String?,
-            teacherName:
-                freezed == teacherName
-                    ? _value.teacherName
-                    : teacherName // ignore: cast_nullable_to_non_nullable
+            reason:
+                freezed == reason
+                    ? _value.reason
+                    : reason // ignore: cast_nullable_to_non_nullable
                         as String?,
           )
           as $Val,
@@ -150,15 +133,13 @@ abstract class _$$AttendanceImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String studentId,
-    String? studentName,
-    String? groupId,
+    String id,
     String subject,
-    @TimestampConverter() DateTime date,
-    AttendanceStatus status,
+    String teacher,
+    DateTime date,
+    bool isPresent,
     String? comment,
-    String? teacherId,
-    String? teacherName,
+    String? reason,
   });
 }
 
@@ -176,62 +157,50 @@ class __$$AttendanceImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? studentId = null,
-    Object? studentName = freezed,
-    Object? groupId = freezed,
+    Object? id = null,
     Object? subject = null,
+    Object? teacher = null,
     Object? date = null,
-    Object? status = null,
+    Object? isPresent = null,
     Object? comment = freezed,
-    Object? teacherId = freezed,
-    Object? teacherName = freezed,
+    Object? reason = freezed,
   }) {
     return _then(
       _$AttendanceImpl(
-        studentId:
-            null == studentId
-                ? _value.studentId
-                : studentId // ignore: cast_nullable_to_non_nullable
+        id:
+            null == id
+                ? _value.id
+                : id // ignore: cast_nullable_to_non_nullable
                     as String,
-        studentName:
-            freezed == studentName
-                ? _value.studentName
-                : studentName // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        groupId:
-            freezed == groupId
-                ? _value.groupId
-                : groupId // ignore: cast_nullable_to_non_nullable
-                    as String?,
         subject:
             null == subject
                 ? _value.subject
                 : subject // ignore: cast_nullable_to_non_nullable
+                    as String,
+        teacher:
+            null == teacher
+                ? _value.teacher
+                : teacher // ignore: cast_nullable_to_non_nullable
                     as String,
         date:
             null == date
                 ? _value.date
                 : date // ignore: cast_nullable_to_non_nullable
                     as DateTime,
-        status:
-            null == status
-                ? _value.status
-                : status // ignore: cast_nullable_to_non_nullable
-                    as AttendanceStatus,
+        isPresent:
+            null == isPresent
+                ? _value.isPresent
+                : isPresent // ignore: cast_nullable_to_non_nullable
+                    as bool,
         comment:
             freezed == comment
                 ? _value.comment
                 : comment // ignore: cast_nullable_to_non_nullable
                     as String?,
-        teacherId:
-            freezed == teacherId
-                ? _value.teacherId
-                : teacherId // ignore: cast_nullable_to_non_nullable
-                    as String?,
-        teacherName:
-            freezed == teacherName
-                ? _value.teacherName
-                : teacherName // ignore: cast_nullable_to_non_nullable
+        reason:
+            freezed == reason
+                ? _value.reason
+                : reason // ignore: cast_nullable_to_non_nullable
                     as String?,
       ),
     );
@@ -242,43 +211,36 @@ class __$$AttendanceImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$AttendanceImpl implements _Attendance {
   const _$AttendanceImpl({
-    required this.studentId,
-    this.studentName,
-    this.groupId,
+    required this.id,
     required this.subject,
-    @TimestampConverter() required this.date,
-    required this.status,
+    required this.teacher,
+    required this.date,
+    required this.isPresent,
     this.comment,
-    this.teacherId,
-    this.teacherName,
+    this.reason,
   });
 
   factory _$AttendanceImpl.fromJson(Map<String, dynamic> json) =>
       _$$AttendanceImplFromJson(json);
 
   @override
-  final String studentId;
-  @override
-  final String? studentName;
-  @override
-  final String? groupId;
+  final String id;
   @override
   final String subject;
   @override
-  @TimestampConverter()
+  final String teacher;
+  @override
   final DateTime date;
   @override
-  final AttendanceStatus status;
+  final bool isPresent;
   @override
   final String? comment;
   @override
-  final String? teacherId;
-  @override
-  final String? teacherName;
+  final String? reason;
 
   @override
   String toString() {
-    return 'Attendance(studentId: $studentId, studentName: $studentName, groupId: $groupId, subject: $subject, date: $date, status: $status, comment: $comment, teacherId: $teacherId, teacherName: $teacherName)';
+    return 'Attendance(id: $id, subject: $subject, teacher: $teacher, date: $date, isPresent: $isPresent, comment: $comment, reason: $reason)';
   }
 
   @override
@@ -286,34 +248,27 @@ class _$AttendanceImpl implements _Attendance {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$AttendanceImpl &&
-            (identical(other.studentId, studentId) ||
-                other.studentId == studentId) &&
-            (identical(other.studentName, studentName) ||
-                other.studentName == studentName) &&
-            (identical(other.groupId, groupId) || other.groupId == groupId) &&
+            (identical(other.id, id) || other.id == id) &&
             (identical(other.subject, subject) || other.subject == subject) &&
+            (identical(other.teacher, teacher) || other.teacher == teacher) &&
             (identical(other.date, date) || other.date == date) &&
-            (identical(other.status, status) || other.status == status) &&
+            (identical(other.isPresent, isPresent) ||
+                other.isPresent == isPresent) &&
             (identical(other.comment, comment) || other.comment == comment) &&
-            (identical(other.teacherId, teacherId) ||
-                other.teacherId == teacherId) &&
-            (identical(other.teacherName, teacherName) ||
-                other.teacherName == teacherName));
+            (identical(other.reason, reason) || other.reason == reason));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
-    studentId,
-    studentName,
-    groupId,
+    id,
     subject,
+    teacher,
     date,
-    status,
+    isPresent,
     comment,
-    teacherId,
-    teacherName,
+    reason,
   );
 
   /// Create a copy of Attendance
@@ -332,39 +287,32 @@ class _$AttendanceImpl implements _Attendance {
 
 abstract class _Attendance implements Attendance {
   const factory _Attendance({
-    required final String studentId,
-    final String? studentName,
-    final String? groupId,
+    required final String id,
     required final String subject,
-    @TimestampConverter() required final DateTime date,
-    required final AttendanceStatus status,
+    required final String teacher,
+    required final DateTime date,
+    required final bool isPresent,
     final String? comment,
-    final String? teacherId,
-    final String? teacherName,
+    final String? reason,
   }) = _$AttendanceImpl;
 
   factory _Attendance.fromJson(Map<String, dynamic> json) =
       _$AttendanceImpl.fromJson;
 
   @override
-  String get studentId;
-  @override
-  String? get studentName;
-  @override
-  String? get groupId;
+  String get id;
   @override
   String get subject;
   @override
-  @TimestampConverter()
+  String get teacher;
+  @override
   DateTime get date;
   @override
-  AttendanceStatus get status;
+  bool get isPresent;
   @override
   String? get comment;
   @override
-  String? get teacherId;
-  @override
-  String? get teacherName;
+  String? get reason;
 
   /// Create a copy of Attendance
   /// with the given fields replaced by the non-null parameter values.

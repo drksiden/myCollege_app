@@ -182,3 +182,11 @@ final studentSubjectsProvider =
         },
       );
     });
+
+final subjectProvider = FutureProvider.family<Subject?, String>((
+  ref,
+  subjectId,
+) async {
+  final subjectService = ref.watch(subjectServiceProvider);
+  return subjectService.getSubject(subjectId);
+});

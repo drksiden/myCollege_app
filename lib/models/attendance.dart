@@ -5,84 +5,49 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'attendance.freezed.dart';
 part 'attendance.g.dart';
 
-// Конвертер для Firestore Timestamp <-> DateTime
-class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
-  const TimestampConverter();
-
-  @override
-  DateTime fromJson(Timestamp timestamp) {
-    return timestamp.toDate();
-  }
-
-  @override
-  Timestamp toJson(DateTime date) => Timestamp.fromDate(date);
-}
-
 @freezed
 class Attendance with _$Attendance {
   const factory Attendance({
-    required String studentId,
-    String? studentName,
-    String? groupId,
+    required String id,
     required String subject,
-    @TimestampConverter() required DateTime date,
-    required AttendanceStatus status,
+    required String teacher,
+    required DateTime date,
+    required bool isPresent,
     String? comment,
-    String? teacherId,
-    String? teacherName,
+    String? reason,
   }) = _Attendance;
 
   factory Attendance.fromJson(Map<String, dynamic> json) =>
       _$AttendanceFromJson(json);
 }
 
-// Статус посещаемости
-enum AttendanceStatus {
-  present, // Присутствовал
-  absent, // Отсутствовал
-  late, // Опоздал
-  excused, // Уважительная причина
+// Конвертер для Firestore Timestamp <-> DateTime
+class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
+  const TimestampConverter();
+
+  @override
+  DateTime fromJson(Timestamp timestamp) => timestamp.toDate();
+
+  @override
+  Timestamp toJson(DateTime date) => Timestamp.fromDate(date);
 }
 
 // Расширение для получения цвета статуса
-extension AttendanceStatusColor on AttendanceStatus {
+extension AttendanceStatusColor on Attendance {
   Color getColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    switch (this) {
-      case AttendanceStatus.present:
-        return Colors.green;
-      case AttendanceStatus.absent:
-        return Colors.red;
-      case AttendanceStatus.late:
-        return Colors.orange;
-      case AttendanceStatus.excused:
-        return Colors.blue;
-    }
+    if (isPresent) return Colors.green;
+    if (reason != null) return Colors.orange;
+    return Colors.red;
   }
 
   String getDisplayName() {
-    switch (this) {
-      case AttendanceStatus.present:
-        return 'Присутствовал';
-      case AttendanceStatus.absent:
-        return 'Отсутствовал';
-      case AttendanceStatus.late:
-        return 'Опоздал';
-      case AttendanceStatus.excused:
-        return 'Уважительная причина';
-    }
+    if (isPresent) return 'Присутствовал';
+    if (reason != null) return 'Отсутствовал (${reason})';
+    return 'Отсутствовал';
   }
 
   IconData getIcon() {
-    switch (this) {
-      case AttendanceStatus.present:
-        return Icons.check_circle_outline;
-      case AttendanceStatus.absent:
-        return Icons.cancel_outlined;
-      case AttendanceStatus.late:
-        return Icons.access_time;
-      case AttendanceStatus.excused:
-        return Icons.info_outline;
-    }
+    if (isPresent) return Icons.check_circle_outline;
+    return Icons.cancel_outlined;
   }
 }

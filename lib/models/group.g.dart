@@ -11,9 +11,8 @@ _$GroupImpl _$$GroupImplFromJson(Map<String, dynamic> json) => _$GroupImpl(
   name: json['name'] as String,
   specialization: json['specialization'] as String,
   year: (json['year'] as num).toInt(),
-  description: json['description'] as String?,
   curatorId: json['curatorId'] as String?,
-  curatorName: json['curatorName'] as String?,
+  description: json['description'] as String?,
   studentIds:
       (json['studentIds'] as List<dynamic>?)?.map((e) => e as String).toList(),
   createdAt: _$JsonConverterFromJson<Timestamp, DateTime>(
@@ -24,6 +23,7 @@ _$GroupImpl _$$GroupImplFromJson(Map<String, dynamic> json) => _$GroupImpl(
     json['updatedAt'],
     const TimestampConverter().fromJson,
   ),
+  curatorName: json['curatorName'] as String?,
 );
 
 Map<String, dynamic> _$$GroupImplToJson(_$GroupImpl instance) =>
@@ -32,9 +32,8 @@ Map<String, dynamic> _$$GroupImplToJson(_$GroupImpl instance) =>
       'name': instance.name,
       'specialization': instance.specialization,
       'year': instance.year,
-      'description': instance.description,
       'curatorId': instance.curatorId,
-      'curatorName': instance.curatorName,
+      'description': instance.description,
       'studentIds': instance.studentIds,
       'createdAt': _$JsonConverterToJson<Timestamp, DateTime>(
         instance.createdAt,
@@ -44,6 +43,7 @@ Map<String, dynamic> _$$GroupImplToJson(_$GroupImpl instance) =>
         instance.updatedAt,
         const TimestampConverter().toJson,
       ),
+      'curatorName': instance.curatorName,
     };
 
 Value? _$JsonConverterFromJson<Json, Value>(

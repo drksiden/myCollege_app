@@ -208,73 +208,135 @@ class _GradesPageState extends ConsumerState<GradesPage> {
 }
 
 // --- Виджет для отображения одной оценки в списке ---
-class _GradeListTile extends StatelessWidget {
+class _GradeListTile extends StatefulWidget {
   final Grade grade;
-  const _GradeListTile({required this.grade}); // Убрали key
+  const _GradeListTile({required this.grade});
+
+  @override
+  State<_GradeListTile> createState() => _GradeListTileState();
+}
+
+class _GradeListTileState extends State<_GradeListTile> {
+  bool _isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    // Форматируем дату
-    final formattedDate = DateFormat('d MMMM yyyy', 'ru_RU').format(grade.date);
-    // Получаем цвет оценки
-    final gradeColor = grade.getColor(context);
+    final formattedDate = DateFormat(
+      'd MMMM yyyy',
+      'ru_RU',
+    ).format(widget.grade.date);
+    final gradeColor = widget.grade.getColor(context);
 
     return Card(
-      // Используем тему CardTheme
-      margin: const EdgeInsets.only(bottom: 8.0), // Отступ между карточками
-      child: ListTile(
-        // Используем тему ListTileTheme
-        leading: CircleAvatar(
-          backgroundColor: gradeColor.withAlpha(30), // Слегка подкрашенный фон
-          foregroundColor: gradeColor, // Цвет иконки
-          child: const Icon(Icons.star_outline, size: 20),
-          // Можно показывать первую букву предмета, если нет иконки
-          // child: Text(grade.subject.isNotEmpty ? grade.subject[0] : '?'),
-        ),
-        title: Text(grade.subject),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        child: Column(
           children: [
-            // Тип оценки и дата
-            Text(
-              '${grade.gradeType ?? "Оценка"} • $formattedDate',
-              style: textTheme.bodySmall,
-            ),
-            // Комментарий, если есть
-            if (grade.comment != null && grade.comment!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  '"${grade.comment!}"',
-                  style: textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: gradeColor.withAlpha(30),
+                foregroundColor: gradeColor,
+                child: const Icon(Icons.star_outline, size: 20),
+              ),
+              title: Text(widget.grade.subject),
+              subtitle: Text(
+                '${widget.grade.isPassFail ? "Зачет" : "Оценка"} • $formattedDate',
+                style: textTheme.bodySmall,
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        widget.grade.isPassFail
+                            ? (widget.grade.value == 'pass'
+                                ? 'Зачет'
+                                : 'Незачет')
+                            : widget.grade.value.toString(),
+                        style: textTheme.titleMedium?.copyWith(
+                          color: gradeColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (widget.grade.teacher.isNotEmpty)
+                        Text(
+                          widget.grade.teacher,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
                     color: colorScheme.onSurfaceVariant,
                   ),
-                ),
+                ],
               ),
-            // Имя преподавателя, если есть
-            if (grade.teacherName != null && grade.teacherName!.isNotEmpty)
+            ),
+            if (_isExpanded &&
+                (widget.grade.comment != null || widget.grade.semester != null))
               Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  'Преп: ${grade.teacherName!}',
-                  style: textTheme.labelSmall,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.grade.comment != null &&
+                        widget.grade.comment!.isNotEmpty) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.comment_outlined,
+                            size: 16,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.grade.comment!,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (widget.grade.semester != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.school_outlined,
+                            size: 16,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Семестр: ${widget.grade.semester}',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
           ],
         ),
-        // Оценка справа
-        trailing: Text(
-          grade.grade, // Отображаем строку оценки
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: gradeColor, // Используем рассчитанный цвет
-          ),
-        ),
-        // Можно добавить onTap для показа деталей оценки, если нужно
-        // onTap: () { ... }
       ),
     );
   }

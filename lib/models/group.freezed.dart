@@ -23,18 +23,16 @@ Group _$GroupFromJson(Map<String, dynamic> json) {
 mixin _$Group {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get specialization =>
-      throw _privateConstructorUsedError; // Специализация
-  int get year => throw _privateConstructorUsedError; // Курс
+  String get specialization => throw _privateConstructorUsedError;
+  int get year => throw _privateConstructorUsedError;
+  String? get curatorId => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
-  String? get curatorId => throw _privateConstructorUsedError; // ID куратора
-  String? get curatorName => throw _privateConstructorUsedError; // Имя куратора
-  List<String>? get studentIds =>
-      throw _privateConstructorUsedError; // Список ID студентов
+  List<String>? get studentIds => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
+  String? get curatorName => throw _privateConstructorUsedError;
 
   /// Serializes this Group to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -55,12 +53,12 @@ abstract class $GroupCopyWith<$Res> {
     String name,
     String specialization,
     int year,
-    String? description,
     String? curatorId,
-    String? curatorName,
+    String? description,
     List<String>? studentIds,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    String? curatorName,
   });
 }
 
@@ -83,12 +81,12 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
     Object? name = null,
     Object? specialization = null,
     Object? year = null,
-    Object? description = freezed,
     Object? curatorId = freezed,
-    Object? curatorName = freezed,
+    Object? description = freezed,
     Object? studentIds = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? curatorName = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -112,20 +110,15 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
                     ? _value.year
                     : year // ignore: cast_nullable_to_non_nullable
                         as int,
-            description:
-                freezed == description
-                    ? _value.description
-                    : description // ignore: cast_nullable_to_non_nullable
-                        as String?,
             curatorId:
                 freezed == curatorId
                     ? _value.curatorId
                     : curatorId // ignore: cast_nullable_to_non_nullable
                         as String?,
-            curatorName:
-                freezed == curatorName
-                    ? _value.curatorName
-                    : curatorName // ignore: cast_nullable_to_non_nullable
+            description:
+                freezed == description
+                    ? _value.description
+                    : description // ignore: cast_nullable_to_non_nullable
                         as String?,
             studentIds:
                 freezed == studentIds
@@ -142,6 +135,11 @@ class _$GroupCopyWithImpl<$Res, $Val extends Group>
                     ? _value.updatedAt
                     : updatedAt // ignore: cast_nullable_to_non_nullable
                         as DateTime?,
+            curatorName:
+                freezed == curatorName
+                    ? _value.curatorName
+                    : curatorName // ignore: cast_nullable_to_non_nullable
+                        as String?,
           )
           as $Val,
     );
@@ -161,12 +159,12 @@ abstract class _$$GroupImplCopyWith<$Res> implements $GroupCopyWith<$Res> {
     String name,
     String specialization,
     int year,
-    String? description,
     String? curatorId,
-    String? curatorName,
+    String? description,
     List<String>? studentIds,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    String? curatorName,
   });
 }
 
@@ -188,12 +186,12 @@ class __$$GroupImplCopyWithImpl<$Res>
     Object? name = null,
     Object? specialization = null,
     Object? year = null,
-    Object? description = freezed,
     Object? curatorId = freezed,
-    Object? curatorName = freezed,
+    Object? description = freezed,
     Object? studentIds = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? curatorName = freezed,
   }) {
     return _then(
       _$GroupImpl(
@@ -217,20 +215,15 @@ class __$$GroupImplCopyWithImpl<$Res>
                 ? _value.year
                 : year // ignore: cast_nullable_to_non_nullable
                     as int,
-        description:
-            freezed == description
-                ? _value.description
-                : description // ignore: cast_nullable_to_non_nullable
-                    as String?,
         curatorId:
             freezed == curatorId
                 ? _value.curatorId
                 : curatorId // ignore: cast_nullable_to_non_nullable
                     as String?,
-        curatorName:
-            freezed == curatorName
-                ? _value.curatorName
-                : curatorName // ignore: cast_nullable_to_non_nullable
+        description:
+            freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
                     as String?,
         studentIds:
             freezed == studentIds
@@ -247,6 +240,11 @@ class __$$GroupImplCopyWithImpl<$Res>
                 ? _value.updatedAt
                 : updatedAt // ignore: cast_nullable_to_non_nullable
                     as DateTime?,
+        curatorName:
+            freezed == curatorName
+                ? _value.curatorName
+                : curatorName // ignore: cast_nullable_to_non_nullable
+                    as String?,
       ),
     );
   }
@@ -260,12 +258,12 @@ class _$GroupImpl implements _Group {
     required this.name,
     required this.specialization,
     required this.year,
-    this.description,
     this.curatorId,
-    this.curatorName,
+    this.description,
     final List<String>? studentIds,
     @TimestampConverter() this.createdAt,
     @TimestampConverter() this.updatedAt,
+    this.curatorName,
   }) : _studentIds = studentIds;
 
   factory _$GroupImpl.fromJson(Map<String, dynamic> json) =>
@@ -277,20 +275,13 @@ class _$GroupImpl implements _Group {
   final String name;
   @override
   final String specialization;
-  // Специализация
   @override
   final int year;
-  // Курс
-  @override
-  final String? description;
   @override
   final String? curatorId;
-  // ID куратора
   @override
-  final String? curatorName;
-  // Имя куратора
+  final String? description;
   final List<String>? _studentIds;
-  // Имя куратора
   @override
   List<String>? get studentIds {
     final value = _studentIds;
@@ -300,17 +291,18 @@ class _$GroupImpl implements _Group {
     return EqualUnmodifiableListView(value);
   }
 
-  // Список ID студентов
   @override
   @TimestampConverter()
   final DateTime? createdAt;
   @override
   @TimestampConverter()
   final DateTime? updatedAt;
+  @override
+  final String? curatorName;
 
   @override
   String toString() {
-    return 'Group(id: $id, name: $name, specialization: $specialization, year: $year, description: $description, curatorId: $curatorId, curatorName: $curatorName, studentIds: $studentIds, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Group(id: $id, name: $name, specialization: $specialization, year: $year, curatorId: $curatorId, description: $description, studentIds: $studentIds, createdAt: $createdAt, updatedAt: $updatedAt, curatorName: $curatorName)';
   }
 
   @override
@@ -323,12 +315,10 @@ class _$GroupImpl implements _Group {
             (identical(other.specialization, specialization) ||
                 other.specialization == specialization) &&
             (identical(other.year, year) || other.year == year) &&
-            (identical(other.description, description) ||
-                other.description == description) &&
             (identical(other.curatorId, curatorId) ||
                 other.curatorId == curatorId) &&
-            (identical(other.curatorName, curatorName) ||
-                other.curatorName == curatorName) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             const DeepCollectionEquality().equals(
               other._studentIds,
               _studentIds,
@@ -336,7 +326,9 @@ class _$GroupImpl implements _Group {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+                other.updatedAt == updatedAt) &&
+            (identical(other.curatorName, curatorName) ||
+                other.curatorName == curatorName));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -347,12 +339,12 @@ class _$GroupImpl implements _Group {
     name,
     specialization,
     year,
-    description,
     curatorId,
-    curatorName,
+    description,
     const DeepCollectionEquality().hash(_studentIds),
     createdAt,
     updatedAt,
+    curatorName,
   );
 
   /// Create a copy of Group
@@ -375,12 +367,12 @@ abstract class _Group implements Group {
     required final String name,
     required final String specialization,
     required final int year,
-    final String? description,
     final String? curatorId,
-    final String? curatorName,
+    final String? description,
     final List<String>? studentIds,
     @TimestampConverter() final DateTime? createdAt,
     @TimestampConverter() final DateTime? updatedAt,
+    final String? curatorName,
   }) = _$GroupImpl;
 
   factory _Group.fromJson(Map<String, dynamic> json) = _$GroupImpl.fromJson;
@@ -390,23 +382,23 @@ abstract class _Group implements Group {
   @override
   String get name;
   @override
-  String get specialization; // Специализация
+  String get specialization;
   @override
-  int get year; // Курс
+  int get year;
+  @override
+  String? get curatorId;
   @override
   String? get description;
   @override
-  String? get curatorId; // ID куратора
-  @override
-  String? get curatorName; // Имя куратора
-  @override
-  List<String>? get studentIds; // Список ID студентов
+  List<String>? get studentIds;
   @override
   @TimestampConverter()
   DateTime? get createdAt;
   @override
   @TimestampConverter()
   DateTime? get updatedAt;
+  @override
+  String? get curatorName;
 
   /// Create a copy of Group
   /// with the given fields replaced by the non-null parameter values.

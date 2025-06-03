@@ -8,10 +8,10 @@ part of 'user.dart';
 
 _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
   uid: json['uid'] as String,
-  lastName: json['lastName'] as String,
-  firstName: json['firstName'] as String,
-  middleName: json['middleName'] as String?,
   email: json['email'] as String,
+  firstName: json['firstName'] as String,
+  lastName: json['lastName'] as String,
+  middleName: json['middleName'] as String?,
   role: json['role'] as String,
   photoURL: json['photoURL'] as String?,
   groupId: json['groupId'] as String?,
@@ -35,15 +35,20 @@ _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
     json['updatedAt'],
     const TimestampConverter().fromJson,
   ),
+  isActivated: json['isActivated'] as bool? ?? false,
+  lastLoginAt:
+      json['lastLoginAt'] == null
+          ? null
+          : DateTime.parse(json['lastLoginAt'] as String),
 );
 
 Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
     <String, dynamic>{
       'uid': instance.uid,
-      'lastName': instance.lastName,
-      'firstName': instance.firstName,
-      'middleName': instance.middleName,
       'email': instance.email,
+      'firstName': instance.firstName,
+      'lastName': instance.lastName,
+      'middleName': instance.middleName,
       'role': instance.role,
       'photoURL': instance.photoURL,
       'groupId': instance.groupId,
@@ -67,6 +72,8 @@ Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
         instance.updatedAt,
         const TimestampConverter().toJson,
       ),
+      'isActivated': instance.isActivated,
+      'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
     };
 
 Value? _$JsonConverterFromJson<Json, Value>(

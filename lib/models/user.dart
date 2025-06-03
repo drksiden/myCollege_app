@@ -21,10 +21,10 @@ class TimestampConverter implements JsonConverter<DateTime, Timestamp> {
 class User with _$User {
   const factory User({
     required String uid,
-    required String lastName,
-    required String firstName,
-    String? middleName,
     required String email,
+    required String firstName,
+    required String lastName,
+    String? middleName,
     required String role,
     String? photoURL,
     String? groupId,
@@ -36,6 +36,8 @@ class User with _$User {
     @TimestampConverter() DateTime? enrollmentDate,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    @Default(false) bool isActivated,
+    DateTime? lastLoginAt,
   }) = _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);

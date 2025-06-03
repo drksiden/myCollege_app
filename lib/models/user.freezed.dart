@@ -22,10 +22,10 @@ User _$UserFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$User {
   String get uid => throw _privateConstructorUsedError;
-  String get lastName => throw _privateConstructorUsedError;
-  String get firstName => throw _privateConstructorUsedError;
-  String? get middleName => throw _privateConstructorUsedError;
   String get email => throw _privateConstructorUsedError;
+  String get firstName => throw _privateConstructorUsedError;
+  String get lastName => throw _privateConstructorUsedError;
+  String? get middleName => throw _privateConstructorUsedError;
   String get role => throw _privateConstructorUsedError;
   String? get photoURL => throw _privateConstructorUsedError;
   String? get groupId => throw _privateConstructorUsedError;
@@ -41,6 +41,8 @@ mixin _$User {
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
+  bool get isActivated => throw _privateConstructorUsedError;
+  DateTime? get lastLoginAt => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -58,10 +60,10 @@ abstract class $UserCopyWith<$Res> {
   @useResult
   $Res call({
     String uid,
-    String lastName,
-    String firstName,
-    String? middleName,
     String email,
+    String firstName,
+    String lastName,
+    String? middleName,
     String role,
     String? photoURL,
     String? groupId,
@@ -73,6 +75,8 @@ abstract class $UserCopyWith<$Res> {
     @TimestampConverter() DateTime? enrollmentDate,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    bool isActivated,
+    DateTime? lastLoginAt,
   });
 }
 
@@ -92,10 +96,10 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
   @override
   $Res call({
     Object? uid = null,
-    Object? lastName = null,
-    Object? firstName = null,
-    Object? middleName = freezed,
     Object? email = null,
+    Object? firstName = null,
+    Object? lastName = null,
+    Object? middleName = freezed,
     Object? role = null,
     Object? photoURL = freezed,
     Object? groupId = freezed,
@@ -107,6 +111,8 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? enrollmentDate = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? isActivated = null,
+    Object? lastLoginAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -115,26 +121,26 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                     ? _value.uid
                     : uid // ignore: cast_nullable_to_non_nullable
                         as String,
-            lastName:
-                null == lastName
-                    ? _value.lastName
-                    : lastName // ignore: cast_nullable_to_non_nullable
+            email:
+                null == email
+                    ? _value.email
+                    : email // ignore: cast_nullable_to_non_nullable
                         as String,
             firstName:
                 null == firstName
                     ? _value.firstName
                     : firstName // ignore: cast_nullable_to_non_nullable
                         as String,
+            lastName:
+                null == lastName
+                    ? _value.lastName
+                    : lastName // ignore: cast_nullable_to_non_nullable
+                        as String,
             middleName:
                 freezed == middleName
                     ? _value.middleName
                     : middleName // ignore: cast_nullable_to_non_nullable
                         as String?,
-            email:
-                null == email
-                    ? _value.email
-                    : email // ignore: cast_nullable_to_non_nullable
-                        as String,
             role:
                 null == role
                     ? _value.role
@@ -190,6 +196,16 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                     ? _value.updatedAt
                     : updatedAt // ignore: cast_nullable_to_non_nullable
                         as DateTime?,
+            isActivated:
+                null == isActivated
+                    ? _value.isActivated
+                    : isActivated // ignore: cast_nullable_to_non_nullable
+                        as bool,
+            lastLoginAt:
+                freezed == lastLoginAt
+                    ? _value.lastLoginAt
+                    : lastLoginAt // ignore: cast_nullable_to_non_nullable
+                        as DateTime?,
           )
           as $Val,
     );
@@ -206,10 +222,10 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
   @useResult
   $Res call({
     String uid,
-    String lastName,
-    String firstName,
-    String? middleName,
     String email,
+    String firstName,
+    String lastName,
+    String? middleName,
     String role,
     String? photoURL,
     String? groupId,
@@ -221,6 +237,8 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
     @TimestampConverter() DateTime? enrollmentDate,
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
+    bool isActivated,
+    DateTime? lastLoginAt,
   });
 }
 
@@ -237,10 +255,10 @@ class __$$UserImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? uid = null,
-    Object? lastName = null,
-    Object? firstName = null,
-    Object? middleName = freezed,
     Object? email = null,
+    Object? firstName = null,
+    Object? lastName = null,
+    Object? middleName = freezed,
     Object? role = null,
     Object? photoURL = freezed,
     Object? groupId = freezed,
@@ -252,6 +270,8 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? enrollmentDate = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? isActivated = null,
+    Object? lastLoginAt = freezed,
   }) {
     return _then(
       _$UserImpl(
@@ -260,26 +280,26 @@ class __$$UserImplCopyWithImpl<$Res>
                 ? _value.uid
                 : uid // ignore: cast_nullable_to_non_nullable
                     as String,
-        lastName:
-            null == lastName
-                ? _value.lastName
-                : lastName // ignore: cast_nullable_to_non_nullable
+        email:
+            null == email
+                ? _value.email
+                : email // ignore: cast_nullable_to_non_nullable
                     as String,
         firstName:
             null == firstName
                 ? _value.firstName
                 : firstName // ignore: cast_nullable_to_non_nullable
                     as String,
+        lastName:
+            null == lastName
+                ? _value.lastName
+                : lastName // ignore: cast_nullable_to_non_nullable
+                    as String,
         middleName:
             freezed == middleName
                 ? _value.middleName
                 : middleName // ignore: cast_nullable_to_non_nullable
                     as String?,
-        email:
-            null == email
-                ? _value.email
-                : email // ignore: cast_nullable_to_non_nullable
-                    as String,
         role:
             null == role
                 ? _value.role
@@ -335,6 +355,16 @@ class __$$UserImplCopyWithImpl<$Res>
                 ? _value.updatedAt
                 : updatedAt // ignore: cast_nullable_to_non_nullable
                     as DateTime?,
+        isActivated:
+            null == isActivated
+                ? _value.isActivated
+                : isActivated // ignore: cast_nullable_to_non_nullable
+                    as bool,
+        lastLoginAt:
+            freezed == lastLoginAt
+                ? _value.lastLoginAt
+                : lastLoginAt // ignore: cast_nullable_to_non_nullable
+                    as DateTime?,
       ),
     );
   }
@@ -345,10 +375,10 @@ class __$$UserImplCopyWithImpl<$Res>
 class _$UserImpl implements _User {
   const _$UserImpl({
     required this.uid,
-    required this.lastName,
-    required this.firstName,
-    this.middleName,
     required this.email,
+    required this.firstName,
+    required this.lastName,
+    this.middleName,
     required this.role,
     this.photoURL,
     this.groupId,
@@ -360,6 +390,8 @@ class _$UserImpl implements _User {
     @TimestampConverter() this.enrollmentDate,
     @TimestampConverter() this.createdAt,
     @TimestampConverter() this.updatedAt,
+    this.isActivated = false,
+    this.lastLoginAt,
   });
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
@@ -368,13 +400,13 @@ class _$UserImpl implements _User {
   @override
   final String uid;
   @override
-  final String lastName;
+  final String email;
   @override
   final String firstName;
   @override
-  final String? middleName;
+  final String lastName;
   @override
-  final String email;
+  final String? middleName;
   @override
   final String role;
   @override
@@ -402,10 +434,15 @@ class _$UserImpl implements _User {
   @override
   @TimestampConverter()
   final DateTime? updatedAt;
+  @override
+  @JsonKey()
+  final bool isActivated;
+  @override
+  final DateTime? lastLoginAt;
 
   @override
   String toString() {
-    return 'User(uid: $uid, lastName: $lastName, firstName: $firstName, middleName: $middleName, email: $email, role: $role, photoURL: $photoURL, groupId: $groupId, iin: $iin, studentIdNumber: $studentIdNumber, phone: $phone, status: $status, dateOfBirth: $dateOfBirth, enrollmentDate: $enrollmentDate, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'User(uid: $uid, email: $email, firstName: $firstName, lastName: $lastName, middleName: $middleName, role: $role, photoURL: $photoURL, groupId: $groupId, iin: $iin, studentIdNumber: $studentIdNumber, phone: $phone, status: $status, dateOfBirth: $dateOfBirth, enrollmentDate: $enrollmentDate, createdAt: $createdAt, updatedAt: $updatedAt, isActivated: $isActivated, lastLoginAt: $lastLoginAt)';
   }
 
   @override
@@ -414,13 +451,13 @@ class _$UserImpl implements _User {
         (other.runtimeType == runtimeType &&
             other is _$UserImpl &&
             (identical(other.uid, uid) || other.uid == uid) &&
-            (identical(other.lastName, lastName) ||
-                other.lastName == lastName) &&
+            (identical(other.email, email) || other.email == email) &&
             (identical(other.firstName, firstName) ||
                 other.firstName == firstName) &&
+            (identical(other.lastName, lastName) ||
+                other.lastName == lastName) &&
             (identical(other.middleName, middleName) ||
                 other.middleName == middleName) &&
-            (identical(other.email, email) || other.email == email) &&
             (identical(other.role, role) || other.role == role) &&
             (identical(other.photoURL, photoURL) ||
                 other.photoURL == photoURL) &&
@@ -437,7 +474,11 @@ class _$UserImpl implements _User {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+                other.updatedAt == updatedAt) &&
+            (identical(other.isActivated, isActivated) ||
+                other.isActivated == isActivated) &&
+            (identical(other.lastLoginAt, lastLoginAt) ||
+                other.lastLoginAt == lastLoginAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -445,10 +486,10 @@ class _$UserImpl implements _User {
   int get hashCode => Object.hash(
     runtimeType,
     uid,
-    lastName,
-    firstName,
-    middleName,
     email,
+    firstName,
+    lastName,
+    middleName,
     role,
     photoURL,
     groupId,
@@ -460,6 +501,8 @@ class _$UserImpl implements _User {
     enrollmentDate,
     createdAt,
     updatedAt,
+    isActivated,
+    lastLoginAt,
   );
 
   /// Create a copy of User
@@ -479,10 +522,10 @@ class _$UserImpl implements _User {
 abstract class _User implements User {
   const factory _User({
     required final String uid,
-    required final String lastName,
-    required final String firstName,
-    final String? middleName,
     required final String email,
+    required final String firstName,
+    required final String lastName,
+    final String? middleName,
     required final String role,
     final String? photoURL,
     final String? groupId,
@@ -494,6 +537,8 @@ abstract class _User implements User {
     @TimestampConverter() final DateTime? enrollmentDate,
     @TimestampConverter() final DateTime? createdAt,
     @TimestampConverter() final DateTime? updatedAt,
+    final bool isActivated,
+    final DateTime? lastLoginAt,
   }) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
@@ -501,13 +546,13 @@ abstract class _User implements User {
   @override
   String get uid;
   @override
-  String get lastName;
+  String get email;
   @override
   String get firstName;
   @override
-  String? get middleName;
+  String get lastName;
   @override
-  String get email;
+  String? get middleName;
   @override
   String get role;
   @override
@@ -534,6 +579,10 @@ abstract class _User implements User {
   @override
   @TimestampConverter()
   DateTime? get updatedAt;
+  @override
+  bool get isActivated;
+  @override
+  DateTime? get lastLoginAt;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
