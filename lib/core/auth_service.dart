@@ -59,9 +59,6 @@ class AuthService {
         return null;
       }
 
-      debugPrint(
-        '[AuthService] Получен активный пользователь: ${appUser.id}, role: ${appUser.role}',
-      );
       return appUser;
     });
   }

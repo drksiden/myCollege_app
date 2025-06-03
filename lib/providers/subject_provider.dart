@@ -60,7 +60,7 @@ final teacherSubjectsProvider =
 
       return FirebaseFirestore.instance
           .collection('subjects')
-          .where('teacherId', isEqualTo: user.id)
+          .where('teacherId', isEqualTo: user.uid)
           .snapshots()
           .map((snapshot) {
             final subjects = <String, Subject>{};

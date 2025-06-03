@@ -88,7 +88,7 @@ class _ChatProfileBody extends ConsumerWidget {
       error: (e, s) => Center(child: Text('Ошибка: $e')),
       data: (users) {
         final chatUsers =
-            users.where((u) => chat.participantIds.contains(u.id)).toList();
+            users.where((u) => chat.participantIds.contains(u.uid)).toList();
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [

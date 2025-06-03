@@ -167,10 +167,10 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                     // --- Фильтрация пользователей ---
                     List filteredUsers =
                         users.where((user) {
-                          if (user.id == widget.currentUserId) return false;
+                          if (user.uid == widget.currentUserId) return false;
                           if (user.role == 'admin') return false;
                           final fullName =
-                              '${user.lastName} ${user.firstName} ${user.patronymic ?? ''}'
+                              '${user.lastName} ${user.firstName} ${user.middleName ?? ''}'
                                   .toLowerCase();
                           if (!fullName.contains(searchQuery)) return false;
                           if (_selectedTab == 1) {
