@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../providers/group_provider.dart'; // Добавляем импорт
 import 'chat_screen.dart';
 import '../../core/auth_service.dart';
 
@@ -167,7 +168,8 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                     // --- Фильтрация пользователей ---
                     List filteredUsers =
                         users.where((user) {
-                          if (user.uid == widget.currentUserId) return false;
+                          if (user.uid == widget.currentUserId)
+                            return false; // ИСПРАВЛЕНО: user.uid вместо user.id
                           if (user.role == 'admin') return false;
                           final fullName =
                               '${user.lastName} ${user.firstName} ${user.middleName ?? ''}'
@@ -195,17 +197,20 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                       itemCount: filteredUsers.length,
                       itemBuilder: (context, index) {
                         final user = filteredUsers[index];
-                        final isSelected = _selectedUserIds.contains(user.id);
+                        final isSelected = _selectedUserIds.contains(
+                          user.uid,
+                        ); // ИСПРАВЛЕНО: user.uid вместо user.id
                         String subtitle = _roleToRu(user.role);
                         if (user.role == 'student' &&
-                            user.groupName != null &&
-                            user.groupName!.isNotEmpty) {
-                          subtitle += ' • ${user.groupName}';
+                            user.groupId != null &&
+                            user.groupId!.isNotEmpty) {
+                          subtitle +=
+                              ' • ${user.groupId}'; // Можно заменить на groupName если нужно
                         }
                         return ListTile(
                           leading: CircleAvatar(child: Text(user.firstName[0])),
                           title: Text(
-                            '${user.lastName} ${user.firstName} ${user.patronymic ?? ''}',
+                            '${user.lastName} ${user.firstName} ${user.middleName ?? ''}',
                           ),
                           subtitle: Text(subtitle),
                           trailing:
@@ -215,9 +220,13 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                                     onChanged: (value) {
                                       setState(() {
                                         if (value == true) {
-                                          _selectedUserIds.add(user.id);
+                                          _selectedUserIds.add(
+                                            user.uid,
+                                          ); // ИСПРАВЛЕНО: user.uid вместо user.id
                                         } else {
-                                          _selectedUserIds.remove(user.id);
+                                          _selectedUserIds.remove(
+                                            user.uid,
+                                          ); // ИСПРАВЛЕНО: user.uid вместо user.id
                                         }
                                       });
                                     },
@@ -231,7 +240,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                                     final chatId = await ref.read(
                                       createChatProvider((
                                         participantIds: [
-                                          user.id,
+                                          user.uid, // ИСПРАВЛЕНО: user.uid вместо user.id
                                           widget.currentUserId,
                                         ],
                                         name: null,
@@ -264,6 +273,83 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+// Отдельный виджет для отображения пользователя
+class _UserListTile extends ConsumerWidget {
+  final dynamic user; // User object
+  final String currentUserId;
+  final bool isGroupChat;
+  final bool isSelected;
+  final Function(bool) onSelectionChanged;
+  final VoidCallback? onTap;
+
+  const _UserListTile({
+    required this.user,
+    required this.currentUserId,
+    required this.isGroupChat,
+    required this.isSelected,
+    required this.onSelectionChanged,
+    this.onTap,
+  });
+
+  String _roleToRu(String role) {
+    switch (role) {
+      case 'student':
+        return 'Студент';
+      case 'teacher':
+        return 'Преподаватель';
+      case 'admin':
+        return 'Администратор';
+      default:
+        return role;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    String subtitle = _roleToRu(user.role);
+
+    // Если пользователь студент и у него есть группа, показываем название группы
+    if (user.role == 'student' &&
+        user.groupId != null &&
+        user.groupId!.isNotEmpty) {
+      final groupNameAsync = ref.watch(groupNameProvider(user.groupId!));
+
+      return groupNameAsync.when(
+        data: (groupName) {
+          // Извлекаем короткое название группы из полного
+          final match = RegExp(r'группа ([^,]+)').firstMatch(groupName);
+          final shortGroupName = match?.group(1) ?? user.groupId;
+          subtitle += ' • $shortGroupName';
+
+          return _buildListTile(subtitle);
+        },
+        loading: () => _buildListTile('$subtitle • ${user.groupId}'),
+        error: (_, __) => _buildListTile('$subtitle • ${user.groupId}'),
+      );
+    }
+
+    return _buildListTile(subtitle);
+  }
+
+  Widget _buildListTile(String subtitle) {
+    return ListTile(
+      leading: CircleAvatar(child: Text(user.firstName[0])),
+      title: Text(
+        '${user.lastName} ${user.firstName} ${user.middleName ?? ''}',
+      ),
+      subtitle: Text(subtitle),
+      trailing:
+          isGroupChat
+              ? Checkbox(
+                value: isSelected,
+                onChanged: (value) => onSelectionChanged(value ?? false),
+              )
+              : null,
+      onTap: onTap,
     );
   }
 }

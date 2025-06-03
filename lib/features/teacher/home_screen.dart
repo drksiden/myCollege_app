@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth_service.dart';
+import '../../routes/app_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Импорт нужных страниц
@@ -40,6 +41,36 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
     });
   }
 
+  // Получаем действия для AppBar в зависимости от текущей страницы
+  List<Widget>? _getAppBarActions() {
+    switch (_selectedIndex) {
+      case 5: // ProfilePage
+        final authState = ref.watch(authStateProvider);
+        final user = authState.valueOrNull;
+        if (user != null) {
+          return [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              tooltip: 'Редактировать профиль',
+              onPressed: () {
+                AppRouter.push(context, '/home/profile/edit', extra: user);
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: 'Настройки',
+              onPressed: () {
+                AppRouter.push(context, '/settings');
+              },
+            ),
+          ];
+        }
+        return null;
+      default:
+        return null; // Убираем кнопку выхода из всех остальных страниц
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -55,25 +86,20 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
       const NewsFeedPage(showAppBar: false),
       const ProfilePage(),
     ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
-        actions:
-            _selectedIndex == _titles.length - 1
-                ? [
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: () async {
-                      await ref.read(authServiceProvider).signOut();
-                    },
-                  ),
-                ]
-                : null,
+        actions: _getAppBarActions(),
       ),
-      body: pages[_selectedIndex],
+      body:
+          pages.isNotEmpty && _selectedIndex < pages.length
+              ? pages[_selectedIndex]
+              : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed, // Добавляем для 6 элементов
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
