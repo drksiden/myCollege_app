@@ -1,13 +1,12 @@
-// lib/features/student/grades_page.dart
+// lib/features/student/grades_page.dart (ОБНОВЛЕННАЯ ВЕРСИЯ)
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart'; // <-- Импортируем intl для форматирования даты
+import 'package:intl/intl.dart';
 
-import '../../models/grade.dart'; // Наша модель Grade
-import 'providers/grades_provider.dart'; // Наши провайдеры
+import '../../models/journal_entry.dart';
+import 'providers/grades_provider.dart'; // Используем новый провайдер
 
-// Используем ConsumerStatefulWidget для хранения выбранного фильтра
 class GradesPage extends ConsumerStatefulWidget {
   const GradesPage({super.key});
 
@@ -16,187 +15,151 @@ class GradesPage extends ConsumerStatefulWidget {
 }
 
 class _GradesPageState extends ConsumerState<GradesPage> {
-  // Локальное состояние для выбранного предмета в фильтре
   String _selectedSubject = 'Все';
-
-  // Функция для получения отфильтрованного списка оценок
-  List<Grade> _getFilteredGrades(List<Grade> allGrades) {
-    if (_selectedSubject == 'Все') {
-      return allGrades; // Уже отсортированы в провайдере по дате
-    }
-    return allGrades.where((g) => g.subject == _selectedSubject).toList();
-  }
-
-  // Функция для расчета среднего балла (только для числовых оценок)
-  String _calculateAverage(List<Grade> filteredGrades) {
-    // Отбираем только те оценки, которые можно преобразовать в число
-    final numericGrades =
-        filteredGrades
-            .map((g) => g.numericGrade) // Используем getter из модели
-            .whereType<double>() // Отбрасываем null (нечисловые оценки)
-            .toList();
-
-    if (numericGrades.isEmpty) {
-      // Если числовых оценок нет, можем показать прочерк или 0.0
-      return '--';
-    }
-
-    final sum = numericGrades.reduce((a, b) => a + b);
-    final average = sum / numericGrades.length;
-
-    // Можно добавить логику округления или форматирования
-    return average.toStringAsFixed(1); // Округляем до 1 знака после запятой
-  }
+  String _selectedGradeType = 'Все';
 
   @override
   Widget build(BuildContext context) {
-    // Следим за асинхронным состоянием оценок
-    final asyncGrades = ref.watch(gradesProvider);
-    // Получаем список уникальных предметов для фильтра
-    final uniqueSubjects = ref.watch(uniqueSubjectsProvider);
+    final gradesWithSubjectsAsync = ref.watch(
+      studentGradesWithSubjectsProvider,
+    );
+    final statsAsync = ref.watch(studentGradesStatsProvider);
+    final uniqueSubjectsAsync = ref.watch(studentUniqueSubjectsProvider);
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Оценки'),
-        // Можно добавить кнопку для сброса фильтра
+        title: const Text('Мои оценки'),
         actions: [
-          if (_selectedSubject != 'Все')
+          if (_selectedSubject != 'Все' || _selectedGradeType != 'Все')
             IconButton(
               icon: const Icon(Icons.filter_alt_off_outlined),
-              tooltip: 'Сбросить фильтр',
-              onPressed: () => setState(() => _selectedSubject = 'Все'),
+              tooltip: 'Сбросить фильтры',
+              onPressed:
+                  () => setState(() {
+                    _selectedSubject = 'Все';
+                    _selectedGradeType = 'Все';
+                  }),
             ),
         ],
       ),
       body: Column(
         children: [
-          // --- Фильтр по предметам ---
-          Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 12.0,
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _selectedSubject,
-                  decoration: InputDecoration(
-                    labelText: 'Предмет',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                  items:
-                      uniqueSubjects.map((subject) {
-                        return DropdownMenuItem<String>(
-                          value: subject,
-                          child: Text(subject),
-                        );
-                      }).toList(),
-                  onChanged: (String? value) {
-                    if (value != null) setState(() => _selectedSubject = value);
-                  },
-                ),
-              )
-              .animate()
-              .fadeIn(duration: 200.ms)
-              .slideY(begin: -0.1), // Анимация фильтра
-          // --- Список оценок (или индикаторы) ---
+          // Статистика
+          _buildStatsCard(statsAsync, colorScheme, textTheme),
+
+          // Фильтры
+          _buildFilters(uniqueSubjectsAsync, colorScheme),
+
+          // Список оценок
           Expanded(
-            child: asyncGrades.when(
-              // --- Загрузка ---
+            child: gradesWithSubjectsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              // --- Ошибка ---
               error: (error, stack) {
                 debugPrint('Error loading grades: $error\n$stack');
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(
-                      'Ошибка загрузки оценок.\n$error',
-                      textAlign: TextAlign.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Ошибка загрузки оценок',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(error.toString(), textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed:
+                              () => ref.refresh(
+                                studentGradesWithSubjectsProvider,
+                              ),
+                          child: const Text('Повторить'),
+                        ),
+                      ],
                     ),
                   ),
                 );
               },
-              // --- Данные ---
-              data: (allGrades) {
-                final filteredGrades = _getFilteredGrades(allGrades);
-                final average = _calculateAverage(filteredGrades);
-                final bool hasGradesToShow = filteredGrades.isNotEmpty;
+              data: (gradesWithSubjects) {
+                final filteredGrades = _filterGrades(gradesWithSubjects);
 
-                // Используем AnimatedSwitcher для плавной смены списка/сообщения
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder:
-                      (child, animation) =>
-                          FadeTransition(opacity: animation, child: child),
-                  child:
-                      hasGradesToShow
-                          ? Column(
-                            // Добавляем Column для списка и среднего балла
-                            key: ValueKey(
-                              'grades_list_$_selectedSubject',
-                            ), // Ключ меняется при смене фильтра
+                if (filteredGrades.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child:
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Expanded(
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  itemCount: filteredGrades.length,
-                                  itemBuilder: (context, index) {
-                                    final grade = filteredGrades[index];
-                                    return _GradeListTile(grade: grade)
-                                        .animate()
-                                        .fadeIn(
-                                          delay: (index * 50).ms,
-                                          duration: 250.ms,
-                                        )
-                                        .moveX(begin: -10, duration: 250.ms);
-                                  },
-                                ),
+                              Icon(
+                                Icons.grade_outlined,
+                                size: 64,
+                                color: colorScheme.onSurfaceVariant,
                               ),
-                              Padding(
-                                // Отображение среднего балла под списком
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16.0,
+                              const SizedBox(height: 16),
+                              Text(
+                                _selectedSubject == 'Все' &&
+                                        _selectedGradeType == 'Все'
+                                    ? 'У вас пока нет оценок'
+                                    : 'Нет оценок по выбранным фильтрам',
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
-                                child: Text(
-                                  'Средняя оценка: $average',
-                                  style: textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ).animate().scale(
-                                  delay: 100.ms,
-                                ), // Анимация среднего балла
+                                textAlign: TextAlign.center,
                               ),
+                              if (_selectedSubject != 'Все' ||
+                                  _selectedGradeType != 'Все') ...[
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed:
+                                      () => setState(() {
+                                        _selectedSubject = 'Все';
+                                        _selectedGradeType = 'Все';
+                                      }),
+                                  child: const Text('Сбросить фильтры'),
+                                ),
+                              ],
                             ],
+                          ).animate().fadeIn(),
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.refresh(studentGradesWithSubjectsProvider);
+                  },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filteredGrades.length,
+                    itemBuilder: (context, index) {
+                      final gradeData = filteredGrades[index];
+                      final entry = gradeData['entry'] as JournalEntry;
+                      final subjectName = gradeData['subjectName'] as String;
+                      final teacherName = gradeData['teacherName'] as String;
+
+                      return _GradeCard(
+                            entry: entry,
+                            subjectName: subjectName,
+                            teacherName: teacherName,
                           )
-                          : Center(
-                            // Сообщение, если оценок нет
-                            key: const ValueKey('no_grades'),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child:
-                                  Text(
-                                    _selectedSubject == 'Все'
-                                        ? 'У вас пока нет оценок'
-                                        : 'Нет оценок по предмету "$_selectedSubject"',
-                                    style: textTheme.titleMedium?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ).animate().fadeIn(),
-                            ),
-                          ),
+                          .animate()
+                          .fadeIn(delay: (index * 50).ms, duration: 250.ms)
+                          .moveX(begin: -10, duration: 250.ms);
+                    },
+                  ),
                 );
               },
             ),
@@ -205,18 +168,224 @@ class _GradesPageState extends ConsumerState<GradesPage> {
       ),
     );
   }
+
+  Widget _buildStatsCard(
+    Map<String, dynamic> stats,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final totalGrades = stats['totalGrades'] as int;
+    final averageGrade = stats['averageGrade'] as double;
+    final recentGrades = stats['recentGrades'] as int;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primaryContainer.withAlpha(77),
+            colorScheme.secondaryContainer.withAlpha(77),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.primary.withAlpha(77)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Статистика оценок',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                'Всего оценок',
+                totalGrades.toString(),
+                Icons.grade,
+                colorScheme,
+                textTheme,
+              ),
+              _buildStatItem(
+                'Средний балл',
+                averageGrade > 0 ? averageGrade.toStringAsFixed(1) : '--',
+                Icons.trending_up,
+                colorScheme,
+                textTheme,
+              ),
+              _buildStatItem(
+                'За неделю',
+                recentGrades.toString(),
+                Icons.schedule,
+                colorScheme,
+                textTheme,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 300.ms).slideY(begin: -0.1);
+  }
+
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: colorScheme.primary, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.primary,
+          ),
+        ),
+        Text(
+          label,
+          style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilters(
+    AsyncValue<List<String>> uniqueSubjectsAsync,
+    ColorScheme colorScheme,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          // Фильтр по предметам
+          Expanded(
+            flex: 2,
+            child: uniqueSubjectsAsync.when(
+              data:
+                  (subjects) => DropdownButtonFormField<String>(
+                    value: _selectedSubject,
+                    decoration: InputDecoration(
+                      labelText: 'Предмет',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    isExpanded: true,
+                    items:
+                        subjects.map((subject) {
+                          return DropdownMenuItem<String>(
+                            value: subject,
+                            child: Text(
+                              subject,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _selectedSubject = value);
+                      }
+                    },
+                  ),
+              loading:
+                  () => const SizedBox(
+                    height: 56,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+              error: (_, __) => const SizedBox(),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Фильтр по типам оценок
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              value: _selectedGradeType,
+              decoration: InputDecoration(
+                labelText: 'Тип',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(value: 'Все', child: Text('Все')),
+                DropdownMenuItem(value: 'current', child: Text('Текущие')),
+                DropdownMenuItem(value: 'midterm', child: Text('Рубежные')),
+                DropdownMenuItem(value: 'final', child: Text('Итоговые')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedGradeType = value);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 100.ms);
+  }
+
+  List<Map<String, dynamic>> _filterGrades(
+    List<Map<String, dynamic>> gradesWithSubjects,
+  ) {
+    return gradesWithSubjects.where((gradeData) {
+      final entry = gradeData['entry'] as JournalEntry;
+      final subjectName = gradeData['subjectName'] as String;
+
+      // Фильтр по предмету
+      if (_selectedSubject != 'Все' && subjectName != _selectedSubject) {
+        return false;
+      }
+
+      // Фильтр по типу оценки
+      if (_selectedGradeType != 'Все' &&
+          entry.gradeType != _selectedGradeType) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+  }
 }
 
-// --- Виджет для отображения одной оценки в списке ---
-class _GradeListTile extends StatefulWidget {
-  final Grade grade;
-  const _GradeListTile({required this.grade});
+class _GradeCard extends StatefulWidget {
+  final JournalEntry entry;
+  final String subjectName;
+  final String teacherName;
+
+  const _GradeCard({
+    required this.entry,
+    required this.subjectName,
+    required this.teacherName,
+  });
 
   @override
-  State<_GradeListTile> createState() => _GradeListTileState();
+  State<_GradeCard> createState() => _GradeCardState();
 }
 
-class _GradeListTileState extends State<_GradeListTile> {
+class _GradeCardState extends State<_GradeCard> {
   bool _isExpanded = false;
 
   @override
@@ -226,116 +395,197 @@ class _GradeListTileState extends State<_GradeListTile> {
     final formattedDate = DateFormat(
       'd MMMM yyyy',
       'ru_RU',
-    ).format(widget.grade.date);
-    final gradeColor = widget.grade.getColor(context);
+    ).format(widget.entry.date);
+    final gradeColor = widget.entry.getGradeColor();
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8.0),
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () {
-          setState(() {
-            _isExpanded = !_isExpanded;
-          });
-        },
-        child: Column(
-          children: [
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: gradeColor.withAlpha(30),
-                foregroundColor: gradeColor,
-                child: const Icon(Icons.star_outline, size: 20),
-              ),
-              title: Text(widget.grade.subject),
-              subtitle: Text(
-                '${widget.grade.isPassFail ? "Зачет" : "Оценка"} • $formattedDate',
-                style: textTheme.bodySmall,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+        onTap: () => setState(() => _isExpanded = !_isExpanded),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        widget.grade.isPassFail
-                            ? (widget.grade.value == 'pass'
-                                ? 'Зачет'
-                                : 'Незачет')
-                            : widget.grade.value.toString(),
-                        style: textTheme.titleMedium?.copyWith(
-                          color: gradeColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  // Иконка типа оценки
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: widget.entry.getGradeColor().withAlpha(26),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: widget.entry.getGradeColor().withAlpha(77),
                       ),
-                      if (widget.grade.teacher.isNotEmpty)
+                    ),
+                    child: Icon(
+                      widget.entry.getGradeTypeIcon(),
+                      color: widget.entry.getGradeColor(),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          widget.grade.teacher,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                          widget.subjectName,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${widget.entry.getGradeTypeName()} • $formattedDate',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    _isExpanded ? Icons.expand_less : Icons.expand_more,
-                    color: colorScheme.onSurfaceVariant,
+                  // Оценка
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: gradeColor.withAlpha(26),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: gradeColor.withAlpha(77)),
+                        ),
+                        child: Text(
+                          widget.entry.displayGrade,
+                          style: textTheme.titleMedium?.copyWith(
+                            color: gradeColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Icon(
+                        _isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: colorScheme.onSurface,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-            if (_isExpanded &&
-                (widget.grade.comment != null || widget.grade.semester != null))
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+
+              // Развернутая информация
+              if (_isExpanded) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 12),
+
+                // Преподаватель
+                Row(
                   children: [
-                    if (widget.grade.comment != null &&
-                        widget.grade.comment!.isNotEmpty) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.comment_outlined,
-                            size: 16,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.grade.comment!,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
+                    Icon(
+                      Icons.person_outlined,
+                      size: 16,
+                      color: colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Преподаватель: ${widget.teacherName}',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                    if (widget.grade.semester != null)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.school_outlined,
-                            size: 16,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Семестр: ${widget.grade.semester}',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
+                    ),
                   ],
                 ),
-              ),
-          ],
+
+                // Посещаемость
+                if (widget.entry.attendanceStatus.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        widget.entry.getAttendanceIcon(),
+                        size: 16,
+                        color: widget.entry.getAttendanceColor(),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Посещение: ${widget.entry.getAttendanceDisplayName()}',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: widget.entry.getAttendanceColor(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Тема занятия
+                if (widget.entry.topicCovered != null &&
+                    widget.entry.topicCovered!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.topic_outlined,
+                        size: 16,
+                        color: colorScheme.onSurface,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Тема: ${widget.entry.topicCovered}',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // Комментарий
+                if (widget.entry.comment != null &&
+                    widget.entry.comment!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest.withAlpha(128),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.comment_outlined,
+                          size: 16,
+                          color: colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.entry.comment!,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ],
+          ),
         ),
       ),
     );
