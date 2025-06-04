@@ -1,16 +1,18 @@
-// lib/features/teacher/pages/grades_page.dart (УЛУЧШЕННАЯ ВЕРСИЯ)
+// lib/features/teacher/pages/grades_page.dart (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/providers/teacher_goups_provider.dart';
-import 'package:flutter_application_1/providers/teacher_subjects_provider.dart'; // Новый импорт
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mycollege/providers/teacher_goups_provider.dart';
+import 'package:mycollege/providers/teacher_subjects_provider.dart';
 import '../../../models/group.dart';
 import '../../../models/user.dart' as app_user;
 import '../../../models/subject.dart';
 import '../providers/teacher_providers.dart';
-import 'grades_history_page.dart'; // Импорт страницы истории
+import 'grades_history_page.dart';
+import 'package:intl/intl.dart';
 
 class GradesPage extends ConsumerStatefulWidget {
   const GradesPage({super.key});
@@ -23,21 +25,25 @@ class _GradesPageState extends ConsumerState<GradesPage> {
   Group? selectedGroup;
   app_user.User? selectedStudent;
   Subject? selectedSubject;
+  DateTime selectedDate = DateTime.now(); // Добавили выбор даты
 
   final _gradeController = TextEditingController();
   final _commentController = TextEditingController();
+  final _topicController = TextEditingController(); // Добавили тему занятия
   final _formKey = GlobalKey<FormState>();
 
   bool isLoading = false;
 
   // Тип оценки
-  String gradeType =
+  String gradeType = 'current'; // 'current', 'midterm', 'final'
+  String gradeSystem =
       'numeric'; // 'numeric' для числовой оценки, 'pass_fail' для зачет/незачет
 
   @override
   void dispose() {
     _gradeController.dispose();
     _commentController.dispose();
+    _topicController.dispose();
     super.dispose();
   }
 
@@ -75,79 +81,66 @@ class _GradesPageState extends ConsumerState<GradesPage> {
     }
   }
 
-  // Получение предметов преподавателя
-  Future<List<Subject>> _getTeacherSubjects(String teacherId) async {
+  // Получение имени преподавателя
+  Future<String> _getTeacherName(String teacherId) async {
     try {
-      print('DEBUG: Getting subjects for teacher: $teacherId');
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(teacherId)
+              .get();
 
-      // Получаем все документы расписания
-      final schedulesSnapshot =
-          await FirebaseFirestore.instance.collection('schedules').get();
+      if (!doc.exists) return 'Преподаватель не найден';
 
-      // Собираем уникальные ID предметов из расписания преподавателя
-      final Set<String> subjectIds = {};
+      final data = doc.data()!;
+      final lastName = data['lastName'] ?? '';
+      final firstName = data['firstName'] ?? '';
+      final middleName = data['middleName'] ?? '';
 
-      for (final scheduleDoc in schedulesSnapshot.docs) {
-        final scheduleData = scheduleDoc.data();
-        final lessons = scheduleData['lessons'] as List<dynamic>? ?? [];
-
-        for (final lesson in lessons) {
-          if (lesson['teacherId'] == teacherId) {
-            final subjectId = lesson['subjectId']?.toString();
-            if (subjectId != null && subjectId.isNotEmpty) {
-              subjectIds.add(subjectId);
-            }
-          }
-        }
-      }
-
-      print('DEBUG: Found subject IDs: $subjectIds');
-
-      if (subjectIds.isEmpty) {
-        return [];
-      }
-
-      // Получаем данные предметов
-      final subjects = <Subject>[];
-
-      // Firestore ограничивает whereIn до 10 элементов, поэтому делаем батчи
-      final subjectIdsList = subjectIds.toList();
-      for (int i = 0; i < subjectIdsList.length; i += 10) {
-        final batch = subjectIdsList.skip(i).take(10).toList();
-
-        final subjectsSnapshot =
-            await FirebaseFirestore.instance
-                .collection('subjects')
-                .where(FieldPath.documentId, whereIn: batch)
-                .get();
-
-        for (final subjectDoc in subjectsSnapshot.docs) {
-          try {
-            final subject = Subject.fromJson({
-              ...subjectDoc.data(),
-              'id': subjectDoc.id,
-            });
-            subjects.add(subject);
-          } catch (e) {
-            print('DEBUG: Error parsing subject ${subjectDoc.id}: $e');
-          }
-        }
-      }
-
-      // Сортируем предметы по названию
-      subjects.sort((a, b) => a.name.compareTo(b.name));
-
-      print('DEBUG: Final subjects count: ${subjects.length}');
-      return subjects;
+      return '$lastName $firstName $middleName'.trim();
     } catch (e) {
-      print('DEBUG: Error getting teacher subjects: $e');
-      return [];
+      print('DEBUG: Error getting teacher name: $e');
+      return 'Ошибка загрузки';
     }
+  }
+
+  // Поиск или создание журнала
+  Future<String> _findOrCreateJournal() async {
+    final teacherId = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    // Сначала ищем существующий журнал
+    final existingJournalQuery =
+        await FirebaseFirestore.instance
+            .collection('journals')
+            .where('teacherId', isEqualTo: teacherId)
+            .where('groupId', isEqualTo: selectedGroup!.id)
+            .where('subjectId', isEqualTo: selectedSubject!.id)
+            .limit(1)
+            .get();
+
+    if (existingJournalQuery.docs.isNotEmpty) {
+      return existingJournalQuery.docs.first.id;
+    }
+
+    // Создаем новый журнал
+    final journalRef = await FirebaseFirestore.instance
+        .collection('journals')
+        .add({
+          'teacherId': teacherId,
+          'groupId': selectedGroup!.id,
+          'subjectId': selectedSubject!.id,
+          'semesterId':
+              'current_semester', // Здесь нужно получать актуальный семестр
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+    return journalRef.id;
   }
 
   // Валидация оценки
   String? _validateGrade(String? value) {
-    if (gradeType == 'pass_fail') {
+    if (gradeSystem == 'pass_fail') {
       return null; // Для зачет/незачет валидация не нужна
     }
 
@@ -167,9 +160,9 @@ class _GradesPageState extends ConsumerState<GradesPage> {
     return null;
   }
 
-  // Сохранение оценки
-  Future<void> _saveGrade() async {
-    if (gradeType == 'numeric' && !_formKey.currentState!.validate()) return;
+  // Сохранение записи в журнал
+  Future<void> _saveJournalEntry() async {
+    if (gradeSystem == 'numeric' && !_formKey.currentState!.validate()) return;
 
     if (selectedGroup == null ||
         selectedStudent == null ||
@@ -187,49 +180,55 @@ class _GradesPageState extends ConsumerState<GradesPage> {
 
     try {
       final teacherId = FirebaseAuth.instance.currentUser?.uid ?? '';
-      final teacherName = ref.read(teacherNameProvider);
-      final comment = _commentController.text.trim();
+      final teacherName = await _getTeacherName(teacherId);
+      final journalId = await _findOrCreateJournal();
 
-      Map<String, dynamic> gradeData = {
+      final comment = _commentController.text.trim();
+      final topic = _topicController.text.trim();
+
+      Map<String, dynamic> entryData = {
+        'journalId': journalId,
         'studentId': selectedStudent!.uid,
-        'teacherId': teacherId,
-        'teacherName': teacherName,
-        'groupId': selectedGroup!.id,
-        'subject': selectedSubject!.name,
-        'subjectId': selectedSubject!.id,
+        'date': Timestamp.fromDate(selectedDate),
+        'attendanceStatus': 'present', // По умолчанию присутствовал
+        'present': true,
         'gradeType': gradeType,
         'comment': comment.isEmpty ? null : comment,
-        'timestamp': FieldValue.serverTimestamp(),
+        'topicCovered':
+            topic.isEmpty
+                ? 'Занятие ${DateFormat('dd.MM.yyyy').format(selectedDate)}'
+                : topic,
+        'lessonId': '', // Можно связать с конкретным уроком из расписания
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      if (gradeType == 'numeric') {
-        final grade = int.parse(_gradeController.text.trim());
-        gradeData['score'] = grade;
-        gradeData['gradeSystem'] = '100';
+      if (gradeSystem == 'numeric') {
+        final grade = _gradeController.text.trim();
+        entryData['grade'] = grade;
       } else {
-        // Для зачет/незачет используем 1 для зачета, 0 для незачета
+        // Для зачет/незачет
         final passed =
             _gradeController.text.trim().toLowerCase() == 'зачет' ||
             _gradeController.text.trim().toLowerCase() == 'pass' ||
             _gradeController.text.trim() == '1';
-        gradeData['score'] = passed ? 1 : 0;
-        gradeData['gradeSystem'] = 'pass_fail';
-        gradeData['passed'] = passed;
+        entryData['grade'] = passed ? 'зачет' : 'незачет';
       }
 
-      await FirebaseFirestore.instance.collection('grades').add(gradeData);
+      await FirebaseFirestore.instance
+          .collection('journalEntries')
+          .add(entryData);
 
       if (mounted) {
         final gradeText =
-            gradeType == 'numeric'
+            gradeSystem == 'numeric'
                 ? _gradeController.text.trim()
-                : (gradeData['passed'] == true ? 'Зачет' : 'Незачет');
+                : entryData['grade'];
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Оценка "$gradeText" поставлена студенту ${selectedStudent!.fullName}',
+              'Оценка "$gradeText" записана в журнал для студента ${selectedStudent!.fullName}',
             ),
             backgroundColor: Colors.green,
           ),
@@ -240,6 +239,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
           selectedStudent = null;
           _gradeController.clear();
           _commentController.clear();
+          _topicController.clear();
         });
       }
     } catch (e) {
@@ -255,6 +255,22 @@ class _GradesPageState extends ConsumerState<GradesPage> {
       if (mounted) {
         setState(() => isLoading = false);
       }
+    }
+  }
+
+  // Выбор даты
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      locale: const Locale('ru', 'RU'),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
     }
   }
 
@@ -290,6 +306,44 @@ class _GradesPageState extends ConsumerState<GradesPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Дата занятия
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Дата занятия',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: Icon(
+                          Icons.calendar_today,
+                          color: colorScheme.primary,
+                        ),
+                        title: Text(
+                          DateFormat('dd.MM.yyyy').format(selectedDate),
+                        ),
+                        subtitle: Text(
+                          DateFormat('EEEE', 'ru_RU').format(selectedDate),
+                        ),
+                        trailing: const Icon(Icons.edit),
+                        onTap: _selectDate,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: colorScheme.outline),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // Тип оценки
               Card(
                 child: Padding(
@@ -308,15 +362,56 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                         children: [
                           Expanded(
                             child: RadioListTile<String>(
+                              title: const Text('Текущая'),
+                              subtitle: const Text('За урок'),
+                              value: 'current',
+                              groupValue: gradeType,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => gradeType = val);
+                                }
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text('Рубежная'),
+                              subtitle: const Text('За период'),
+                              value: 'midterm',
+                              groupValue: gradeType,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => gradeType = val);
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      RadioListTile<String>(
+                        title: const Text('Итоговая'),
+                        subtitle: const Text('За семестр/курс'),
+                        value: 'final',
+                        groupValue: gradeType,
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => gradeType = val);
+                          }
+                        },
+                      ),
+                      const Divider(),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
                               title: const Text('Числовая оценка'),
                               subtitle: const Text('0-100 баллов'),
                               value: 'numeric',
-                              groupValue: gradeType,
-                              onChanged: (value) {
-                                setState(() {
-                                  gradeType = value!;
-                                  _gradeController.clear();
-                                });
+                              groupValue: gradeSystem,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => gradeSystem = val);
+                                }
                               },
                             ),
                           ),
@@ -325,12 +420,11 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                               title: const Text('Зачет/Незачет'),
                               subtitle: const Text('Зачтено/Не зачтено'),
                               value: 'pass_fail',
-                              groupValue: gradeType,
-                              onChanged: (value) {
-                                setState(() {
-                                  gradeType = value!;
-                                  _gradeController.clear();
-                                });
+                              groupValue: gradeSystem,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => gradeSystem = val);
+                                }
                               },
                             ),
                           ),
@@ -644,7 +738,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                 ),
               const SizedBox(height: 16),
 
-              // Ввод оценки и комментария
+              // Ввод оценки и дополнительной информации
               if (selectedStudent != null && selectedSubject != null) ...[
                 Card(
                   child: Padding(
@@ -653,7 +747,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Оценка и комментарий',
+                          'Оценка и дополнительная информация',
                           style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -661,7 +755,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                         const SizedBox(height: 16),
 
                         // Поле ввода оценки
-                        if (gradeType == 'numeric') ...[
+                        if (gradeSystem == 'numeric') ...[
                           TextFormField(
                             controller: _gradeController,
                             decoration: InputDecoration(
@@ -725,6 +819,25 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                         ],
                         const SizedBox(height: 16),
 
+                        // Поле темы занятия
+                        TextFormField(
+                          controller: _topicController,
+                          decoration: InputDecoration(
+                            labelText: 'Тема занятия (необязательно)',
+                            hintText: 'Введите тему урока...',
+                            prefixIcon: Icon(
+                              Icons.topic,
+                              color: colorScheme.primary,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          maxLines: 2,
+                          maxLength: 200,
+                        ),
+                        const SizedBox(height: 16),
+
                         // Поле комментария
                         TextFormField(
                           controller: _commentController,
@@ -748,7 +861,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
-                            onPressed: isLoading ? null : _saveGrade,
+                            onPressed: isLoading ? null : _saveJournalEntry,
                             icon:
                                 isLoading
                                     ? SizedBox(
@@ -764,7 +877,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                                       color: colorScheme.onPrimary,
                                     ),
                             label: Text(
-                              'Поставить оценку',
+                              'Записать в журнал',
                               style: TextStyle(
                                 color: colorScheme.onPrimary,
                                 fontWeight: FontWeight.bold,
@@ -809,6 +922,9 @@ class _GradesPageState extends ConsumerState<GradesPage> {
                               ),
                               Text('Предмет: ${selectedSubject!.name}'),
                               Text('Группа: ${selectedGroup!.name}'),
+                              Text(
+                                'Дата: ${DateFormat('dd.MM.yyyy').format(selectedDate)}',
+                              ),
                             ],
                           ),
                         ),
@@ -855,8 +971,7 @@ class _GradesPageState extends ConsumerState<GradesPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<T>(
-              value:
-                  null, // Всегда null, чтобы показывать выбранное значение в hint
+              value: null, // Always null to show selected value in hint
               hint: Text(value ?? hint),
               decoration: InputDecoration(
                 border: OutlineInputBorder(
@@ -881,9 +996,19 @@ class _GradesPageState extends ConsumerState<GradesPage> {
               isExpanded: true,
               dropdownColor: colorScheme.surface,
               style: TextStyle(color: colorScheme.onSurface),
-              items: items,
+              items:
+                  items.map((item) {
+                    // Ensure each item has a non-null label
+                    if (item.child == null) {
+                      return DropdownMenuItem<T>(
+                        value: item.value,
+                        child: Text(item.value?.toString() ?? ''),
+                      );
+                    }
+                    return item;
+                  }).toList(),
               onChanged: onChanged,
-              menuMaxHeight: 300, // Ограничиваем высоту выпадающего меню
+              menuMaxHeight: 300,
             ),
           ],
         ),

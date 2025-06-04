@@ -1,4 +1,3 @@
-import 'package:flutter_application_1/providers/user_profile_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/subject.dart';
 import '../services/subject_service.dart';

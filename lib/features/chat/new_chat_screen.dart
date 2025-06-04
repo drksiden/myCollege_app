@@ -72,26 +72,46 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
       }
     }
 
-    final chatId = await ref.read(
-      createChatProvider((
-        participantIds: participants,
-        name: chatName,
-        type: _isGroupChat ? 'group' : 'private',
-      )).future,
-    );
+    try {
+      final chatId = await ref.read(
+        createChatProvider((
+          participantIds: participants,
+          name: chatName,
+          type: _isGroupChat ? 'group' : 'private',
+        )).future,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder:
-            (_) => ChatScreen(
-              chatId: chatId,
-              currentUserId: widget.currentUserId,
-              chatName: chatName ?? 'Чат',
-            ),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isGroupChat ? 'Группа успешно создана!' : 'Чат успешно создан!',
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder:
+              (_) => ChatScreen(
+                chatId: chatId,
+                currentUserId: widget.currentUserId,
+                chatName: chatName ?? 'Чат',
+              ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при создании чата: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -208,11 +228,20 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                               ' • ${user.groupId}'; // Можно заменить на groupName если нужно
                         }
                         return ListTile(
-                          leading: CircleAvatar(child: Text(user.firstName[0])),
-                          title: Text(
-                            '${user.lastName} ${user.firstName} ${user.middleName ?? ''}',
+                          leading: CircleAvatar(
+                            child: Text(
+                              user.firstName.isNotEmpty
+                                  ? user.firstName[0]
+                                  : '?',
+                            ),
                           ),
-                          subtitle: Text(subtitle),
+                          title: Text(
+                            '${user.lastName} ${user.firstName} ${user.middleName ?? ''}'
+                                .trim(),
+                          ),
+                          subtitle: Text(
+                            subtitle.isNotEmpty ? subtitle : 'Роль не указана',
+                          ),
                           trailing:
                               _isGroupChat
                                   ? Checkbox(
@@ -220,13 +249,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                                     onChanged: (value) {
                                       setState(() {
                                         if (value == true) {
-                                          _selectedUserIds.add(
-                                            user.uid,
-                                          ); // ИСПРАВЛЕНО: user.uid вместо user.id
+                                          _selectedUserIds.add(user.uid);
                                         } else {
-                                          _selectedUserIds.remove(
-                                            user.uid,
-                                          ); // ИСПРАВЛЕНО: user.uid вместо user.id
+                                          _selectedUserIds.remove(user.uid);
                                         }
                                       });
                                     },

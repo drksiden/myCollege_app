@@ -96,7 +96,17 @@ class _LessonCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         title: Text('${lesson.startTime} - ${lesson.endTime}'),
-        subtitle: Text(lesson.room),
+        subtitle: Text(
+          lesson.room.isNotEmpty ? lesson.room : 'Аудитория не указана',
+        ),
+        leading: Icon(
+          Icons.access_time,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }

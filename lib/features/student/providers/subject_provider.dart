@@ -1,10 +1,10 @@
-import 'package:flutter_application_1/models/subject.dart';
-import 'package:flutter_application_1/providers/user_profile_provider.dart';
-import 'package:flutter_application_1/services/subject_service.dart';
-import 'package:flutter_application_1/services/teacher_service.dart';
-import 'package:flutter_application_1/services/user_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mycollege/models/subject.dart';
+import 'package:mycollege/providers/user_profile_provider.dart';
+import 'package:mycollege/services/subject_service.dart';
+import 'package:mycollege/services/teacher_service.dart';
+import 'package:mycollege/services/user_service.dart';
 
 final subjectServiceProvider = Provider((ref) => SubjectService());
 final userServiceProvider = Provider((ref) => UserService());

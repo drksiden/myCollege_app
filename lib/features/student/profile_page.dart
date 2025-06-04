@@ -259,66 +259,50 @@ class ProfilePage extends ConsumerWidget {
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
-    return _buildSection(
-      context,
-      'Личная информация',
-      Icons.person_outline,
-      colorScheme,
-      textTheme,
-      [
-        _buildInfoRow(
-          context,
-          'Фамилия',
-          user.lastName,
-          Icons.badge_outlined,
-          colorScheme,
-          textTheme,
-        ),
-        _buildInfoRow(
-          context,
-          'Имя',
-          user.firstName,
-          Icons.badge_outlined,
-          colorScheme,
-          textTheme,
-        ),
-        if (user.middleName != null && user.middleName!.isNotEmpty)
-          _buildInfoRow(
-            context,
-            'Отчество',
-            user.middleName!,
-            Icons.badge_outlined,
-            colorScheme,
-            textTheme,
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Личная информация',
+              style: textTheme.titleMedium?.copyWith(
+                color: colorScheme.primary,
+              ),
+            ),
           ),
-        if (user.dateOfBirth != null)
-          _buildInfoRow(
-            context,
-            'Дата рождения',
-            '${user.dateOfBirth!.day}.${user.dateOfBirth!.month}.${user.dateOfBirth!.year}',
-            Icons.cake_outlined,
-            colorScheme,
-            textTheme,
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('ФИО'),
+            subtitle: Text(
+              user.fullName.isNotEmpty ? user.fullName : 'Не указано',
+            ),
           ),
-        if (user.iin != null)
-          _buildInfoRow(
-            context,
-            'ИИН',
-            user.iin!,
-            Icons.credit_card_outlined,
-            colorScheme,
-            textTheme,
+          ListTile(
+            leading: const Icon(Icons.calendar_today_outlined),
+            title: const Text('Дата рождения'),
+            subtitle: Text(
+              user.dateOfBirth != null
+                  ? '${user.dateOfBirth!.day}.${user.dateOfBirth!.month}.${user.dateOfBirth!.year}'
+                  : 'Не указано',
+            ),
           ),
-        if (user.studentIdNumber != null)
-          _buildInfoRow(
-            context,
-            'Номер студенческого',
-            user.studentIdNumber!,
-            Icons.badge_outlined,
-            colorScheme,
-            textTheme,
-          ),
-      ],
+          if (user.iin != null && user.iin!.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.credit_card_outlined),
+              title: const Text('ИИН'),
+              subtitle: Text(user.iin!),
+            ),
+          if (user.studentIdNumber != null && user.studentIdNumber!.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.badge_outlined),
+              title: const Text('Номер студенческого'),
+              subtitle: Text(user.studentIdNumber!),
+            ),
+        ],
+      ),
     );
   }
 

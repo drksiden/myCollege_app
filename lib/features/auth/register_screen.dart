@@ -127,6 +127,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
         // Перенаправляем на экран входа
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Регистрация прошла успешно. Ожидайте активации аккаунта администратором.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
           AppRouter.go(context, '/login');
         }
       }

@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Импорт нужных страниц
 import 'teacher_schedule_page.dart';
 import 'pages/grades_page.dart';
-import 'pages/assignments_page.dart';
+import 'pages/attendance_page.dart';
 import 'pages/profile_page.dart';
 import '../../features/chat/chats_page.dart';
 import '../../features/news/news_feed_page.dart';
@@ -76,7 +76,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
     final pages = [
       if (_userId != null) TeacherSchedulePage(teacherId: _userId!),
       const GradesPage(),
-      const AssignmentsPage(showAppBar: false),
+      const AttendancePage(),
       if (_userId != null)
         ChatsPage(
           currentUserId: _userId!,
@@ -108,7 +108,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.grade), label: 'Оценки'),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
-            label: 'Задания',
+            label: 'Посещаемость',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
@@ -127,7 +127,7 @@ class _TeacherHomeScreenState extends ConsumerState<TeacherHomeScreen> {
   final List<String> _titles = [
     'Расписание',
     'Оценки',
-    'Задания',
+    'Посещаемость',
     'Чаты',
     'Новости',
     'Профиль',

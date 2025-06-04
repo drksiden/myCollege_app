@@ -1,8 +1,9 @@
 // lib/features/student/schedule_page.dart (исправленная версия)
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/features/student/providers/schedule_provider.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:mycollege/features/student/providers/schedule_provider.dart';
 import '../../providers/subject_provider.dart';
 import '../../providers/teacher_provider.dart'; // Используем исправленный провайдер
 import '../../models/schedule_entry.dart';

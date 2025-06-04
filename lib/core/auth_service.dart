@@ -55,7 +55,7 @@ class AuthService {
           '[AuthService] Пользователь ${firebaseUser.uid} не активен или его профиль не найден. Возвращаем null.',
         );
         // Можно также принудительно разлогинить, если appUser.status не active, для надежности.
-        // await signOut();
+        await signOut();
         return null;
       }
 

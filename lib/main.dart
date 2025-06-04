@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'core/providers/theme_provider.dart'; // Наш провайдер темы
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 // --- Константы для удобства ---
 const _seedColor = Colors.indigo; // Основной цвет для генерации схемы
@@ -141,22 +142,17 @@ class MyApp extends ConsumerWidget {
           ),
         ),
 
-        cardTheme: CardTheme(
-          elevation: 0, // Без тени для чистого вида
-          color:
-              colorScheme
-                  .surfaceContainerLow, // Цвет фона карточки (чуть отличается от фона)
+        cardTheme: ThemeData().cardTheme.copyWith(
+          elevation: 0,
+          color: colorScheme.surfaceContainerLow,
           shape: RoundedRectangleBorder(
             borderRadius: commonBorderRadius,
-            // Добавляем тонкую обводку в цвет границы
             side: BorderSide(
               color: colorScheme.outlineVariant.withAlpha(153),
               width: 0.8,
             ),
           ),
-          margin: const EdgeInsets.symmetric(
-            vertical: 6.0,
-          ), // Отступы по умолчанию для карточек
+          margin: const EdgeInsets.symmetric(vertical: 6.0),
         ),
 
         listTileTheme: ListTileThemeData(
@@ -211,8 +207,8 @@ class MyApp extends ConsumerWidget {
           space: 1, // Минимальное пространство (управляется в ListTile)
         ),
 
-        dialogTheme: DialogTheme(
-          backgroundColor: colorScheme.surfaceContainerHigh, // Фон диалога
+        dialogTheme: ThemeData().dialogTheme.copyWith(
+          backgroundColor: colorScheme.surfaceContainerHigh,
           shape: RoundedRectangleBorder(borderRadius: commonBorderRadius),
           titleTextStyle: TextStyle(
             fontSize: 18,
@@ -253,6 +249,12 @@ class MyApp extends ConsumerWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: currentThemeMode,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('ru', 'RU'), Locale('en', 'US')],
       debugShowCheckedModeBanner: false,
     );
   }

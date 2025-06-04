@@ -328,47 +328,27 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
 
     // Список страниц для PageView
     final pages = [
-      const KeepAliveWrapper(child: SchedulePage()),
-      const KeepAliveWrapper(child: NewsFeedPage()),
-      const KeepAliveWrapper(child: GradesPage()),
-      const KeepAliveWrapper(child: AttendancePage()),
-      if (_userId != null)
-        KeepAliveWrapper(child: ChatsPage(currentUserId: _userId!)),
-      const KeepAliveWrapper(child: ProfilePage()),
+      const KeepAliveWrapper(child: SchedulePage()), // 0. Расписание
+      const KeepAliveWrapper(child: GradesPage()), // 1. Оценки
+      const KeepAliveWrapper(child: AttendancePage()), // 2. Посещаемость
+      _userId != null
+          ? KeepAliveWrapper(child: ChatsPage(currentUserId: _userId!))
+          : const SizedBox.shrink(), // 3. Чаты (или заглушка)
+      const KeepAliveWrapper(child: NewsFeedPage()), // 4. Новости
+      const KeepAliveWrapper(child: ProfilePage()), // 5. Профиль
     ];
 
     // Список элементов нижней навигации
     final bottomNavItems = [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today_outlined),
-        activeIcon: Icon(Icons.calendar_today),
-        label: 'Расписание',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.newspaper_outlined),
-        activeIcon: Icon(Icons.newspaper),
-        label: 'Новости',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.grade_outlined),
-        activeIcon: Icon(Icons.grade),
-        label: 'Оценки',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_today_outlined),
-        activeIcon: Icon(Icons.calendar_today),
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Главная'),
+      BottomNavigationBarItem(icon: Icon(Icons.grade), label: 'Оценки'),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.event_available),
         label: 'Посещаемость',
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.chat_outlined),
-        activeIcon: Icon(Icons.chat),
-        label: 'Чаты',
-      ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.person_outline),
-        activeIcon: Icon(Icons.person),
-        label: 'Профиль',
-      ),
+      BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Чаты'),
+      BottomNavigationBarItem(icon: Icon(Icons.newspaper), label: 'Новости'),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Профиль'),
     ];
 
     return Listener(
@@ -381,8 +361,12 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap:
-              _onItemTapped, // Вызывает анимацию и сброс таймера через onPageChanged
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+              _pageController.jumpToPage(index);
+            });
+          },
           items: bottomNavItems,
         ),
         drawer: _buildDrawer(context),
@@ -437,27 +421,19 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
             },
           ),
           ListTile(
-            leading: const Icon(Icons.newspaper_outlined),
-            title: const Text('Новости'),
+            leading: const Icon(Icons.grade_outlined),
+            title: const Text('Оценки'),
             onTap: () {
               Navigator.pop(context);
               _pageController.jumpToPage(1);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.grade_outlined),
-            title: const Text('Оценки'),
-            onTap: () {
-              Navigator.pop(context);
-              _pageController.jumpToPage(2);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.calendar_today_outlined),
+            leading: const Icon(Icons.event_available),
             title: const Text('Посещаемость'),
             onTap: () {
               Navigator.pop(context);
-              _pageController.jumpToPage(3);
+              _pageController.jumpToPage(2);
             },
           ),
           if (_userId != null)
@@ -466,15 +442,23 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
               title: const Text('Чаты'),
               onTap: () {
                 Navigator.pop(context);
-                _pageController.jumpToPage(5);
+                _pageController.jumpToPage(3);
               },
             ),
+          ListTile(
+            leading: const Icon(Icons.newspaper_outlined),
+            title: const Text('Новости'),
+            onTap: () {
+              Navigator.pop(context);
+              _pageController.jumpToPage(4);
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.person_outline),
             title: const Text('Профиль'),
             onTap: () {
               Navigator.pop(context);
-              _pageController.jumpToPage(6);
+              _pageController.jumpToPage(5);
             },
           ),
           const Divider(),

@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/features/admin/home_screen.dart';
-import 'package:flutter_application_1/features/auth/loading_screen.dart';
-import 'package:flutter_application_1/features/auth/lock_screen.dart';
-import 'package:flutter_application_1/features/settings/pin/change_pin_screen.dart';
-import 'package:flutter_application_1/features/settings/pin/pin_setup_screen.dart';
-import 'package:flutter_application_1/features/settings/settings_screen.dart';
-import 'package:flutter_application_1/features/student/edit_profile_page.dart';
-import 'package:flutter_application_1/features/teacher/home_screen.dart'; // Исправлено "teather" на "teacher"
-import 'package:flutter_application_1/models/user.dart';
+import 'package:mycollege/features/admin/home_screen.dart';
+import 'package:mycollege/features/auth/loading_screen.dart';
+import 'package:mycollege/features/auth/lock_screen.dart';
+import 'package:mycollege/features/settings/pin/change_pin_screen.dart';
+import 'package:mycollege/features/settings/pin/pin_setup_screen.dart';
+import 'package:mycollege/features/settings/settings_screen.dart';
+import 'package:mycollege/features/teacher/home_screen.dart';
+import 'package:mycollege/features/student/edit_profile_page.dart';
+import 'package:mycollege/models/user.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/auth_service.dart';
 
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/student/home_screen.dart';
-import '../core/auth_service.dart';
 import '../features/student/attendance_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -110,12 +110,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         builder: (BuildContext context, GoRouterState state) {
+          final authState = ref.watch(authStateProvider);
+
+          // Если состояние загрузки, показываем индикатор
+          if (authState.isLoading) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          // Если ошибка, показываем сообщение
+          if (authState.hasError) {
+            return Scaffold(
+              body: Center(child: Text('Ошибка: ${authState.error}')),
+            );
+          }
+
           final user = authState.valueOrNull;
           if (user != null) {
             switch (user.role) {
-              // Используем switch для ясности
               case 'student':
-                return const StudentHomeScreen(); // <-- Указываем наш новый экран
+                return const StudentHomeScreen();
               case 'teacher':
                 return const TeacherHomeScreen();
               case 'admin':
@@ -126,7 +141,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 );
             }
           }
-          // Если пользователь еще загружается или null (хотя редирект должен сработать)
+
+          // Если пользователь null, редиректим на /login
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );

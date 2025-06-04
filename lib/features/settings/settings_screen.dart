@@ -222,11 +222,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           RadioListTile<ThemeMode>(
             title: const Text('Как в системе'),
             value: ThemeMode.system,
-            groupValue:
-                currentThemeMode, // Используем текущее состояние из провайдера
-            onChanged: (value) {
+            groupValue: currentThemeMode,
+            onChanged: (ThemeMode? value) {
               if (value != null) {
-                themeNotifier.setThemeMode(value); // Вызываем метод Notifier'я
+                themeNotifier.setThemeMode(value);
               }
             },
           ),
@@ -234,16 +233,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: const Text('Только светлая'),
             value: ThemeMode.light,
             groupValue: currentThemeMode,
-            onChanged: (value) {
-              if (value != null) themeNotifier.setThemeMode(value);
+            onChanged: (ThemeMode? value) {
+              if (value != null) {
+                themeNotifier.setThemeMode(value);
+              }
             },
           ),
           RadioListTile<ThemeMode>(
             title: const Text('Только темная'),
             value: ThemeMode.dark,
             groupValue: currentThemeMode,
-            onChanged: (value) {
-              if (value != null) themeNotifier.setThemeMode(value);
+            onChanged: (ThemeMode? value) {
+              if (value != null) {
+                themeNotifier.setThemeMode(value);
+              }
             },
           ),
           const Divider(height: 20),

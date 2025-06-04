@@ -58,11 +58,29 @@ class ChatProfileScreen extends ConsumerWidget {
                           ),
                     );
                     if (confirm == true) {
-                      await ref.read(chatServiceProvider).deleteChat(chat.id);
-                      if (context.mounted) {
-                        Navigator.of(context)
-                          ..pop()
-                          ..pop(); // Вернуться на список чатов
+                      try {
+                        await ref.read(chatServiceProvider).deleteChat(chat.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Чат успешно удалён!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          Navigator.of(context)
+                            ..pop()
+                            ..pop(); // Вернуться на список чатов
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Ошибка при удалении чата: $e'),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                        }
                       }
                     }
                   },
