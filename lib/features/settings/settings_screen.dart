@@ -354,7 +354,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 applicationName: 'myCollege App', // Название из main.dart
                 applicationVersion: '1.0.0', // Версия из pubspec.yaml
                 applicationLegalese:
-                    '© 2025 Your Name/Company', // Авторские права
+                    '© 2025 4Agroup/MyCollege', // Авторские права
                 // applicationIcon: Image.asset('assets/icons/app_icon.png', width: 40), // Иконка приложения
                 children: [
                   // Дополнительная информация
