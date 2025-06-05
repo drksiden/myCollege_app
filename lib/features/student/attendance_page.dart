@@ -281,7 +281,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                 'Всего занятий',
                 totalLessons.toString(),
                 Icons.calendar_today,
-                colorScheme as Color,
+                colorScheme.primary,
                 textTheme,
               ),
               _buildStatItem(

@@ -8,6 +8,7 @@ import '../../providers/subject_provider.dart';
 import '../../providers/teacher_provider.dart'; // Используем исправленный провайдер
 import '../../models/schedule_entry.dart';
 import '../../models/subject.dart';
+import 'widgets/semester_selector.dart';
 
 class SchedulePage extends ConsumerStatefulWidget {
   const SchedulePage({super.key});
@@ -34,14 +35,43 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
     super.dispose();
   }
 
+  Future<void> _showSemesterDialog(BuildContext context) async {
+    final selectedSemester = ref.read(selectedSemesterProvider);
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Выберите семестр'),
+          content: SemesterSelector(
+            selectedSemester: selectedSemester,
+            onSemesterSelected: (semester) {
+              ref.read(selectedSemesterProvider.notifier).state = semester;
+              Navigator.of(context).pop();
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final selectedSemester = ref.watch(selectedSemesterProvider);
+    final groupedSchedule = ref.watch(groupedScheduleProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Расписание'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.event_note),
+            tooltip:
+                selectedSemester != null ? selectedSemester.name : 'Семестр',
+            onPressed: () => _showSemesterDialog(context),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: false,
@@ -54,145 +84,135 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
           ),
         ),
       ),
-      body: ref
-          .watch(scheduleProvider)
-          .when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error:
-                (error, stack) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Ошибка загрузки расписания',
-                          style: textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          error.toString(),
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+      body: Expanded(
+        child: ref
+            .watch(scheduleProvider)
+            .when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (error, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: colorScheme.error,
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => ref.refresh(scheduleProvider),
-                          child: const Text('Повторить'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            data: (schedule) {
-              // Получаем все предметы
-              final allSubjectsAsync = ref.watch(subjectsProvider);
-
-              return allSubjectsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error:
-                    (error, stack) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Ошибка загрузки предметов.\n$error',
-                          textAlign: TextAlign.center,
-                        ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ошибка загрузки расписания',
+                            style: textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref.refresh(scheduleProvider),
+                            child: const Text('Повторить'),
+                          ),
+                        ],
                       ),
                     ),
-                data: (allSubjects) {
-                  // Группируем расписание по дням недели
-                  final grouped = <int, List<ScheduleEntry>>{};
-                  for (final entry in schedule) {
-                    grouped.putIfAbsent(entry.dayOfWeek, () => []).add(entry);
-                  }
+                  ),
+              data: (schedule) {
+                // Получаем все предметы
+                final allSubjectsAsync = ref.watch(subjectsProvider);
 
-                  // Сортируем уроки в каждом дне по времени
-                  for (final dayLessons in grouped.values) {
-                    dayLessons.sort(
-                      (a, b) => a.startTime.compareTo(b.startTime),
+                return allSubjectsAsync.when(
+                  loading:
+                      () => const Center(child: CircularProgressIndicator()),
+                  error:
+                      (error, stack) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Ошибка загрузки предметов.\n$error',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  data: (allSubjects) {
+                    return TabBarView(
+                      controller: _tabController,
+                      children: List.generate(_daysOfWeek.length, (tabIndex) {
+                        final dayOfWeek = _daysOfWeek[tabIndex];
+                        final lessonsForDay = groupedSchedule[dayOfWeek] ?? [];
+
+                        return RefreshIndicator(
+                          color: colorScheme.primary,
+                          onRefresh: () async {
+                            ref.invalidate(scheduleProvider);
+                            ref.invalidate(subjectsProvider);
+                            return;
+                          },
+                          child:
+                              lessonsForDay.isEmpty
+                                  ? LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      return SingleChildScrollView(
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            minHeight: constraints.maxHeight,
+                                          ),
+                                          child: Center(
+                                            child:
+                                                Text(
+                                                  'Нет занятий в этот день',
+                                                  style: textTheme.titleMedium
+                                                      ?.copyWith(
+                                                        color:
+                                                            colorScheme
+                                                                .onSurfaceVariant,
+                                                      ),
+                                                ).animate().fadeIn(),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                  : ListView.builder(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.all(16.0),
+                                    itemCount: lessonsForDay.length,
+                                    itemBuilder: (context, lessonIndex) {
+                                      final lesson = lessonsForDay[lessonIndex];
+                                      return _LessonCard(
+                                            lesson: lesson,
+                                            subject:
+                                                allSubjects[lesson.subjectId],
+                                          )
+                                          .animate()
+                                          .fadeIn(
+                                            delay: (lessonIndex * 80).ms,
+                                            duration: 300.ms,
+                                          )
+                                          .moveX(
+                                            begin: -10,
+                                            end: 0,
+                                            duration: 300.ms,
+                                          );
+                                    },
+                                  ),
+                        );
+                      }),
                     );
-                  }
-
-                  return TabBarView(
-                    controller: _tabController,
-                    children: List.generate(_daysOfWeek.length, (tabIndex) {
-                      final dayOfWeek = _daysOfWeek[tabIndex];
-                      final lessonsForDay = grouped[dayOfWeek] ?? [];
-
-                      return RefreshIndicator(
-                        color: colorScheme.primary,
-                        onRefresh: () async {
-                          ref.invalidate(scheduleProvider);
-                          ref.invalidate(subjectsProvider);
-                          return;
-                        },
-                        child:
-                            lessonsForDay.isEmpty
-                                ? LayoutBuilder(
-                                  builder: (context, constraints) {
-                                    return SingleChildScrollView(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          minHeight: constraints.maxHeight,
-                                        ),
-                                        child: Center(
-                                          child:
-                                              Text(
-                                                'Нет занятий в этот день',
-                                                style: textTheme.titleMedium
-                                                    ?.copyWith(
-                                                      color:
-                                                          colorScheme
-                                                              .onSurfaceVariant,
-                                                    ),
-                                              ).animate().fadeIn(),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                )
-                                : ListView.builder(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(16.0),
-                                  itemCount: lessonsForDay.length,
-                                  itemBuilder: (context, lessonIndex) {
-                                    final lesson = lessonsForDay[lessonIndex];
-                                    return _LessonCard(
-                                          lesson: lesson,
-                                          subject:
-                                              allSubjects[lesson.subjectId],
-                                        )
-                                        .animate()
-                                        .fadeIn(
-                                          delay: (lessonIndex * 80).ms,
-                                          duration: 300.ms,
-                                        )
-                                        .moveX(
-                                          begin: -10,
-                                          end: 0,
-                                          duration: 300.ms,
-                                        );
-                                  },
-                                ),
-                      );
-                    }),
-                  );
-                },
-              );
-            },
-          ),
+                  },
+                );
+              },
+            ),
+      ),
     );
   }
 }
