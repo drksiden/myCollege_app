@@ -94,6 +94,10 @@ class ApprovalGate extends ConsumerWidget {
                     ),
                   ),
               data: (approval) {
+                if (user.status == 'active') {
+                  return child;
+                }
+
                 if (approval == null) {
                   return const ApprovalPendingPage();
                 }

@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'schedule_entry.freezed.dart';
-part 'schedule_entry.g.dart';
+// part 'schedule_entry.g.dart';
 
 // Конвертер для работы с датами из Firestore
 class TimestampConverter implements JsonConverter<DateTime?, dynamic> {

@@ -87,136 +87,132 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
           ),
         ),
       ),
-      body: Expanded(
-        child: ref
-            .watch(studentScheduleProvider)
-            .when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error:
-                  (error, stack) => Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: colorScheme.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Ошибка загрузки расписания',
-                            style: textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            error.toString(),
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed:
-                                () => ref.refresh(studentScheduleProvider),
-                            child: const Text('Повторить'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              data: (schedule) {
-                // Получаем все предметы
-                final allSubjectsAsync = ref.watch(subjectsProvider);
-
-                return allSubjectsAsync.when(
-                  loading:
-                      () => const Center(child: CircularProgressIndicator()),
-                  error:
-                      (error, stack) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Ошибка загрузки предметов.\n$error',
-                            textAlign: TextAlign.center,
+      body: ref
+          .watch(studentScheduleProvider)
+          .when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (error, stack) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: colorScheme.error,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Ошибка загрузки расписания',
+                          style: textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
-                      ),
-                  data: (allSubjects) {
-                    return TabBarView(
-                      controller: _tabController,
-                      children: List.generate(_daysOfWeek.length, (tabIndex) {
-                        final dayOfWeek = _daysOfWeek[tabIndex];
-                        final lessonsForDay = groupedSchedule[dayOfWeek] ?? [];
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => ref.refresh(studentScheduleProvider),
+                          child: const Text('Повторить'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            data: (schedule) {
+              // Получаем все предметы
+              final allSubjectsAsync = ref.watch(subjectsProvider);
 
-                        return RefreshIndicator(
-                          color: colorScheme.primary,
-                          onRefresh: () async {
-                            ref.invalidate(studentScheduleProvider);
-                            ref.invalidate(subjectsProvider);
-                            return;
-                          },
-                          child:
-                              lessonsForDay.isEmpty
-                                  ? LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      return SingleChildScrollView(
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            minHeight: constraints.maxHeight,
-                                          ),
-                                          child: Center(
-                                            child:
-                                                Text(
-                                                  'Нет занятий в этот день',
-                                                  style: textTheme.titleMedium
-                                                      ?.copyWith(
-                                                        color:
-                                                            colorScheme
-                                                                .onSurfaceVariant,
-                                                      ),
-                                                ).animate().fadeIn(),
-                                          ),
+              return allSubjectsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, stack) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          'Ошибка загрузки предметов.\n$error',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                data: (allSubjects) {
+                  return TabBarView(
+                    controller: _tabController,
+                    children: List.generate(_daysOfWeek.length, (tabIndex) {
+                      final dayOfWeek = _daysOfWeek[tabIndex];
+                      final lessonsForDay = groupedSchedule[dayOfWeek] ?? [];
+
+                      return RefreshIndicator(
+                        color: colorScheme.primary,
+                        onRefresh: () async {
+                          ref.invalidate(studentScheduleProvider);
+                          ref.invalidate(subjectsProvider);
+                          return;
+                        },
+                        child:
+                            lessonsForDay.isEmpty
+                                ? LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return SingleChildScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight: constraints.maxHeight,
                                         ),
-                                      );
-                                    },
-                                  )
-                                  : ListView.builder(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    padding: const EdgeInsets.all(16.0),
-                                    itemCount: lessonsForDay.length,
-                                    itemBuilder: (context, lessonIndex) {
-                                      final lesson = lessonsForDay[lessonIndex];
-                                      return _LessonCard(
-                                            lesson: lesson,
-                                            subject:
-                                                allSubjects[lesson.subjectId],
-                                          )
-                                          .animate()
-                                          .fadeIn(
-                                            delay: (lessonIndex * 80).ms,
-                                            duration: 300.ms,
-                                          )
-                                          .moveX(
-                                            begin: -10,
-                                            end: 0,
-                                            duration: 300.ms,
-                                          );
-                                    },
-                                  ),
-                        );
-                      }),
-                    );
-                  },
-                );
-              },
-            ),
-      ),
+                                        child: Center(
+                                          child:
+                                              Text(
+                                                'Нет занятий в этот день',
+                                                style: textTheme.titleMedium
+                                                    ?.copyWith(
+                                                      color:
+                                                          colorScheme
+                                                              .onSurfaceVariant,
+                                                    ),
+                                              ).animate().fadeIn(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                )
+                                : ListView.builder(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(16.0),
+                                  itemCount: lessonsForDay.length,
+                                  itemBuilder: (context, lessonIndex) {
+                                    final lesson = lessonsForDay[lessonIndex];
+                                    return _LessonCard(
+                                          lesson: lesson,
+                                          subject:
+                                              allSubjects[lesson.subjectId],
+                                        )
+                                        .animate()
+                                        .fadeIn(
+                                          delay: (lessonIndex * 80).ms,
+                                          duration: 300.ms,
+                                        )
+                                        .moveX(
+                                          begin: -10,
+                                          end: 0,
+                                          duration: 300.ms,
+                                        );
+                                  },
+                                ),
+                      );
+                    }),
+                  );
+                },
+              );
+            },
+          ),
     );
   }
 }
@@ -309,6 +305,7 @@ class _LessonCard extends ConsumerWidget {
                     subject?.name ?? 'Неизвестный предмет',
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: subject == null ? colorScheme.error : null,
                     ),
                   ),
                   Padding(
@@ -395,24 +392,33 @@ class _LessonCard extends ConsumerWidget {
   }
 
   bool _isCurrentLesson(ScheduleEntry lesson) {
-    final now = DateTime.now();
-    final currentTime =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-    return lesson.dayOfWeek == now.weekday &&
-        lesson.startTime.compareTo(currentTime) <= 0 &&
-        lesson.endTime.compareTo(currentTime) >= 0;
+    try {
+      final now = DateTime.now();
+      final currentTime = DateFormat('HH:mm').format(now);
+      return lesson.dayOfWeek == now.weekday &&
+          lesson.startTime.compareTo(currentTime) <= 0 &&
+          lesson.endTime.compareTo(currentTime) >= 0;
+    } catch (e) {
+      logger.e('Error in _isCurrentLesson: $e');
+      return false;
+    }
   }
 
   String _getLessonType(String type) {
-    switch (type) {
-      case 'lecture':
-        return 'Лекция';
-      case 'practice':
-        return 'Практика';
-      case 'lab':
-        return 'Лабораторная';
-      default:
-        return type;
+    try {
+      switch (type.toLowerCase()) {
+        case 'lecture':
+          return 'Лекция';
+        case 'practice':
+          return 'Практика';
+        case 'lab':
+          return 'Лабораторная';
+        default:
+          return type;
+      }
+    } catch (e) {
+      logger.e('Error in _getLessonType: $e');
+      return type;
     }
   }
 }

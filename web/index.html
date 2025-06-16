@@ -23,14 +23,37 @@
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="flutter_application_1">
+  <meta name="apple-mobile-web-app-title" content="MyCollege">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>flutter_application_1</title>
+  <title>MyCollege</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1dGgjrn9_RWpFIf5wjHsX2wkUdKOnZ80",
+      authDomain: "mycollegeapp-4f6ce.firebaseapp.com",
+      projectId: "mycollegeapp-4f6ce",
+      storageBucket: "mycollegeapp-4f6ce.firebasestorage.app",
+      messagingSenderId: "361946186456",
+      appId: "1:361946186456:web:8e335684941d3bf8500dad",
+      measurementId: "G-PW5MCGW993"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

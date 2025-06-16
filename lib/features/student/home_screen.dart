@@ -356,18 +356,23 @@ class _StudentHomeScreenState extends ConsumerState<StudentHomeScreen>
       child: Scaffold(
         body: PageView(
           controller: _pageController,
-          onPageChanged: _onPageChanged, // Вызывает setState и сброс таймера
+          onPageChanged: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+            _resetInactiveTimer(); // Сбрасываем таймер при смене страницы
+          },
           children: pages,
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
-          onTap: (index) {
-            setState(() {
-              _selectedIndex = index;
-              _pageController.jumpToPage(index);
-            });
-          },
+          onTap: _onItemTapped,
           items: bottomNavItems,
+          selectedItemColor: colorScheme.primary,
+          unselectedItemColor: colorScheme.onSurfaceVariant,
+          backgroundColor: colorScheme.surface,
+          type: BottomNavigationBarType.fixed,
+          elevation: 8,
         ),
         drawer: _buildDrawer(context),
       ),

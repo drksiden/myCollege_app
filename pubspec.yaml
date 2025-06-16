@@ -32,13 +32,20 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^3.13.0
-  firebase_auth: ^5.5.2
-  cloud_firestore: ^5.6.8
-  firebase_messaging: ^15.2.5
-  firebase_crashlytics: ^4.3.5
-  firebase_analytics: ^11.4.5
-  google_sign_in: ^6.2.1
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
+  firebase_storage: ^11.5.6
+  firebase_messaging: ^14.7.9
+  firebase_analytics: ^10.7.4
+  firebase_crashlytics: ^3.4.9
+  firebase_auth_web: ^5.8.12
+  firebase_core_web: ^2.10.0
+  cloud_firestore_web: ^3.8.10
+  firebase_storage_web: ^3.6.17
+  firebase_messaging_web: ^3.8.7
+  firebase_analytics_web: ^0.5.1+5
+  js: ^0.6.7
 
   # Управление состоянием
   riverpod: ^2.6.1
@@ -86,7 +93,7 @@ dependencies:
   flutter_html: ^3.0.0
 
   # Добавленный пакет
-  flutter_local_notifications: ^16.3.0
+  flutter_local_notifications: ^19.2.1
 
 dev_dependencies:
   flutter_test:

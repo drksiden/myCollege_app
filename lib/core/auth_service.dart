@@ -39,12 +39,40 @@ class AuthService {
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
   final _authStateController = StreamController<app_user.User?>.broadcast();
+  StreamSubscription? _authStateSubscription;
 
-  AuthService(
-    this._firebaseAuth,
-    this._firestore,
-    this._googleSignIn,
-  ); // Получаем зависимости через конструктор
+  AuthService(this._firebaseAuth, this._firestore, this._googleSignIn) {
+    // Подписываемся на изменения состояния аутентификации Firebase
+    _authStateSubscription = _firebaseAuth.authStateChanges().listen((
+      firebaseUser,
+    ) async {
+      debugPrint(
+        '[AuthService] Firebase Auth state changed: ${firebaseUser?.uid}',
+      );
+      if (firebaseUser == null) {
+        _authStateController.add(null);
+        return;
+      }
+
+      final appUser = await _getUserData(firebaseUser.uid);
+      if (appUser == null || appUser.status != 'active') {
+        debugPrint(
+          '[AuthService] User ${firebaseUser.uid} is not active or profile not found',
+        );
+        await signOut();
+        _authStateController.add(null);
+        return;
+      }
+
+      _authStateController.add(appUser);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    _authStateController.close();
+  }
 
   Stream<app_user.User?> get authStateChanges => _authStateController.stream;
 
