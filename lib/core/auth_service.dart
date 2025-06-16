@@ -4,39 +4,52 @@ import 'package:firebase_auth/firebase_auth.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart'; // Для debugPrint
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'dart:async';
 
 // Импортируем нашу модель User без псевдонима, если нет конфликтов
 // или используем 'as app_user' если есть конфликт имен
-import '../models/user.dart';
+import '../models/user.dart' as app_user;
 
 // --- Riverpod Провайдеры ---
 
 // Провайдер для самого сервиса
 final authServiceProvider = Provider<AuthService>((ref) {
   // Можно передать зависимости, если они нужны, например, ref
-  return AuthService(FirebaseAuth.instance, FirebaseFirestore.instance);
+  return AuthService(
+    firebase_auth.FirebaseAuth.instance,
+    FirebaseFirestore.instance,
+    GoogleSignIn(),
+  );
 });
 
 // Провайдер для стрима состояния аутентификации с данными пользователя
-final authStateProvider = StreamProvider<User?>((ref) {
+final authStateProvider = StreamProvider<app_user.User?>((ref) {
   // Следим за authServiceProvider, чтобы получить экземпляр AuthService
   final authService = ref.watch(authServiceProvider);
-  return authService.userStream(); // Возвращаем стрим кастомного пользователя
+  return authService
+      .authStateChanges; // Возвращаем стрим кастомного пользователя
 });
 
 // --- Класс Сервиса Аутентификации ---
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth;
+  final firebase_auth.FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
+  final GoogleSignIn _googleSignIn;
+  final _authStateController = StreamController<app_user.User?>.broadcast();
 
   AuthService(
     this._firebaseAuth,
     this._firestore,
+    this._googleSignIn,
   ); // Получаем зависимости через конструктор
 
+  Stream<app_user.User?> get authStateChanges => _authStateController.stream;
+
   /// Стрим, который выдает нашего кастомного пользователя [User] или null.
-  Stream<User?> userStream() {
+  Stream<app_user.User?> userStream() {
     return _firebaseAuth.authStateChanges().asyncMap((firebaseUser) async {
       debugPrint(
         '[AuthService] AuthState изменился. Firebase User ID: ${firebaseUser?.uid}',
@@ -64,7 +77,7 @@ class AuthService {
   }
 
   /// Вспомогательный метод для загрузки данных пользователя из Firestore.
-  Future<User?> _getUserData(String uid) async {
+  Future<app_user.User?> _getUserData(String uid) async {
     try {
       final DocumentReference userDocRef = _firestore
           .collection('users')
@@ -83,7 +96,7 @@ class AuthService {
         userData['id'] = uid;
 
         // Создаем наш объект User из данных Firestore
-        return User.fromJson(userData);
+        return app_user.User.fromJson(userData);
       } else {
         // Документа нет - это может быть проблемой (например, ошибка при записи во время регистрации)
         debugPrint(
@@ -107,7 +120,7 @@ class AuthService {
   }
 
   /// Вход пользователя по email и паролю.
-  Future<UserCredential?> signInWithEmailAndPassword(
+  Future<firebase_auth.UserCredential?> signInWithEmailAndPassword(
     String email,
     String password,
   ) async {
@@ -119,7 +132,7 @@ class AuthService {
       );
       debugPrint('[AuthService] Вход успешен для: ${credential.user?.uid}');
       return credential;
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       // Обрабатываем специфичные ошибки Firebase Auth
       debugPrint(
         '[AuthService] ОШИБКА FirebaseAuth при входе: ${e.code} - ${e.message}',
@@ -134,7 +147,7 @@ class AuthService {
   }
 
   /// Регистрация нового пользователя с email, паролем, именем и ролью.
-  Future<UserCredential?> createUserWithEmailAndPassword(
+  Future<firebase_auth.UserCredential?> createUserWithEmailAndPassword(
     String email,
     String password,
     // --- Принимаем раздельные ФИО ---
@@ -194,7 +207,7 @@ class AuthService {
         );
         return null;
       }
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       // Обрабатываем ошибки создания пользователя (слабый пароль, email уже используется и т.д.)
       debugPrint(
         '[AuthService] ОШИБКА FirebaseAuth при регистрации: ${e.code} - ${e.message}',
@@ -214,6 +227,80 @@ class AuthService {
       debugPrint('[AuthService] Выход выполнен.');
     } catch (e) {
       debugPrint('[AuthService] ОШИБКА при выходе: $e');
+    }
+  }
+
+  /// Вход через Google
+  Future<void> signInWithGoogle() async {
+    try {
+      // Запускаем процесс входа через Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        throw Exception('Вход через Google был отменен');
+      }
+
+      // Получаем учетные данные для Firebase
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Создаем учетные данные для Firebase
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Входим в Firebase
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
+
+      if (userCredential.user == null) {
+        throw Exception('Не удалось получить данные пользователя');
+      }
+
+      // Получаем данные пользователя из Firestore
+      final userDoc =
+          await _firestore
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+
+      if (!userDoc.exists) {
+        // Если пользователь новый, создаем запись в Firestore
+        final displayName = userCredential.user!.displayName ?? '';
+        final nameParts = displayName.split(' ');
+        final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+        final lastName = nameParts.length > 1 ? nameParts.last : '';
+
+        final newUser = app_user.User(
+          uid: userCredential.user!.uid,
+          email: userCredential.user!.email!,
+          firstName: firstName,
+          lastName: lastName,
+          role: 'student', // По умолчанию роль - студент
+          status:
+              'pending_approval', // По умолчанию статус - ожидание одобрения
+          photoURL: userCredential.user!.photoURL,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set(newUser.toJson());
+
+        // Обновляем состояние
+        _authStateController.add(newUser);
+      } else {
+        // Если пользователь существует, обновляем состояние
+        final user = app_user.User.fromJson(userDoc.data()!);
+        _authStateController.add(user);
+      }
+    } catch (e) {
+      debugPrint('Error signing in with Google: $e');
+      rethrow;
     }
   }
 

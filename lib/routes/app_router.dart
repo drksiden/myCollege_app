@@ -207,7 +207,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'schedule',
-            builder: (context, state) => const StudentSchedulePage(),
+            builder: (context, state) => const SchedulePage(),
           ),
         ],
       ),
