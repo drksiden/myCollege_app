@@ -15,13 +15,9 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
-ScheduleEntry _$ScheduleEntryFromJson(Map<String, dynamic> json) {
-  return _ScheduleEntry.fromJson(json);
-}
-
 /// @nodoc
 mixin _$ScheduleEntry {
-  // Обязательные поля, которые ДОЛЖНЫ быть в базе
+  // Обязательные поля
   String get id => throw _privateConstructorUsedError;
   String get groupId => throw _privateConstructorUsedError;
   String get semesterId => throw _privateConstructorUsedError;
@@ -29,22 +25,18 @@ mixin _$ScheduleEntry {
   String get teacherId => throw _privateConstructorUsedError;
   String get startTime => throw _privateConstructorUsedError;
   String get endTime =>
-      throw _privateConstructorUsedError; // Необязательные поля со значениями ПО УМОЛЧАНИЮ
-  // Если этих полей не будет в базе, подставятся эти значения
+      throw _privateConstructorUsedError; // Поля с значениями по умолчанию
   int get dayOfWeek => throw _privateConstructorUsedError;
   String get type => throw _privateConstructorUsedError;
   String get weekType => throw _privateConstructorUsedError;
   String get room => throw _privateConstructorUsedError;
   int get duration => throw _privateConstructorUsedError;
   bool get isFloating =>
-      throw _privateConstructorUsedError; // Поля с датой, которые могут быть null
+      throw _privateConstructorUsedError; // Поля с датами (могут быть null)
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-
-  /// Serializes this ScheduleEntry to a JSON map.
-  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
   /// Create a copy of ScheduleEntry
   /// with the given fields replaced by the non-null parameter values.
@@ -334,8 +326,8 @@ class __$$ScheduleEntryImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-@JsonSerializable()
-class _$ScheduleEntryImpl implements _ScheduleEntry {
+
+class _$ScheduleEntryImpl extends _ScheduleEntry {
   const _$ScheduleEntryImpl({
     required this.id,
     required this.groupId,
@@ -352,12 +344,9 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
     this.isFloating = false,
     @TimestampConverter() this.createdAt,
     @TimestampConverter() this.updatedAt,
-  });
+  }) : super._();
 
-  factory _$ScheduleEntryImpl.fromJson(Map<String, dynamic> json) =>
-      _$$ScheduleEntryImplFromJson(json);
-
-  // Обязательные поля, которые ДОЛЖНЫ быть в базе
+  // Обязательные поля
   @override
   final String id;
   @override
@@ -372,8 +361,7 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   final String startTime;
   @override
   final String endTime;
-  // Необязательные поля со значениями ПО УМОЛЧАНИЮ
-  // Если этих полей не будет в базе, подставятся эти значения
+  // Поля с значениями по умолчанию
   @override
   @JsonKey()
   final int dayOfWeek;
@@ -392,7 +380,7 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   @override
   @JsonKey()
   final bool isFloating;
-  // Поля с датой, которые могут быть null
+  // Поля с датами (могут быть null)
   @override
   @TimestampConverter()
   final DateTime? createdAt;
@@ -437,7 +425,6 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
                 other.updatedAt == updatedAt));
   }
 
-  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
@@ -465,14 +452,9 @@ class _$ScheduleEntryImpl implements _ScheduleEntry {
   @pragma('vm:prefer-inline')
   _$$ScheduleEntryImplCopyWith<_$ScheduleEntryImpl> get copyWith =>
       __$$ScheduleEntryImplCopyWithImpl<_$ScheduleEntryImpl>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$$ScheduleEntryImplToJson(this);
-  }
 }
 
-abstract class _ScheduleEntry implements ScheduleEntry {
+abstract class _ScheduleEntry extends ScheduleEntry {
   const factory _ScheduleEntry({
     required final String id,
     required final String groupId,
@@ -490,11 +472,9 @@ abstract class _ScheduleEntry implements ScheduleEntry {
     @TimestampConverter() final DateTime? createdAt,
     @TimestampConverter() final DateTime? updatedAt,
   }) = _$ScheduleEntryImpl;
+  const _ScheduleEntry._() : super._();
 
-  factory _ScheduleEntry.fromJson(Map<String, dynamic> json) =
-      _$ScheduleEntryImpl.fromJson;
-
-  // Обязательные поля, которые ДОЛЖНЫ быть в базе
+  // Обязательные поля
   @override
   String get id;
   @override
@@ -508,8 +488,7 @@ abstract class _ScheduleEntry implements ScheduleEntry {
   @override
   String get startTime;
   @override
-  String get endTime; // Необязательные поля со значениями ПО УМОЛЧАНИЮ
-  // Если этих полей не будет в базе, подставятся эти значения
+  String get endTime; // Поля с значениями по умолчанию
   @override
   int get dayOfWeek;
   @override
@@ -521,7 +500,7 @@ abstract class _ScheduleEntry implements ScheduleEntry {
   @override
   int get duration;
   @override
-  bool get isFloating; // Поля с датой, которые могут быть null
+  bool get isFloating; // Поля с датами (могут быть null)
   @override
   @TimestampConverter()
   DateTime? get createdAt;

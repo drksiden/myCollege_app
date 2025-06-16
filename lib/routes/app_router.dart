@@ -1,94 +1,109 @@
+// lib/routes/app_router.dart (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 import 'package:flutter/material.dart';
-import 'package:mycollege/features/admin/home_screen.dart';
-import 'package:mycollege/features/auth/loading_screen.dart';
-import 'package:mycollege/features/auth/lock_screen.dart';
-import 'package:mycollege/features/settings/pin/change_pin_screen.dart';
-import 'package:mycollege/features/settings/pin/pin_setup_screen.dart';
-import 'package:mycollege/features/settings/settings_screen.dart';
-import 'package:mycollege/features/teacher/home_screen.dart';
-import 'package:mycollege/features/student/edit_profile_page.dart';
-import 'package:mycollege/models/user.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/auth_service.dart';
 
+// Импорты экранов
+import '../features/auth/loading_screen.dart';
 import '../features/auth/login_screen.dart';
 import '../features/auth/register_screen.dart';
+import '../features/auth/lock_screen.dart';
+import '../features/admin/home_screen.dart';
+import '../features/teacher/home_screen.dart';
 import '../features/student/home_screen.dart';
+import '../features/student/edit_profile_page.dart';
 import '../features/student/attendance_page.dart';
+import '../features/settings/settings_screen.dart';
+import '../features/settings/pin/pin_setup_screen.dart';
+import '../features/settings/pin/change_pin_screen.dart';
+import '../features/student/schedule_page.dart';
+
+// Импорты сервисов и моделей
+import '../core/auth_service.dart';
+import '../models/user.dart';
+import '../widgets/approval_gate.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
   return GoRouter(
     initialLocation: '/loading',
     redirect: (context, state) {
       final location = state.uri.toString();
-      // Следим за AsyncValue<User?>
       final authState = ref.watch(authStateProvider);
 
-      // 1. Если authState еще грузится, остаемся на /loading (если мы там)
-      // Или идем на /loading, если еще не там (на случай прямого входа по ссылке)
+      debugPrint('[GoRouter] Current location: $location');
+      debugPrint('[GoRouter] Auth state loading: ${authState.isLoading}');
+      debugPrint('[GoRouter] Auth state hasError: ${authState.hasError}');
+      debugPrint('[GoRouter] Auth state hasValue: ${authState.hasValue}');
+
+      // 1. Если состояние загружается, показываем loading
       if (authState.isLoading) {
-        debugPrint('[GoRouter Redirect] Auth state loading...');
+        debugPrint('[GoRouter] Auth state loading, redirecting to /loading');
         return location == '/loading' ? null : '/loading';
       }
 
       // 2. Если ошибка загрузки authState
-      if (authState.hasError && location != '/login') {
-        debugPrint(
-          '[GoRouter Redirect] Auth state error, redirecting to /login',
-        );
-        return '/login';
+      if (authState.hasError) {
+        debugPrint('[GoRouter] Auth state error: ${authState.error}');
+        return location == '/login' ? null : '/login';
       }
 
-      // 3. authState загружен (есть данные или null)
-      final isLoggedIn = authState.valueOrNull != null;
-      final isLoggingArea =
+      // 3. authState загружен
+      final user = authState.valueOrNull;
+      final isLoggedIn = user != null;
+      final isAuthArea =
           location == '/login' ||
           location == '/register' ||
           location == '/loading';
 
-      debugPrint(
-        '[GoRouter Redirect] Location: $location, isLoggedIn: $isLoggedIn, isLoggingArea: $isLoggingArea',
-      );
+      debugPrint('[GoRouter] User: ${user?.email}');
+      debugPrint('[GoRouter] User status: ${user?.status}');
+      debugPrint('[GoRouter] Is logged in: $isLoggedIn');
+      debugPrint('[GoRouter] Is auth area: $isAuthArea');
 
-      // --- НОВАЯ ЛОГИКА ДЛЯ /loading ---
-      // 4. Если мы на /loading И пользователь НЕ вошел -> на /login
-      if (location == '/loading' && !isLoggedIn) {
-        debugPrint(
-          '[GoRouter Redirect] Redirecting from /loading to /login (logged out)',
-        );
-        return '/login';
+      // 4. Если пользователь не вошел
+      if (!isLoggedIn) {
+        if (location == '/loading') {
+          debugPrint('[GoRouter] No user, redirecting from loading to login');
+          return '/login';
+        }
+        if (!isAuthArea) {
+          debugPrint('[GoRouter] No user, redirecting to login');
+          return '/login';
+        }
+        return null; // Остаемся в auth области
       }
-      // 5. Если мы на /loading И пользователь ВОШЕЛ -> на /home
-      if (location == '/loading' && isLoggedIn) {
-        debugPrint(
-          '[GoRouter Redirect] Redirecting from /loading to /home (logged in)',
-        );
-        return '/home';
-      }
-      // ---------------------------------
 
-      // --- Старая логика для других случаев ---
-      // 6. Если НЕ вошел И НЕ в зоне входа -> на /login
-      if (!isLoggedIn && !isLoggingArea) {
-        debugPrint(
-          '[GoRouter Redirect] Redirecting to /login (not logged in, outside logging area)',
-        );
-        return '/login';
-      }
-      // 7. Если ВОШЕЛ И В зоне входа (кроме /loading, уже обработано) -> на /home
-      if (isLoggedIn && (location == '/login' || location == '/register')) {
-        debugPrint(
-          '[GoRouter Redirect] Redirecting to /home (logged in, tried login/register)',
-        );
-        return '/home';
-      }
-      // ---------------------------------------
+      // 5. Пользователь вошел
+      if (isLoggedIn) {
+        // Если находимся в auth области или loading, перенаправляем в приложение
+        if (isAuthArea) {
+          debugPrint(
+            '[GoRouter] User logged in, redirecting from auth area to /home',
+          );
+          return '/home';
+        }
 
-      // 8. Во всех остальных случаях - разрешаем
-      debugPrint('[GoRouter Redirect] No redirection needed.');
+        // Проверяем статус пользователя для доступа к защищенным страницам
+        if (user.status == 'pending_approval') {
+          // Пользователь ожидает подтверждения - разрешаем доступ к /home
+          // ApprovalGate покажет соответствующий экран
+          if (location != '/home' && !location.startsWith('/home/')) {
+            debugPrint(
+              '[GoRouter] User pending approval, redirecting to /home',
+            );
+            return '/home';
+          }
+        } else if (user.status == 'rejected' || user.status == 'suspended') {
+          // Пользователь отклонен/заблокирован - выход должен произойти в AuthService
+          debugPrint(
+            '[GoRouter] User rejected/suspended, redirecting to login',
+          );
+          return '/login';
+        }
+        // Для активных пользователей (status == 'active') разрешаем доступ везде
+      }
+
+      debugPrint('[GoRouter] No redirection needed');
       return null;
     },
     routes: <RouteBase>[
@@ -96,68 +111,86 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/loading',
         builder: (context, state) => const LoadingScreen(),
       ),
-      GoRoute(
-        path: '/login',
-        builder:
-            (BuildContext context, GoRouterState state) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/register',
-        builder:
-            (BuildContext context, GoRouterState state) =>
-                const RegisterScreen(),
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/home',
-        builder: (BuildContext context, GoRouterState state) {
-          final authState = ref.watch(authStateProvider);
+        builder: (context, state) {
+          return Consumer(
+            builder: (context, ref, child) {
+              final authState = ref.watch(authStateProvider);
 
-          // Если состояние загрузки, показываем индикатор
-          if (authState.isLoading) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          // Если ошибка, показываем сообщение
-          if (authState.hasError) {
-            return Scaffold(
-              body: Center(child: Text('Ошибка: ${authState.error}')),
-            );
-          }
-
-          final user = authState.valueOrNull;
-          if (user != null) {
-            switch (user.role) {
-              case 'student':
-                return const StudentHomeScreen();
-              case 'teacher':
-                return const TeacherHomeScreen();
-              case 'admin':
-                return const AdminHomeScreen();
-              default:
-                return Scaffold(
-                  body: Center(child: Text("Неизвестная роль: ${user.role}")),
+              if (authState.isLoading) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
                 );
-            }
-          }
+              }
 
-          // Если пользователь null, редиректим на /login
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+              if (authState.hasError) {
+                return Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text('Ошибка: ${authState.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => ref.refresh(authStateProvider),
+                          child: const Text('Повторить'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final user = authState.valueOrNull;
+              if (user == null) {
+                return const Scaffold(
+                  body: Center(child: Text('Пользователь не найден')),
+                );
+              }
+
+              // Определяем, какой экран показать в зависимости от роли
+              Widget homeScreen;
+              switch (user.role) {
+                case 'student':
+                  homeScreen = const StudentHomeScreen();
+                  break;
+                case 'teacher':
+                  homeScreen = const TeacherHomeScreen();
+                  break;
+                case 'admin':
+                  homeScreen = const AdminHomeScreen();
+                  break;
+                default:
+                  homeScreen = Scaffold(
+                    body: Center(child: Text("Неизвестная роль: ${user.role}")),
+                  );
+              }
+
+              // Оборачиваем в ApprovalGate для проверки статуса
+              return ApprovalGate(child: homeScreen);
+            },
           );
         },
         routes: <RouteBase>[
           GoRoute(
-            path: 'profile/edit', // Путь будет /home/profile/edit
-            builder: (BuildContext context, GoRouterState state) {
-              // Получаем объект User, переданный из ProfilePage
+            path: 'profile/edit',
+            builder: (context, state) {
               final user = state.extra as User?;
               if (user != null) {
                 return EditProfilePage(initialUser: user);
               } else {
-                // Если данные не переданы, можно показать ошибку или вернуться назад
-                // Возможно, лучше редиректить на /home или /profile
                 return const Scaffold(
                   body: Center(
                     child: Text(
@@ -172,6 +205,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'attendance',
             builder: (context, state) => const AttendancePage(),
           ),
+          GoRoute(
+            path: 'schedule',
+            builder: (context, state) => const StudentSchedulePage(),
+          ),
         ],
       ),
       GoRoute(
@@ -179,12 +216,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsScreen(),
         routes: [
           GoRoute(
-            path: 'pin/setup', // Относительный путь -> /settings/pin/setup
-            builder: (context, state) => PinSetupScreen(),
+            path: 'pin/setup',
+            builder: (context, state) => const PinSetupScreen(),
           ),
           GoRoute(
-            path: 'pin/change', // Относительный путь -> /settings/pin/change
-            builder: (context, state) => ChangePinScreen(),
+            path: 'pin/change',
+            builder: (context, state) => const ChangePinScreen(),
           ),
         ],
       ),
@@ -193,53 +230,169 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
+// Вспомогательные виджеты для разных статусов
+
+Widget _buildPendingApprovalScreen(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Ожидание подтверждения'),
+      automaticallyImplyLeading: false,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            // Выход из аккаунта
+          },
+        ),
+      ],
+    ),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.hourglass_empty,
+              size: 80,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Ожидание подтверждения',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Ваша заявка на регистрацию отправлена администратору.\n\n'
+              'Пожалуйста, ожидайте подтверждения. Вы получите уведомление, '
+              'когда ваш аккаунт будет активирован.',
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Что происходит дальше?',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• Администратор проверит ваши данные\n'
+                      '• Вы получите уведомление о решении\n'
+                      '• После активации получите полный доступ',
+                      textAlign: TextAlign.left,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _buildRejectedScreen(BuildContext context, WidgetRef ref) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Доступ отклонен'),
+      automaticallyImplyLeading: false,
+    ),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cancel_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Доступ отклонен',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'К сожалению, ваша заявка на регистрацию была отклонена.\n\n'
+              'Пожалуйста, свяжитесь с администратором для получения '
+              'дополнительной информации.',
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await ref.read(authServiceProvider).signOut();
+              },
+              icon: const Icon(Icons.logout),
+              label: const Text('Выйти из аккаунта'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// Утилитарный класс для навигации
 class AppRouter {
-  // --- Метод go() остается ---
   static void go(BuildContext context, String path, {Object? extra}) {
-    // Используем GoRouter.of(context) для доступа к роутеру из текущего контекста
     try {
       GoRouter.of(context).go(path, extra: extra);
     } catch (e) {
-      debugPrint(
-        'GoRouter Error (go): $e. Context might not contain GoRouter.',
-      );
-      // Возможно, стоит показать SnackBar или залогировать ошибку серьезнее
+      debugPrint('GoRouter Error (go): $e');
     }
   }
 
-  // --- ДОБАВЛЯЕМ МЕТОД push() ---
   static Future<T?> push<T extends Object?>(
     BuildContext context,
     String path, {
     Object? extra,
   }) async {
-    // Добавляем async и возвращаемый тип Future<T?>
     try {
-      // Возвращаем Future, который возвращает GoRouter.push<T>()
       return await GoRouter.of(context).push<T>(path, extra: extra);
     } catch (e) {
-      debugPrint(
-        'GoRouter Error (push): $e. Context might not contain GoRouter.',
-      );
-      return null; // Возвращаем null в случае ошибки
+      debugPrint('GoRouter Error (push): $e');
+      return null;
     }
   }
 
-  // --- ДОБАВЛЯЕМ МЕТОД pop() ---
   static void pop(BuildContext context) {
     try {
-      // Проверяем, можно ли вернуться назад
       if (GoRouter.of(context).canPop()) {
         GoRouter.of(context).pop();
       } else {
-        debugPrint(
-          'GoRouter Warning (pop): Cannot pop from the current route.',
-        );
+        debugPrint('GoRouter Warning: Cannot pop from current route');
       }
     } catch (e) {
-      debugPrint(
-        'GoRouter Error (pop): $e. Context might not contain GoRouter.',
-      );
+      debugPrint('GoRouter Error (pop): $e');
     }
   }
 }

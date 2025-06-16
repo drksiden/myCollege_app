@@ -1,14 +1,17 @@
 // lib/features/student/schedule_page.dart (исправленная версия)
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:mycollege/features/student/providers/schedule_provider.dart';
+import 'providers/schedule_provider.dart';
 import '../../providers/subject_provider.dart';
-import '../../providers/teacher_provider.dart'; // Используем исправленный провайдер
+import '../../providers/teacher_provider.dart' as teacher;
 import '../../models/schedule_entry.dart';
 import '../../models/subject.dart';
 import 'widgets/semester_selector.dart';
+import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
+
+final logger = Logger();
 
 class SchedulePage extends ConsumerStatefulWidget {
   const SchedulePage({super.key});
@@ -59,7 +62,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final selectedSemester = ref.watch(selectedSemesterProvider);
-    final groupedSchedule = ref.watch(groupedScheduleProvider);
+    final groupedSchedule = ref.watch(groupedStudentScheduleProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -86,7 +89,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
       ),
       body: Expanded(
         child: ref
-            .watch(scheduleProvider)
+            .watch(studentScheduleProvider)
             .when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error:
@@ -116,7 +119,8 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => ref.refresh(scheduleProvider),
+                            onPressed:
+                                () => ref.refresh(studentScheduleProvider),
                             child: const Text('Повторить'),
                           ),
                         ],
@@ -150,7 +154,7 @@ class _SchedulePageState extends ConsumerState<SchedulePage>
                         return RefreshIndicator(
                           color: colorScheme.primary,
                           onRefresh: () async {
-                            ref.invalidate(scheduleProvider);
+                            ref.invalidate(studentScheduleProvider);
                             ref.invalidate(subjectsProvider);
                             return;
                           },
@@ -229,11 +233,11 @@ class _LessonCard extends ConsumerWidget {
     final bool isCurrent = _isCurrentLesson(lesson);
 
     // ИСПРАВЛЕНО: Используем правильный провайдер
-    print(
+    logger.d(
       'DEBUG: _LessonCard building for lesson with teacherId: ${lesson.teacherId}',
     );
     final teacherNameAsync = ref.watch(
-      teacherNameByIdProvider(lesson.teacherId),
+      teacher.teacherNameByIdProvider(lesson.teacherId),
     );
 
     return Card(
@@ -329,7 +333,7 @@ class _LessonCard extends ConsumerWidget {
                       Expanded(
                         child: teacherNameAsync.when(
                           data: (name) {
-                            print('DEBUG: Teacher name loaded: $name');
+                            logger.d('DEBUG: Teacher name loaded: $name');
                             return Text(
                               name,
                               style: textTheme.bodySmall?.copyWith(
@@ -338,7 +342,7 @@ class _LessonCard extends ConsumerWidget {
                             );
                           },
                           loading: () {
-                            print('DEBUG: Teacher name loading...');
+                            logger.d('DEBUG: Teacher name loading...');
                             return Text(
                               'Загрузка...',
                               style: textTheme.bodySmall?.copyWith(
@@ -347,7 +351,7 @@ class _LessonCard extends ConsumerWidget {
                             );
                           },
                           error: (e, s) {
-                            print('DEBUG: Teacher name error: $e');
+                            logger.d('DEBUG: Teacher name error: $e');
                             return Text(
                               'Ошибка: $e',
                               style: textTheme.bodySmall?.copyWith(

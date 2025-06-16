@@ -45,6 +45,9 @@ dependencies:
   flutter_riverpod: ^2.6.1
   shared_preferences: ^2.5.3
 
+  # Логирование
+  logger: ^2.0.2+1
+
   # Навигация
   go_router: ^15.1.1
 
