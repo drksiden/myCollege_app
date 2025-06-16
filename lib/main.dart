@@ -7,6 +7,8 @@ import 'routes/app_router.dart';
 import 'core/providers/theme_provider.dart'; // Наш провайдер темы
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/fcm_service.dart';
+import 'core/notification_navigation.dart';
 
 // --- Константы для удобства ---
 const _seedColor = Colors.indigo; // Основной цвет для генерации схемы
@@ -16,11 +18,23 @@ const _inputBorderRadiusValue = 8.0; // Радиус для полей ввод�
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Инициализация Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Инициализация FCM
+  final container = ProviderContainer();
+  final fcmService = container.read(fcmServiceProvider);
+  await fcmService.initialize();
+
   // Инициализируем форматирование дат для русского языка
   await initializeDateFormatting('ru_RU', null);
 
-  runApp(const ProviderScope(child: MyApp()));
+  // Инициализируем навигацию по уведомлениям
+  final fcmService = ref.read(fcmServiceProvider);
+  fcmService.setNavigation(NotificationNavigation(context));
+
+  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
